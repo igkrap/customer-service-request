@@ -1,6 +1,6 @@
 # Customer Service Request Management System
 
-A full-stack application for managing customer service requests, built with Spring Boot, React, and Microsoft SQL Server.
+A full-stack application for managing customer service requests, built with Spring Boot, React, and SQLite.
 
 ## Features
 
@@ -10,7 +10,7 @@ A full-stack application for managing customer service requests, built with Spri
 - Priority Levels (Low, Medium, High, Urgent)
 - RESTful API with Spring Boot
 - Modern React UI
-- Microsoft SQL Server database
+- SQLite database (file-based, no server required)
 
 ## Technology Stack
 
@@ -18,7 +18,7 @@ A full-stack application for managing customer service requests, built with Spri
 - Java 17
 - Spring Boot 3.2.0
 - Spring Data JPA
-- Microsoft SQL Server
+- SQLite (file-based database)
 - Maven
 
 ### Frontend
@@ -27,8 +27,7 @@ A full-stack application for managing customer service requests, built with Spri
 - Modern CSS styling
 
 ### Database
-- Microsoft SQL Server 2022
-- Docker container support
+- SQLite 3.44+ (embedded, no installation required)
 
 ## Project Structure
 
@@ -63,24 +62,13 @@ customer-service-request/
 - Java 17 or higher
 - Maven 3.6+
 - Node.js 16+ and npm
-- Docker and Docker Compose (for database)
+- (No database installation required - SQLite is embedded)
 
 ## Setup Instructions
 
-### 1. Database Setup
+### 1. Backend Setup
 
-Start the Microsoft SQL Server using Docker:
-
-```bash
-docker-compose up -d
-```
-
-This will:
-- Start MSSQL Server on port 1433
-- Create the `CustomerServiceDB` database
-- Set up the SA password as configured
-
-### 2. Backend Setup
+No database setup required! SQLite will automatically create the database file (`customer_service.db`) when the application starts.
 
 Navigate to the backend directory and run:
 
@@ -92,7 +80,9 @@ mvn spring-boot:run
 
 The backend server will start on `http://localhost:8080`
 
-### 3. Frontend Setup
+The database file `customer_service.db` will be automatically created in the backend directory.
+
+### 2. Frontend Setup
 
 Navigate to the frontend directory and run:
 
@@ -176,13 +166,14 @@ The React application will start on `http://localhost:3000`
 
 ### Database Connection
 
-Edit `backend/src/main/resources/application.properties` to modify database settings:
+The database is configured in `backend/src/main/resources/application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=CustomerServiceDB
-spring.datasource.username=sa
-spring.datasource.password=YourStrong@Passw0rd
+spring.datasource.url=jdbc:sqlite:customer_service.db
+spring.datasource.driver-class-name=org.sqlite.JDBC
 ```
+
+The database file (`customer_service.db`) will be created automatically in the backend directory when the application starts for the first time.
 
 ### CORS Configuration
 
@@ -221,36 +212,38 @@ npm run build
 
 ## Troubleshooting
 
-### Database Connection Issues
+### Database Issues
 
-1. Ensure Docker container is running:
+1. Check if database file exists:
 ```bash
-docker ps
+ls -la backend/customer_service.db
 ```
 
-2. Check SQL Server logs:
+2. If you need to reset the database, simply delete the file:
 ```bash
-docker logs customer-service-mssql
+rm backend/customer_service.db
 ```
 
-3. Verify database exists:
+3. View database contents using SQLite CLI:
 ```bash
-docker exec -it customer-service-mssql /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -Q "SELECT name FROM sys.databases"
+sqlite3 backend/customer_service.db
+.tables
+SELECT * FROM customers;
+.quit
 ```
 
 ### Port Conflicts
 
-If ports 8080, 3000, or 1433 are already in use, modify:
+If ports 8080 or 3000 are already in use, modify:
 - Backend port: `server.port` in `application.properties`
 - Frontend port: Set `PORT` environment variable
-- Database port: Change port mapping in `docker-compose.yml`
 
 ## Security Notes
 
-- The default SA password is for development only
-- Change passwords in production environments
+- SQLite is file-based and intended for development/small deployments
+- For production with high concurrency, consider PostgreSQL or MySQL
 - Implement proper authentication/authorization
-- Use environment variables for sensitive data
+- Protect the database file with appropriate file system permissions
 
 ## License
 
