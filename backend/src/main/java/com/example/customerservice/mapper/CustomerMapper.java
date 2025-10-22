@@ -26,7 +26,7 @@ public interface CustomerMapper {
 
     @Insert("INSERT INTO customers (name, email, phone_number, company, created_at, updated_at) " +
             "VALUES (#{name}, #{email}, #{phoneNumber}, #{company}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(Customer customer);
 
     @Update("UPDATE customers SET name = #{name}, email = #{email}, phone_number = #{phoneNumber}, " +

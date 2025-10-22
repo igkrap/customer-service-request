@@ -32,7 +32,7 @@ public interface UserMapper {
 
     @Insert("INSERT INTO users (username, email, password, role, created_at, updated_at) " +
             "VALUES (#{username}, #{email}, #{password}, #{role}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(User user);
 
     @Update("UPDATE users SET username = #{username}, email = #{email}, " +
