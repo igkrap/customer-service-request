@@ -4,8 +4,10 @@ A full-stack application for managing customer service requests, built with Spri
 
 ## Features
 
-- Customer Management (CRUD operations)
-- Service Request Management (CRUD operations)
+- User Authentication & Authorization (JWT-based)
+- Role-based Access Control (Admin & User roles)
+- Customer Management (CRUD operations - Admin only)
+- Service Request Management (CRUD operations - User & Admin)
 - Request Status Tracking (Open, In Progress, Resolved, Closed, Cancelled)
 - Priority Levels (Low, Medium, High, Urgent)
 - RESTful API with Spring Boot
@@ -17,6 +19,7 @@ A full-stack application for managing customer service requests, built with Spri
 ### Backend
 - Java 17
 - Spring Boot 3.2.0
+- Spring Security with JWT
 - MyBatis 3.0.3
 - SQLite (file-based database)
 - Maven
@@ -97,7 +100,12 @@ The React application will start on `http://localhost:3000`
 
 ## API Endpoints
 
-### Customer Endpoints
+### Authentication Endpoints
+
+- `POST /api/auth/signup` - Register a new user (Public)
+- `POST /api/auth/login` - Login and get JWT token (Public)
+
+### Customer Endpoints (Admin only)
 
 - `GET /api/customers` - Get all customers
 - `GET /api/customers/{id}` - Get customer by ID
@@ -106,7 +114,7 @@ The React application will start on `http://localhost:3000`
 - `PUT /api/customers/{id}` - Update customer
 - `DELETE /api/customers/{id}` - Delete customer
 
-### Service Request Endpoints
+### Service Request Endpoints (User & Admin)
 
 - `GET /api/service-requests` - Get all service requests
 - `GET /api/service-requests/{id}` - Get request by ID
@@ -118,6 +126,47 @@ The React application will start on `http://localhost:3000`
 - `DELETE /api/service-requests/{id}` - Delete request
 
 ## Data Models
+
+### User
+```json
+{
+  "id": 1,
+  "username": "johndoe",
+  "email": "john@example.com",
+  "role": "ROLE_USER",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-01T10:00:00"
+}
+```
+
+### Signup Request
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Login Request
+```json
+{
+  "username": "johndoe",
+  "password": "password123"
+}
+```
+
+### Auth Response
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "type": "Bearer",
+  "id": 1,
+  "username": "johndoe",
+  "email": "john@example.com",
+  "role": "ROLE_USER"
+}
+```
 
 ### Customer
 ```json
@@ -162,6 +211,44 @@ The React application will start on `http://localhost:3000`
 - MEDIUM
 - HIGH
 - URGENT
+
+### User Roles
+- `ROLE_USER` - Regular user with access to service requests
+- `ROLE_ADMIN` - Administrator with full access to all features including customer management
+
+## Authentication
+
+The API uses JWT (JSON Web Token) for authentication. To access protected endpoints:
+
+1. **Sign up** or **Login** to get a JWT token
+2. Include the token in the `Authorization` header of your requests:
+   ```
+   Authorization: Bearer <your-jwt-token>
+   ```
+
+### Example Usage
+
+```bash
+# 1. Sign up
+curl -X POST http://localhost:8080/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"johndoe","email":"john@example.com","password":"password123"}'
+
+# 2. Login (get token)
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"johndoe","password":"password123"}'
+
+# 3. Use token to access protected endpoint
+curl -X GET http://localhost:8080/api/service-requests \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### Access Control
+
+- **Public Endpoints**: `/api/auth/signup`, `/api/auth/login`
+- **User & Admin**: `/api/service-requests/**`
+- **Admin Only**: `/api/customers/**`
 
 ## Configuration
 
