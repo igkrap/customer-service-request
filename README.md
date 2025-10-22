@@ -6,6 +6,7 @@ A full-stack application for managing customer service requests, built with Spri
 
 - User Authentication & Authorization (JWT-based)
 - Role-based Access Control (Admin & User roles)
+- User Management (Admin only - view users, update roles, delete users)
 - Customer Management (CRUD operations - Admin only)
 - Service Request Management (CRUD operations - User & Admin)
 - Request Status Tracking (Open, In Progress, Resolved, Closed, Cancelled)
@@ -84,7 +85,14 @@ mvn spring-boot:run
 
 The backend server will start on `http://localhost:8080`
 
-The database file `customer_service.db` will be automatically created in the backend directory.
+The database file `customer_service.db` will be automatically created in the backend directory with a default admin account.
+
+**Default Admin Account:**
+- Username: `admin`
+- Password: `1234`
+- Role: `ROLE_ADMIN`
+
+**Important:** Change the admin password after first login for security purposes.
 
 ### 2. Frontend Setup
 
@@ -104,6 +112,13 @@ The React application will start on `http://localhost:3000`
 
 - `POST /api/auth/signup` - Register a new user (Public)
 - `POST /api/auth/login` - Login and get JWT token (Public)
+
+### User Management Endpoints (Admin only)
+
+- `GET /api/users` - Get all users
+- `GET /api/users/{id}` - Get user by ID
+- `PUT /api/users/{id}/role` - Update user role
+- `DELETE /api/users/{id}` - Delete user
 
 ### Customer Endpoints (Admin only)
 
@@ -229,26 +244,35 @@ The API uses JWT (JSON Web Token) for authentication. To access protected endpoi
 ### Example Usage
 
 ```bash
-# 1. Sign up
+# 1. Login with default admin account
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"1234"}'
+
+# Response will include JWT token
+# {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...","type":"Bearer",...}
+
+# 2. Sign up new user
 curl -X POST http://localhost:8080/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"username":"johndoe","email":"john@example.com","password":"password123"}'
 
-# 2. Login (get token)
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"johndoe","password":"password123"}'
-
 # 3. Use token to access protected endpoint
 curl -X GET http://localhost:8080/api/service-requests \
   -H "Authorization: Bearer <your-jwt-token>"
+
+# 4. Admin: Manage user roles
+curl -X PUT http://localhost:8080/api/users/2/role \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"ROLE_ADMIN"}'
 ```
 
 ### Access Control
 
 - **Public Endpoints**: `/api/auth/signup`, `/api/auth/login`
 - **User & Admin**: `/api/service-requests/**`
-- **Admin Only**: `/api/customers/**`
+- **Admin Only**: `/api/users/**`, `/api/customers/**`
 
 ## Configuration
 
