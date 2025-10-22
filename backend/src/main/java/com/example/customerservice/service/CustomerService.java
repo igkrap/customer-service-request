@@ -1,12 +1,13 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.CustomerDTO;
+import com.example.customerservice.mapper.CustomerMapper;
 import com.example.customerservice.model.Customer;
-import com.example.customerservice.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,42 +16,45 @@ import java.util.stream.Collectors;
 public class CustomerService {
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private CustomerMapper customerMapper;
 
     public List<CustomerDTO> getAllCustomers() {
-        return customerRepository.findAll().stream()
+        return customerMapper.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public CustomerDTO getCustomerById(Long id) {
-        Customer customer = customerRepository.findById(id)
+        Customer customer = customerMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
         return convertToDTO(customer);
     }
 
     public CustomerDTO getCustomerByEmail(String email) {
-        Customer customer = customerRepository.findByEmail(email)
+        Customer customer = customerMapper.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Customer not found with email: " + email));
         return convertToDTO(customer);
     }
 
     public CustomerDTO createCustomer(CustomerDTO customerDTO) {
-        if (customerRepository.existsByEmail(customerDTO.getEmail())) {
+        if (customerMapper.existsByEmail(customerDTO.getEmail())) {
             throw new RuntimeException("Customer already exists with email: " + customerDTO.getEmail());
         }
 
         Customer customer = convertToEntity(customerDTO);
-        Customer savedCustomer = customerRepository.save(customer);
-        return convertToDTO(savedCustomer);
+        customer.setCreatedAt(LocalDateTime.now());
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        customerMapper.insert(customer);
+        return convertToDTO(customer);
     }
 
     public CustomerDTO updateCustomer(Long id, CustomerDTO customerDTO) {
-        Customer customer = customerRepository.findById(id)
+        Customer customer = customerMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
 
         if (!customer.getEmail().equals(customerDTO.getEmail()) &&
-                customerRepository.existsByEmail(customerDTO.getEmail())) {
+                customerMapper.existsByEmail(customerDTO.getEmail())) {
             throw new RuntimeException("Email already in use: " + customerDTO.getEmail());
         }
 
@@ -58,16 +62,17 @@ public class CustomerService {
         customer.setEmail(customerDTO.getEmail());
         customer.setPhoneNumber(customerDTO.getPhoneNumber());
         customer.setCompany(customerDTO.getCompany());
+        customer.setUpdatedAt(LocalDateTime.now());
 
-        Customer updatedCustomer = customerRepository.save(customer);
-        return convertToDTO(updatedCustomer);
+        customerMapper.update(customer);
+        return convertToDTO(customer);
     }
 
     public void deleteCustomer(Long id) {
-        if (!customerRepository.existsById(id)) {
+        if (!customerMapper.existsById(id)) {
             throw new RuntimeException("Customer not found with id: " + id);
         }
-        customerRepository.deleteById(id);
+        customerMapper.deleteById(id);
     }
 
     private CustomerDTO convertToDTO(Customer customer) {

@@ -1,14 +1,15 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.mapper.CustomerMapper;
+import com.example.customerservice.mapper.ServiceRequestMapper;
 import com.example.customerservice.model.Customer;
 import com.example.customerservice.model.ServiceRequest;
-import com.example.customerservice.repository.CustomerRepository;
-import com.example.customerservice.repository.ServiceRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,77 +18,100 @@ import java.util.stream.Collectors;
 public class ServiceRequestService {
 
     @Autowired
-    private ServiceRequestRepository serviceRequestRepository;
+    private ServiceRequestMapper serviceRequestMapper;
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private CustomerMapper customerMapper;
 
     public List<ServiceRequestDTO> getAllServiceRequests() {
-        return serviceRequestRepository.findAll().stream()
+        return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public ServiceRequestDTO getServiceRequestById(Long id) {
-        ServiceRequest serviceRequest = serviceRequestRepository.findById(id)
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
         return convertToDTO(serviceRequest);
     }
 
     public List<ServiceRequestDTO> getServiceRequestsByCustomerId(Long customerId) {
-        return serviceRequestRepository.findByCustomerId(customerId).stream()
+        return serviceRequestMapper.findByCustomerId(customerId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ServiceRequestDTO> getServiceRequestsByStatus(ServiceRequest.RequestStatus status) {
-        return serviceRequestRepository.findByStatus(status).stream()
+        return serviceRequestMapper.findByStatus(status).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ServiceRequestDTO> getServiceRequestsByPriority(ServiceRequest.Priority priority) {
-        return serviceRequestRepository.findByPriority(priority).stream()
+        return serviceRequestMapper.findByPriority(priority).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto) {
-        Customer customer = customerRepository.findById(dto.getCustomerId())
+        Customer customer = customerMapper.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
 
         ServiceRequest serviceRequest = convertToEntity(dto);
-        serviceRequest.setCustomer(customer);
+        serviceRequest.setCustomerId(customer.getId());
+        serviceRequest.setCreatedAt(LocalDateTime.now());
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
 
-        ServiceRequest savedRequest = serviceRequestRepository.save(serviceRequest);
-        return convertToDTO(savedRequest);
+        // Set default values if not provided
+        if (serviceRequest.getStatus() == null) {
+            serviceRequest.setStatus(ServiceRequest.RequestStatus.OPEN);
+        }
+        if (serviceRequest.getPriority() == null) {
+            serviceRequest.setPriority(ServiceRequest.Priority.MEDIUM);
+        }
+
+        serviceRequestMapper.insert(serviceRequest);
+        return convertToDTO(serviceRequest);
     }
 
     public ServiceRequestDTO updateServiceRequest(Long id, ServiceRequestDTO dto) {
-        ServiceRequest serviceRequest = serviceRequestRepository.findById(id)
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
 
         serviceRequest.setTitle(dto.getTitle());
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setAssignedTo(dto.getAssignedTo());
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
 
-        if (dto.getCustomerId() != null && !serviceRequest.getCustomer().getId().equals(dto.getCustomerId())) {
-            Customer customer = customerRepository.findById(dto.getCustomerId())
-                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
-            serviceRequest.setCustomer(customer);
+        // Set resolvedAt when status changes to RESOLVED or CLOSED
+        if ((dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED ||
+             dto.getStatus() == ServiceRequest.RequestStatus.CLOSED) &&
+            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
+             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+            if (serviceRequest.getResolvedAt() == null) {
+                serviceRequest.setResolvedAt(LocalDateTime.now());
+            }
         }
 
-        ServiceRequest updatedRequest = serviceRequestRepository.save(serviceRequest);
-        return convertToDTO(updatedRequest);
+        if (dto.getCustomerId() != null && !serviceRequest.getCustomerId().equals(dto.getCustomerId())) {
+            Customer customer = customerMapper.findById(dto.getCustomerId())
+                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+            serviceRequest.setCustomerId(customer.getId());
+        }
+
+        serviceRequestMapper.update(serviceRequest);
+        return convertToDTO(serviceRequest);
     }
 
     public void deleteServiceRequest(Long id) {
-        if (!serviceRequestRepository.existsById(id)) {
+        if (!serviceRequestMapper.existsById(id)) {
             throw new RuntimeException("Service request not found with id: " + id);
         }
-        serviceRequestRepository.deleteById(id);
+        serviceRequestMapper.deleteById(id);
     }
 
     private ServiceRequestDTO convertToDTO(ServiceRequest serviceRequest) {
@@ -97,9 +121,16 @@ public class ServiceRequestService {
         dto.setDescription(serviceRequest.getDescription());
         dto.setStatus(serviceRequest.getStatus());
         dto.setPriority(serviceRequest.getPriority());
-        dto.setCustomerId(serviceRequest.getCustomer().getId());
-        dto.setCustomerName(serviceRequest.getCustomer().getName());
-        dto.setCustomerEmail(serviceRequest.getCustomer().getEmail());
+        dto.setCustomerId(serviceRequest.getCustomerId());
+
+        // Load customer details for DTO
+        Customer customer = customerMapper.findById(serviceRequest.getCustomerId())
+                .orElse(null);
+        if (customer != null) {
+            dto.setCustomerName(customer.getName());
+            dto.setCustomerEmail(customer.getEmail());
+        }
+
         dto.setAssignedTo(serviceRequest.getAssignedTo());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
