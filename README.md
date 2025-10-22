@@ -17,7 +17,7 @@ A full-stack application for managing customer service requests, built with Spri
 ### Backend
 - Java 17
 - Spring Boot 3.2.0
-- Spring Data JPA
+- MyBatis 3.0.3
 - SQLite (file-based database)
 - Maven
 
@@ -39,12 +39,13 @@ customer-service-request/
 │   │   │   ├── java/com/example/customerservice/
 │   │   │   │   ├── controller/    # REST controllers
 │   │   │   │   ├── service/       # Business logic
-│   │   │   │   ├── repository/    # Data access layer
-│   │   │   │   ├── model/         # Entity classes
+│   │   │   │   ├── mapper/        # MyBatis mapper interfaces
+│   │   │   │   ├── model/         # Domain model classes
 │   │   │   │   ├── dto/           # Data transfer objects
 │   │   │   │   └── config/        # Configuration classes
 │   │   │   └── resources/
-│   │   │       └── application.properties
+│   │   │       ├── application.properties
+│   │   │       └── schema.sql     # Database schema
 │   │   └── test/
 │   └── pom.xml
 ├── frontend/                   # React frontend
@@ -169,11 +170,25 @@ The React application will start on `http://localhost:3000`
 The database is configured in `backend/src/main/resources/application.properties`:
 
 ```properties
+# Database Configuration
 spring.datasource.url=jdbc:sqlite:customer_service.db
 spring.datasource.driver-class-name=org.sqlite.JDBC
+
+# MyBatis Configuration
+mybatis.mapper-locations=classpath:mapper/**/*.xml
+mybatis.type-aliases-package=com.example.customerservice.model
+mybatis.configuration.map-underscore-to-camel-case=true
 ```
 
-The database file (`customer_service.db`) will be created automatically in the backend directory when the application starts for the first time.
+The database file (`customer_service.db`) will be created automatically in the backend directory when the application starts for the first time. The database schema is defined in `backend/src/main/resources/schema.sql` and is executed automatically on startup.
+
+### MyBatis Mappers
+
+This project uses MyBatis with annotation-based SQL mapping. Mapper interfaces are located in the `mapper` package:
+- `CustomerMapper.java` - CRUD operations for customers
+- `ServiceRequestMapper.java` - CRUD operations for service requests
+
+SQL queries are defined using `@Select`, `@Insert`, `@Update`, and `@Delete` annotations directly on the mapper interface methods.
 
 ### CORS Configuration
 
