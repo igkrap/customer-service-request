@@ -34,3 +34,7 @@ build/
 
 ### MacOS ###
 .DS_Store
+
+### SQLite Database ###
+*.db
+*.db-journal
