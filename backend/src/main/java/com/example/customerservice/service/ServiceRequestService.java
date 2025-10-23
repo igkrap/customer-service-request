@@ -53,6 +53,39 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestDTO> getServiceRequestsByUserId(Long userId) {
+        return serviceRequestMapper.findByCreatedByUserId(userId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ServiceRequest getServiceRequestEntityById(Long id) {
+        return serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+    }
+
+    public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto, Long userId) {
+        Customer customer = customerMapper.findById(dto.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+
+        ServiceRequest serviceRequest = convertToEntity(dto);
+        serviceRequest.setCustomerId(customer.getId());
+        serviceRequest.setCreatedByUserId(userId);
+        serviceRequest.setCreatedAt(LocalDateTime.now());
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
+
+        // Set default values if not provided
+        if (serviceRequest.getStatus() == null) {
+            serviceRequest.setStatus(ServiceRequest.RequestStatus.OPEN);
+        }
+        if (serviceRequest.getPriority() == null) {
+            serviceRequest.setPriority(ServiceRequest.Priority.MEDIUM);
+        }
+
+        serviceRequestMapper.insert(serviceRequest);
+        return convertToDTO(serviceRequest);
+    }
+
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto) {
         Customer customer = customerMapper.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
@@ -132,6 +165,7 @@ public class ServiceRequestService {
         }
 
         dto.setAssignedTo(serviceRequest.getAssignedTo());
+        dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());

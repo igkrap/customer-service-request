@@ -27,6 +27,8 @@ public class ServiceRequest {
 
     private String assignedTo;
 
+    private Long createdByUserId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
