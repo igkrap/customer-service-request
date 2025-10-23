@@ -38,7 +38,7 @@ public class ServiceRequestController {
             requests = serviceRequestService.getAllServiceRequests();
         } else {
             // Regular users can only see their own requests
-            requests = serviceRequestService.getServiceRequestsByUserId(user.getId());
+            requests = serviceRequestService.getServiceRequestsByCreatedByUserId(user.getId());
         }
         return ResponseEntity.ok(requests);
     }
@@ -59,9 +59,9 @@ public class ServiceRequestController {
         }
     }
 
-    @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<ServiceRequestDTO>> getServiceRequestsByCustomerId(@PathVariable Long customerId) {
-        List<ServiceRequestDTO> requests = serviceRequestService.getServiceRequestsByCustomerId(customerId);
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<ServiceRequestDTO>> getServiceRequestsByUserId(@PathVariable Long userId) {
+        List<ServiceRequestDTO> requests = serviceRequestService.getServiceRequestsByUserId(userId);
         return ResponseEntity.ok(requests);
     }
 

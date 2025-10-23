@@ -26,11 +26,11 @@ public class ServiceRequestDTO {
     @NotNull(message = "Priority is required")
     private ServiceRequest.Priority priority;
 
-    @NotNull(message = "Customer ID is required")
-    private Long customerId;
+    @NotNull(message = "User ID is required")
+    private Long userId;
 
-    private String customerName;
-    private String customerEmail;
+    private String userName;
+    private String userEmail;
 
     private String assignedTo;
 

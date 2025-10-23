@@ -55,7 +55,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // Admin-only endpoints
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/customers/**").hasRole("ADMIN")
                         .requestMatchers("/api/service-requests/**").hasAnyRole("USER", "ADMIN")
                         // All other requests need authentication
                         .anyRequest().authenticated()

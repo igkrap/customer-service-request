@@ -23,7 +23,7 @@ public class ServiceRequest {
 
     private Priority priority;
 
-    private Long customerId;
+    private Long userId;
 
     private String assignedTo;
 
@@ -34,9 +34,6 @@ public class ServiceRequest {
     private LocalDateTime updatedAt;
 
     private LocalDateTime resolvedAt;
-
-    // For DTO conversion - not stored in DB
-    private transient Customer customer;
 
     public enum RequestStatus {
         OPEN, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED

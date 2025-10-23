@@ -1,10 +1,10 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
-import com.example.customerservice.mapper.CustomerMapper;
 import com.example.customerservice.mapper.ServiceRequestMapper;
-import com.example.customerservice.model.Customer;
+import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.ServiceRequest;
+import com.example.customerservice.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ public class ServiceRequestService {
     private ServiceRequestMapper serviceRequestMapper;
 
     @Autowired
-    private CustomerMapper customerMapper;
+    private UserMapper userMapper;
 
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
@@ -35,8 +35,8 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
-    public List<ServiceRequestDTO> getServiceRequestsByCustomerId(Long customerId) {
-        return serviceRequestMapper.findByCustomerId(customerId).stream()
+    public List<ServiceRequestDTO> getServiceRequestsByUserId(Long userId) {
+        return serviceRequestMapper.findByUserId(userId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -53,7 +53,7 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
-    public List<ServiceRequestDTO> getServiceRequestsByUserId(Long userId) {
+    public List<ServiceRequestDTO> getServiceRequestsByCreatedByUserId(Long userId) {
         return serviceRequestMapper.findByCreatedByUserId(userId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -65,11 +65,11 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto, Long userId) {
-        Customer customer = customerMapper.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+        User user = userMapper.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
 
         ServiceRequest serviceRequest = convertToEntity(dto);
-        serviceRequest.setCustomerId(customer.getId());
+        serviceRequest.setUserId(user.getId());
         serviceRequest.setCreatedByUserId(userId);
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
@@ -87,11 +87,11 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto) {
-        Customer customer = customerMapper.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+        User user = userMapper.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
 
         ServiceRequest serviceRequest = convertToEntity(dto);
-        serviceRequest.setCustomerId(customer.getId());
+        serviceRequest.setUserId(user.getId());
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
@@ -130,10 +130,10 @@ public class ServiceRequestService {
             }
         }
 
-        if (dto.getCustomerId() != null && !serviceRequest.getCustomerId().equals(dto.getCustomerId())) {
-            Customer customer = customerMapper.findById(dto.getCustomerId())
-                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
-            serviceRequest.setCustomerId(customer.getId());
+        if (dto.getUserId() != null && !serviceRequest.getUserId().equals(dto.getUserId())) {
+            User user = userMapper.findById(dto.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+            serviceRequest.setUserId(user.getId());
         }
 
         serviceRequestMapper.update(serviceRequest);
@@ -154,14 +154,14 @@ public class ServiceRequestService {
         dto.setDescription(serviceRequest.getDescription());
         dto.setStatus(serviceRequest.getStatus());
         dto.setPriority(serviceRequest.getPriority());
-        dto.setCustomerId(serviceRequest.getCustomerId());
+        dto.setUserId(serviceRequest.getUserId());
 
-        // Load customer details for DTO
-        Customer customer = customerMapper.findById(serviceRequest.getCustomerId())
+        // Load user details for DTO
+        User user = userMapper.findById(serviceRequest.getUserId())
                 .orElse(null);
-        if (customer != null) {
-            dto.setCustomerName(customer.getName());
-            dto.setCustomerEmail(customer.getEmail());
+        if (user != null) {
+            dto.setUserName(user.getUsername());
+            dto.setUserEmail(user.getEmail());
         }
 
         dto.setAssignedTo(serviceRequest.getAssignedTo());
