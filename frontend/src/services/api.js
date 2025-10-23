@@ -49,6 +49,7 @@ export const userAPI = {
   getAllManagers: () => api.get('/users/managers'),
   getCustomersByManagerId: (managerId) => api.get(`/users/managers/${managerId}/customers`),
   assignManagers: (customerId, managerIds) => api.put(`/users/${customerId}/assign-managers`, { managerIds }),
+  assignCustomersToManager: (managerId, customerIds) => api.put(`/users/managers/${managerId}/assign-customers`, { customerIds }),
   addManager: (customerId, managerId) => api.post(`/users/${customerId}/managers/${managerId}`),
   removeManager: (customerId, managerId) => api.delete(`/users/${customerId}/managers/${managerId}`),
   updateRole: (id, role) => api.put(`/users/${id}/role`, role),

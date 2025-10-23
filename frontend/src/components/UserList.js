@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 function UserList() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
-  const [managers, setManagers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
@@ -14,7 +14,7 @@ function UserList() {
     email: '',
     password: '',
     role: '',
-    managerIds: []
+    customerIds: []
   });
 
   useEffect(() => {
@@ -27,9 +27,9 @@ function UserList() {
       const response = await userAPI.getAll();
       setUsers(response.data);
 
-      // Fetch managers for assignment dropdown
-      const managersResponse = await userAPI.getAllManagers();
-      setManagers(managersResponse.data);
+      // Fetch customers for assignment dropdown
+      const allCustomers = response.data.filter(u => u.role === 'ROLE_CUSTOMER');
+      setCustomers(allCustomers);
 
       setError(null);
     } catch (err) {
@@ -45,7 +45,7 @@ function UserList() {
       email: userToEdit.email,
       password: '',
       role: userToEdit.role,
-      managerIds: userToEdit.managerIds || []
+      customerIds: userToEdit.customerIds || []
     });
     setShowEditForm(true);
   };
@@ -53,8 +53,8 @@ function UserList() {
   const handleInputChange = (e) => {
     const { name, value, options } = e.target;
 
-    // Handle multiple select for managerIds
-    if (name === 'managerIds') {
+    // Handle multiple select for customerIds
+    if (name === 'customerIds') {
       const selectedValues = Array.from(options)
         .filter(option => option.selected)
         .map(option => parseInt(option.value));
@@ -88,23 +88,23 @@ function UserList() {
         await userAPI.updateRole(editingUser.id, { role: formData.role });
       }
 
-      // Update manager assignments if role is customer
-      if (formData.role === 'ROLE_CUSTOMER') {
-        const newManagerIds = formData.managerIds || [];
-        const oldManagerIds = editingUser.managerIds || [];
+      // Update customer assignments if role is manager
+      if (formData.role === 'ROLE_MANAGER') {
+        const newCustomerIds = formData.customerIds || [];
+        const oldCustomerIds = editingUser.customerIds || [];
 
-        // Check if manager assignments changed
-        const changed = newManagerIds.length !== oldManagerIds.length ||
-                        !newManagerIds.every(id => oldManagerIds.includes(id));
+        // Check if customer assignments changed
+        const changed = newCustomerIds.length !== oldCustomerIds.length ||
+                        !newCustomerIds.every(id => oldCustomerIds.includes(id));
 
         if (changed) {
-          await userAPI.assignManagers(editingUser.id, newManagerIds);
+          await userAPI.assignCustomersToManager(editingUser.id, newCustomerIds);
         }
       }
 
       setShowEditForm(false);
       setEditingUser(null);
-      setFormData({ email: '', password: '', role: '', managerIds: [] });
+      setFormData({ email: '', password: '', role: '', customerIds: [] });
       fetchUsers();
       setError(null);
     } catch (err) {
@@ -132,7 +132,7 @@ function UserList() {
   const handleCancel = () => {
     setShowEditForm(false);
     setEditingUser(null);
-    setFormData({ email: '', password: '', role: '', managerIds: [] });
+    setFormData({ email: '', password: '', role: '', customerIds: [] });
   };
 
   const getRoleBadge = (role) => {
@@ -203,27 +203,27 @@ function UserList() {
                     <option value="ROLE_ADMIN">Admin</option>
                   </select>
                 </div>
-                {formData.role === 'ROLE_CUSTOMER' && (
+                {formData.role === 'ROLE_MANAGER' && (
                   <div className="form-group">
-                    <label>Assigned Managers (hold Ctrl/Cmd to select multiple)</label>
+                    <label>Assigned Customers (hold Ctrl/Cmd to select multiple)</label>
                     <select
-                      name="managerIds"
-                      value={formData.managerIds.map(String)}
+                      name="customerIds"
+                      value={formData.customerIds.map(String)}
                       onChange={handleInputChange}
                       multiple
                       size="5"
                       style={{ height: 'auto' }}
                     >
-                      {managers.map(m => (
-                        <option key={m.id} value={m.id}>
-                          {m.username} - {m.email}
+                      {customers.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.username} - {c.email}
                         </option>
                       ))}
                     </select>
                     <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                      {formData.managerIds.length > 0
-                        ? `${formData.managerIds.length} manager(s) selected`
-                        : 'No managers selected'}
+                      {formData.customerIds.length > 0
+                        ? `${formData.customerIds.length} customer(s) selected`
+                        : 'No customers selected'}
                     </small>
                   </div>
                 )}
@@ -247,7 +247,7 @@ function UserList() {
               <th>Username</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Assigned Manager</th>
+              <th>Relationships</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -260,11 +260,21 @@ function UserList() {
                 <td>{u.email}</td>
                 <td>{getRoleBadge(u.role)}</td>
                 <td>
-                  {u.role === 'ROLE_CUSTOMER'
-                    ? (u.managerNames && u.managerNames.length > 0
+                  {u.role === 'ROLE_CUSTOMER' && (
+                    <span>
+                      Managers: {u.managerNames && u.managerNames.length > 0
                         ? u.managerNames.join(', ')
-                        : 'None')
-                    : '-'}
+                        : 'None'}
+                    </span>
+                  )}
+                  {u.role === 'ROLE_MANAGER' && (
+                    <span>
+                      Customers: {u.customerNames && u.customerNames.length > 0
+                        ? u.customerNames.join(', ')
+                        : 'None'}
+                    </span>
+                  )}
+                  {u.role === 'ROLE_ADMIN' && '-'}
                 </td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td>
