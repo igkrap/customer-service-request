@@ -1,14 +1,14 @@
-# Customer Service Request Management System
+# Service Request Management System
 
-A full-stack application for managing customer service requests, built with Spring Boot, React, and SQLite.
+A full-stack application for managing service requests, built with Spring Boot, React, and SQLite.
 
 ## Features
 
 - User Authentication & Authorization (JWT-based)
 - Role-based Access Control (Admin & User roles)
 - User Management (Admin only - view users, update roles, delete users)
-- Customer Management (CRUD operations - Admin only)
 - Service Request Management (CRUD operations - User & Admin)
+- User-based Service Requests (Each request is associated with a user)
 - Request Status Tracking (Open, In Progress, Resolved, Closed, Cancelled)
 - Priority Levels (Low, Medium, High, Urgent)
 - RESTful API with Spring Boot
@@ -120,20 +120,11 @@ The React application will start on `http://localhost:3000`
 - `PUT /api/users/{id}/role` - Update user role
 - `DELETE /api/users/{id}` - Delete user
 
-### Customer Endpoints (Admin only)
-
-- `GET /api/customers` - Get all customers
-- `GET /api/customers/{id}` - Get customer by ID
-- `GET /api/customers/email/{email}` - Get customer by email
-- `POST /api/customers` - Create new customer
-- `PUT /api/customers/{id}` - Update customer
-- `DELETE /api/customers/{id}` - Delete customer
-
 ### Service Request Endpoints (User & Admin)
 
-- `GET /api/service-requests` - Get all service requests
+- `GET /api/service-requests` - Get all service requests (Admin sees all, users see only their own)
 - `GET /api/service-requests/{id}` - Get request by ID
-- `GET /api/service-requests/customer/{customerId}` - Get requests by customer
+- `GET /api/service-requests/user/{userId}` - Get requests by user
 - `GET /api/service-requests/status/{status}` - Get requests by status
 - `GET /api/service-requests/priority/{priority}` - Get requests by priority
 - `POST /api/service-requests` - Create new request
@@ -183,19 +174,6 @@ The React application will start on `http://localhost:3000`
 }
 ```
 
-### Customer
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phoneNumber": "555-1234",
-  "company": "Acme Corp",
-  "createdAt": "2024-01-01T10:00:00",
-  "updatedAt": "2024-01-01T10:00:00"
-}
-```
-
 ### Service Request
 ```json
 {
@@ -204,10 +182,11 @@ The React application will start on `http://localhost:3000`
   "description": "Detailed description",
   "status": "OPEN",
   "priority": "HIGH",
-  "customerId": 1,
-  "customerName": "John Doe",
-  "customerEmail": "john@example.com",
+  "userId": 1,
+  "userName": "johndoe",
+  "userEmail": "john@example.com",
   "assignedTo": "Support Team",
+  "createdByUserId": 1,
   "createdAt": "2024-01-01T10:00:00",
   "updatedAt": "2024-01-01T10:00:00",
   "resolvedAt": null
@@ -271,8 +250,8 @@ curl -X PUT http://localhost:8080/api/users/2/role \
 ### Access Control
 
 - **Public Endpoints**: `/api/auth/signup`, `/api/auth/login`
-- **User & Admin**: `/api/service-requests/**`
-- **Admin Only**: `/api/users/**`, `/api/customers/**`
+- **User & Admin**: `/api/service-requests/**` (Users can only view/edit their own requests)
+- **Admin Only**: `/api/users/**` (Full access to all service requests)
 
 ## Configuration
 
@@ -296,7 +275,7 @@ The database file (`customer_service.db`) will be created automatically in the b
 ### MyBatis Mappers
 
 This project uses MyBatis with annotation-based SQL mapping. Mapper interfaces are located in the `mapper` package:
-- `CustomerMapper.java` - CRUD operations for customers
+- `UserMapper.java` - CRUD operations for users
 - `ServiceRequestMapper.java` - CRUD operations for service requests
 
 SQL queries are defined using `@Select`, `@Insert`, `@Update`, and `@Delete` annotations directly on the mapper interface methods.
@@ -354,7 +333,8 @@ rm backend/customer_service.db
 ```bash
 sqlite3 backend/customer_service.db
 .tables
-SELECT * FROM customers;
+SELECT * FROM users;
+SELECT * FROM service_requests;
 .quit
 ```
 

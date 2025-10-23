@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { serviceRequestAPI, customerAPI } from '../services/api';
+import { serviceRequestAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
-  const [customers, setCustomers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -15,7 +15,7 @@ function ServiceRequestList() {
     description: '',
     status: 'OPEN',
     priority: 'MEDIUM',
-    customerId: '',
+    userId: '',
     assignedTo: ''
   });
 
@@ -29,14 +29,14 @@ function ServiceRequestList() {
       const requestsResponse = await serviceRequestAPI.getAll();
       setRequests(requestsResponse.data);
 
-      // Try to fetch customers, but silently fail if forbidden (user doesn't have permission)
+      // Try to fetch users, but silently fail if forbidden (user doesn't have permission)
       try {
-        const customersResponse = await customerAPI.getAll();
-        setCustomers(customersResponse.data);
+        const usersResponse = await userAPI.getAll();
+        setUsers(usersResponse.data);
       } catch (err) {
         if (err.response?.status === 403) {
-          // User doesn't have permission to view customers, that's okay
-          setCustomers([]);
+          // User doesn't have permission to view users, that's okay
+          setUsers([]);
         } else {
           throw err;
         }
@@ -64,7 +64,7 @@ function ServiceRequestList() {
     try {
       const submitData = {
         ...formData,
-        customerId: parseInt(formData.customerId)
+        userId: parseInt(formData.userId || user?.id)
       };
 
       if (editingRequest) {
@@ -78,7 +78,7 @@ function ServiceRequestList() {
         description: '',
         status: 'OPEN',
         priority: 'MEDIUM',
-        customerId: '',
+        userId: '',
         assignedTo: ''
       });
       setShowForm(false);
@@ -96,7 +96,7 @@ function ServiceRequestList() {
       description: request.description || '',
       status: request.status,
       priority: request.priority,
-      customerId: request.customerId.toString(),
+      userId: request.userId.toString(),
       assignedTo: request.assignedTo || ''
     });
     setShowForm(true);
@@ -121,7 +121,7 @@ function ServiceRequestList() {
       description: '',
       status: 'OPEN',
       priority: 'MEDIUM',
-      customerId: '',
+      userId: '',
       assignedTo: ''
     });
   };
@@ -151,22 +151,24 @@ function ServiceRequestList() {
 
         {showForm && (
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Customer *</label>
-              <select
-                name="customerId"
-                value={formData.customerId}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select a customer</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} - {customer.email}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {user?.role === 'ROLE_ADMIN' && users.length > 0 && (
+              <div className="form-group">
+                <label>User *</label>
+                <select
+                  name="userId"
+                  value={formData.userId}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select a user</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.username} - {u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label>Title *</label>
               <input
@@ -239,7 +241,7 @@ function ServiceRequestList() {
             <tr>
               <th>ID</th>
               <th>Title</th>
-              <th>Customer</th>
+              <th>User</th>
               <th>Status</th>
               <th>Priority</th>
               <th>Assigned To</th>
@@ -252,7 +254,7 @@ function ServiceRequestList() {
               <tr key={request.id}>
                 <td>{request.id}</td>
                 <td>{request.title}</td>
-                <td>{request.customerName}</td>
+                <td>{request.userName}</td>
                 <td>{getStatusBadge(request.status)}</td>
                 <td>{getPriorityBadge(request.priority)}</td>
                 <td>{request.assignedTo || 'Unassigned'}</td>

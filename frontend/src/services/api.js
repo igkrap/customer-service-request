@@ -42,21 +42,19 @@ export const authAPI = {
   signup: (userData) => api.post('/auth/signup', userData),
 };
 
-// Customer API
-export const customerAPI = {
-  getAll: () => api.get('/customers'),
-  getById: (id) => api.get(`/customers/${id}`),
-  getByEmail: (email) => api.get(`/customers/email/${email}`),
-  create: (customer) => api.post('/customers', customer),
-  update: (id, customer) => api.put(`/customers/${id}`, customer),
-  delete: (id) => api.delete(`/customers/${id}`),
+// User API
+export const userAPI = {
+  getAll: () => api.get('/users'),
+  getById: (id) => api.get(`/users/${id}`),
+  updateRole: (id, role) => api.put(`/users/${id}/role`, role),
+  delete: (id) => api.delete(`/users/${id}`),
 };
 
 // Service Request API
 export const serviceRequestAPI = {
   getAll: () => api.get('/service-requests'),
   getById: (id) => api.get(`/service-requests/${id}`),
-  getByCustomerId: (customerId) => api.get(`/service-requests/customer/${customerId}`),
+  getByUserId: (userId) => api.get(`/service-requests/user/${userId}`),
   getByStatus: (status) => api.get(`/service-requests/status/${status}`),
   getByPriority: (priority) => api.get(`/service-requests/priority/${priority}`),
   create: (request) => api.post('/service-requests', request),
