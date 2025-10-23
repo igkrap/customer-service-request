@@ -77,7 +77,11 @@ function UserProfile() {
         <div className="profile-info">
           <h3>Account Information</h3>
           <p><strong>Username:</strong> {user?.username}</p>
-          <p><strong>Role:</strong> {user?.role === 'ROLE_ADMIN' ? 'Administrator' : 'User'}</p>
+          <p><strong>Role:</strong> {
+            user?.role === 'ROLE_ADMIN' ? 'Administrator' :
+            user?.role === 'ROLE_MANAGER' ? 'Manager' :
+            user?.role === 'ROLE_CUSTOMER' ? 'Customer' : 'User'
+          }</p>
         </div>
 
         <div className="profile-section">

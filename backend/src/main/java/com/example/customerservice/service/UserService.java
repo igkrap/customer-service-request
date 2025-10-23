@@ -34,6 +34,42 @@ public class UserService {
         return convertToDTO(user);
     }
 
+    public List<UserDTO> getAllManagers() {
+        return userMapper.findAllManagers().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<UserDTO> getCustomersByManagerId(Long managerId) {
+        return userMapper.findCustomersByManagerId(managerId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public UserDTO assignManager(Long customerId, Long managerId) {
+        User customer = userMapper.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+
+        if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+            throw new RuntimeException("User is not a customer");
+        }
+
+        if (managerId != null) {
+            User manager = userMapper.findById(managerId)
+                    .orElseThrow(() -> new RuntimeException("Manager not found with id: " + managerId));
+
+            if (manager.getRole() != User.Role.ROLE_MANAGER) {
+                throw new RuntimeException("Assigned user is not a manager");
+            }
+        }
+
+        userMapper.updateAssignedManager(customerId, managerId, LocalDateTime.now());
+        customer.setAssignedManagerId(managerId);
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        return convertToDTO(customer);
+    }
+
     public UserDTO updateUserRole(Long id, User.Role role) {
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -88,6 +124,16 @@ public class UserService {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setAssignedManagerId(user.getAssignedManagerId());
+
+        // Load manager name if assigned
+        if (user.getAssignedManagerId() != null) {
+            User manager = userMapper.findById(user.getAssignedManagerId()).orElse(null);
+            if (manager != null) {
+                dto.setAssignedManagerName(manager.getUsername());
+            }
+        }
+
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         return dto;

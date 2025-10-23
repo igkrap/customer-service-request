@@ -30,11 +30,13 @@ public class User {
 
     private Role role;
 
+    private Long assignedManagerId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     public enum Role {
-        ROLE_USER, ROLE_ADMIN
+        ROLE_CUSTOMER, ROLE_MANAGER, ROLE_ADMIN
     }
 }

@@ -1,5 +1,6 @@
 package com.example.customerservice.controller;
 
+import com.example.customerservice.dto.AssignManagerRequest;
 import com.example.customerservice.dto.UpdateUserEmailRequest;
 import com.example.customerservice.dto.UpdateUserPasswordRequest;
 import com.example.customerservice.dto.UpdateUserRoleRequest;
@@ -102,6 +103,32 @@ public class UserController {
 
             UserDTO updatedUser = userService.updateUserPassword(id, request.getPassword());
             return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/managers")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER')")
+    public ResponseEntity<List<UserDTO>> getAllManagers() {
+        List<UserDTO> managers = userService.getAllManagers();
+        return ResponseEntity.ok(managers);
+    }
+
+    @GetMapping("/managers/{managerId}/customers")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<List<UserDTO>> getCustomersByManagerId(@PathVariable Long managerId) {
+        List<UserDTO> customers = userService.getCustomersByManagerId(managerId);
+        return ResponseEntity.ok(customers);
+    }
+
+    @PutMapping("/{customerId}/assign-manager")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> assignManager(@PathVariable Long customerId,
+                                           @Valid @RequestBody AssignManagerRequest request) {
+        try {
+            UserDTO updatedCustomer = userService.assignManager(customerId, request.getManagerId());
+            return ResponseEntity.ok(updatedCustomer);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

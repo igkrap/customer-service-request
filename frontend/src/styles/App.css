@@ -289,8 +289,18 @@ body {
   color: white;
 }
 
-.badge-user {
+.badge-manager {
+  background-color: #27ae60;
+  color: white;
+}
+
+.badge-customer {
   background-color: #3498db;
+  color: white;
+}
+
+.badge-user {
+  background-color: #95a5a6;
   color: white;
 }
 
