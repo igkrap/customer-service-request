@@ -37,9 +37,21 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+    public ResponseEntity<?> getUserById(@PathVariable Long id, Authentication authentication) {
         try {
+            String username = authentication.getName();
+            User currentUser = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user is admin or requesting their own info
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only view your own information");
+            }
+
             UserDTO user = userService.getUserById(id);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
