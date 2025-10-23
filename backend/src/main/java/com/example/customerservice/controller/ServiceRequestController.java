@@ -95,9 +95,10 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // If customer is creating, use their own ID
+            // If customer is creating, use their own ID and force status to OPEN
             if (user.getRole() == User.Role.ROLE_CUSTOMER) {
                 dto.setCustomerId(user.getId());
+                dto.setStatus(ServiceRequest.RequestStatus.OPEN);
             }
 
             ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto, user.getId());

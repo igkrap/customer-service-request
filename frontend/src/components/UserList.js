@@ -14,7 +14,7 @@ function UserList() {
     email: '',
     password: '',
     role: '',
-    assignedManagerId: ''
+    managerIds: []
   });
 
   useEffect(() => {
@@ -45,16 +45,29 @@ function UserList() {
       email: userToEdit.email,
       password: '',
       role: userToEdit.role,
-      assignedManagerId: userToEdit.assignedManagerId || ''
+      managerIds: userToEdit.managerIds || []
     });
     setShowEditForm(true);
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value, options } = e.target;
+
+    // Handle multiple select for managerIds
+    if (name === 'managerIds') {
+      const selectedValues = Array.from(options)
+        .filter(option => option.selected)
+        .map(option => parseInt(option.value));
+      setFormData({
+        ...formData,
+        [name]: selectedValues
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -75,19 +88,23 @@ function UserList() {
         await userAPI.updateRole(editingUser.id, { role: formData.role });
       }
 
-      // Update manager assignment if role is customer and assignment changed
+      // Update manager assignments if role is customer
       if (formData.role === 'ROLE_CUSTOMER') {
-        const newManagerId = formData.assignedManagerId ? parseInt(formData.assignedManagerId) : null;
-        const oldManagerId = editingUser.assignedManagerId || null;
+        const newManagerIds = formData.managerIds || [];
+        const oldManagerIds = editingUser.managerIds || [];
 
-        if (newManagerId !== oldManagerId) {
-          await userAPI.assignManager(editingUser.id, newManagerId);
+        // Check if manager assignments changed
+        const changed = newManagerIds.length !== oldManagerIds.length ||
+                        !newManagerIds.every(id => oldManagerIds.includes(id));
+
+        if (changed) {
+          await userAPI.assignManagers(editingUser.id, newManagerIds);
         }
       }
 
       setShowEditForm(false);
       setEditingUser(null);
-      setFormData({ email: '', password: '', role: '', assignedManagerId: '' });
+      setFormData({ email: '', password: '', role: '', managerIds: [] });
       fetchUsers();
       setError(null);
     } catch (err) {
@@ -115,7 +132,7 @@ function UserList() {
   const handleCancel = () => {
     setShowEditForm(false);
     setEditingUser(null);
-    setFormData({ email: '', password: '', role: '', assignedManagerId: '' });
+    setFormData({ email: '', password: '', role: '', managerIds: [] });
   };
 
   const getRoleBadge = (role) => {
@@ -188,19 +205,26 @@ function UserList() {
                 </div>
                 {formData.role === 'ROLE_CUSTOMER' && (
                   <div className="form-group">
-                    <label>Assigned Manager</label>
+                    <label>Assigned Managers (hold Ctrl/Cmd to select multiple)</label>
                     <select
-                      name="assignedManagerId"
-                      value={formData.assignedManagerId}
+                      name="managerIds"
+                      value={formData.managerIds.map(String)}
                       onChange={handleInputChange}
+                      multiple
+                      size="5"
+                      style={{ height: 'auto' }}
                     >
-                      <option value="">No manager assigned</option>
                       {managers.map(m => (
                         <option key={m.id} value={m.id}>
                           {m.username} - {m.email}
                         </option>
                       ))}
                     </select>
+                    <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                      {formData.managerIds.length > 0
+                        ? `${formData.managerIds.length} manager(s) selected`
+                        : 'No managers selected'}
+                    </small>
                   </div>
                 )}
                 <div className="btn-group">
@@ -237,7 +261,9 @@ function UserList() {
                 <td>{getRoleBadge(u.role)}</td>
                 <td>
                   {u.role === 'ROLE_CUSTOMER'
-                    ? (u.assignedManagerName || 'None')
+                    ? (u.managerNames && u.managerNames.length > 0
+                        ? u.managerNames.join(', ')
+                        : 'None')
                     : '-'}
                 </td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>

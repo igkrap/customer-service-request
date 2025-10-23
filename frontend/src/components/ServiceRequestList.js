@@ -198,21 +198,23 @@ function ServiceRequestList() {
                 onChange={handleInputChange}
               />
             </div>
-            <div className="form-group">
-              <label>Status *</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="OPEN">Open</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-            </div>
+            {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
+              <div className="form-group">
+                <label>Status *</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label>Priority *</label>
               <select

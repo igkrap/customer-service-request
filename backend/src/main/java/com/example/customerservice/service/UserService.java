@@ -46,7 +46,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDTO assignManager(Long customerId, Long managerId) {
+    public UserDTO assignManagers(Long customerId, List<Long> managerIds) {
         User customer = userMapper.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
 
@@ -54,19 +54,55 @@ public class UserService {
             throw new RuntimeException("User is not a customer");
         }
 
-        if (managerId != null) {
+        // Validate all managers exist and have ROLE_MANAGER
+        for (Long managerId : managerIds) {
             User manager = userMapper.findById(managerId)
                     .orElseThrow(() -> new RuntimeException("Manager not found with id: " + managerId));
 
             if (manager.getRole() != User.Role.ROLE_MANAGER) {
-                throw new RuntimeException("Assigned user is not a manager");
+                throw new RuntimeException("User with id " + managerId + " is not a manager");
             }
         }
 
-        userMapper.updateAssignedManager(customerId, managerId, LocalDateTime.now());
-        customer.setAssignedManagerId(managerId);
-        customer.setUpdatedAt(LocalDateTime.now());
+        // Remove all existing manager assignments
+        userMapper.removeAllManagersFromCustomer(customerId);
 
+        // Assign new managers
+        for (Long managerId : managerIds) {
+            userMapper.assignManagerToCustomer(customerId, managerId, LocalDateTime.now());
+        }
+
+        return convertToDTO(customer);
+    }
+
+    public UserDTO addManagerToCustomer(Long customerId, Long managerId) {
+        User customer = userMapper.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+
+        if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+            throw new RuntimeException("User is not a customer");
+        }
+
+        User manager = userMapper.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found with id: " + managerId));
+
+        if (manager.getRole() != User.Role.ROLE_MANAGER) {
+            throw new RuntimeException("User is not a manager");
+        }
+
+        userMapper.assignManagerToCustomer(customerId, managerId, LocalDateTime.now());
+        return convertToDTO(customer);
+    }
+
+    public UserDTO removeManagerFromCustomer(Long customerId, Long managerId) {
+        User customer = userMapper.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+
+        if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+            throw new RuntimeException("User is not a customer");
+        }
+
+        userMapper.removeManagerFromCustomer(customerId, managerId);
         return convertToDTO(customer);
     }
 
@@ -124,14 +160,17 @@ public class UserService {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
-        dto.setAssignedManagerId(user.getAssignedManagerId());
 
-        // Load manager name if assigned
-        if (user.getAssignedManagerId() != null) {
-            User manager = userMapper.findById(user.getAssignedManagerId()).orElse(null);
-            if (manager != null) {
-                dto.setAssignedManagerName(manager.getUsername());
-            }
+        // Load managers if user is a customer
+        if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+            List<Long> managerIds = userMapper.getManagerIdsByCustomerId(user.getId());
+            dto.setManagerIds(managerIds);
+
+            List<User> managers = userMapper.getManagersByCustomerId(user.getId());
+            List<String> managerNames = managers.stream()
+                    .map(User::getUsername)
+                    .collect(Collectors.toList());
+            dto.setManagerNames(managerNames);
         }
 
         dto.setCreatedAt(user.getCreatedAt());
