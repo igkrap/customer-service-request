@@ -1,12 +1,18 @@
 package com.example.customerservice.controller;
 
+import com.example.customerservice.dto.UpdateUserEmailRequest;
+import com.example.customerservice.dto.UpdateUserPasswordRequest;
 import com.example.customerservice.dto.UpdateUserRoleRequest;
 import com.example.customerservice.dto.UserDTO;
+import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.model.User;
 import com.example.customerservice.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +24,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -42,6 +51,56 @@ public class UserController {
     public ResponseEntity<?> updateUserRole(@PathVariable Long id, @Valid @RequestBody UpdateUserRoleRequest request) {
         try {
             UserDTO updatedUser = userService.updateUserRole(id, request.getRole());
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/email")
+    public ResponseEntity<?> updateUserEmail(@PathVariable Long id,
+                                             @Valid @RequestBody UpdateUserEmailRequest request,
+                                             Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User currentUser = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user is admin or updating their own email
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only update your own email");
+            }
+
+            UserDTO updatedUser = userService.updateUserEmail(id, request.getEmail());
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> updateUserPassword(@PathVariable Long id,
+                                                @Valid @RequestBody UpdateUserPasswordRequest request,
+                                                Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User currentUser = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user is admin or updating their own password
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only update your own password");
+            }
+
+            UserDTO updatedUser = userService.updateUserPassword(id, request.getPassword());
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -4,6 +4,7 @@ import com.example.customerservice.dto.UserDTO;
 import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,9 @@ public class UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<UserDTO> getAllUsers() {
         return userMapper.findAll().stream()
@@ -38,6 +42,36 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.update(user);
+        return convertToDTO(user);
+    }
+
+    public UserDTO updateUserEmail(Long id, String email) {
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        // Check if email is already taken by another user
+        if (userMapper.existsByEmail(email)) {
+            User existingUser = userMapper.findByEmail(email).orElse(null);
+            if (existingUser != null && !existingUser.getId().equals(id)) {
+                throw new RuntimeException("Email already in use");
+            }
+        }
+
+        user.setEmail(email);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.update(user);
+        return convertToDTO(user);
+    }
+
+    public UserDTO updateUserPassword(Long id, String password) {
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        user.setPassword(passwordEncoder.encode(password));
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.updatePassword(user);
         return convertToDTO(user);
     }
 

@@ -47,6 +47,8 @@ export const userAPI = {
   getAll: () => api.get('/users'),
   getById: (id) => api.get(`/users/${id}`),
   updateRole: (id, role) => api.put(`/users/${id}/role`, role),
+  updateEmail: (id, email) => api.put(`/users/${id}/email`, email),
+  updatePassword: (id, password) => api.put(`/users/${id}/password`, password),
   delete: (id) => api.delete(`/users/${id}`),
 };
 
