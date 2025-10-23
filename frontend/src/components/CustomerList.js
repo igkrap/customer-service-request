@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { customerAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function CustomerList() {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -175,12 +177,14 @@ function CustomerList() {
                   >
                     Edit
                   </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(customer.id)}
-                  >
-                    Delete
-                  </button>
+                  {user?.role === 'ROLE_ADMIN' && (
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDelete(customer.id)}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
