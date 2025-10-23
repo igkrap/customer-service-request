@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -15,8 +16,8 @@ function ServiceRequestList() {
     description: '',
     status: 'OPEN',
     priority: 'MEDIUM',
-    userId: '',
-    assignedTo: ''
+    customerId: '',
+    managerId: ''
   });
 
   useEffect(() => {
@@ -29,16 +30,25 @@ function ServiceRequestList() {
       const requestsResponse = await serviceRequestAPI.getAll();
       setRequests(requestsResponse.data);
 
-      // Try to fetch users, but silently fail if forbidden (user doesn't have permission)
+      // Fetch managers for the dropdown
       try {
-        const usersResponse = await userAPI.getAll();
-        setUsers(usersResponse.data);
+        const managersResponse = await userAPI.getAllManagers();
+        setManagers(managersResponse.data);
       } catch (err) {
-        if (err.response?.status === 403) {
-          // User doesn't have permission to view users, that's okay
-          setUsers([]);
-        } else {
-          throw err;
+        if (err.response?.status !== 403) {
+          console.error('Failed to fetch managers:', err);
+        }
+      }
+
+      // Fetch all users (customers) if admin
+      if (user?.role === 'ROLE_ADMIN') {
+        try {
+          const usersResponse = await userAPI.getAll();
+          setCustomers(usersResponse.data.filter(u => u.role === 'ROLE_CUSTOMER'));
+        } catch (err) {
+          if (err.response?.status !== 403) {
+            console.error('Failed to fetch customers:', err);
+          }
         }
       }
 
@@ -64,7 +74,8 @@ function ServiceRequestList() {
     try {
       const submitData = {
         ...formData,
-        userId: parseInt(formData.userId || user?.id)
+        customerId: parseInt(formData.customerId || user?.id),
+        managerId: formData.managerId ? parseInt(formData.managerId) : null
       };
 
       if (editingRequest) {
@@ -78,8 +89,8 @@ function ServiceRequestList() {
         description: '',
         status: 'OPEN',
         priority: 'MEDIUM',
-        userId: '',
-        assignedTo: ''
+        customerId: '',
+        managerId: ''
       });
       setShowForm(false);
       setEditingRequest(null);
@@ -96,8 +107,8 @@ function ServiceRequestList() {
       description: request.description || '',
       status: request.status,
       priority: request.priority,
-      userId: request.userId.toString(),
-      assignedTo: request.assignedTo || ''
+      customerId: request.customerId.toString(),
+      managerId: request.managerId ? request.managerId.toString() : ''
     });
     setShowForm(true);
   };
@@ -121,8 +132,8 @@ function ServiceRequestList() {
       description: '',
       status: 'OPEN',
       priority: 'MEDIUM',
-      userId: '',
-      assignedTo: ''
+      customerId: '',
+      managerId: ''
     });
   };
 
@@ -151,19 +162,19 @@ function ServiceRequestList() {
 
         {showForm && (
           <form onSubmit={handleSubmit}>
-            {user?.role === 'ROLE_ADMIN' && users.length > 0 && (
+            {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
               <div className="form-group">
-                <label>User *</label>
+                <label>Customer *</label>
                 <select
-                  name="userId"
-                  value={formData.userId}
+                  name="customerId"
+                  value={formData.customerId}
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">Select a user</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.username} - {u.email}
+                  <option value="">Select a customer</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.username} - {c.email}
                     </option>
                   ))}
                 </select>
@@ -217,13 +228,19 @@ function ServiceRequestList() {
               </select>
             </div>
             <div className="form-group">
-              <label>Assigned To</label>
-              <input
-                type="text"
-                name="assignedTo"
-                value={formData.assignedTo}
+              <label>Manager</label>
+              <select
+                name="managerId"
+                value={formData.managerId}
                 onChange={handleInputChange}
-              />
+              >
+                <option value="">Select a manager (optional)</option>
+                {managers.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.username} - {m.email}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="btn-group">
               <button type="submit" className="btn btn-success">
@@ -241,10 +258,10 @@ function ServiceRequestList() {
             <tr>
               <th>ID</th>
               <th>Title</th>
-              <th>User</th>
+              <th>Customer</th>
               <th>Status</th>
               <th>Priority</th>
-              <th>Assigned To</th>
+              <th>Manager</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -254,10 +271,10 @@ function ServiceRequestList() {
               <tr key={request.id}>
                 <td>{request.id}</td>
                 <td>{request.title}</td>
-                <td>{request.userName}</td>
+                <td>{request.customerName}</td>
                 <td>{getStatusBadge(request.status)}</td>
                 <td>{getPriorityBadge(request.priority)}</td>
-                <td>{request.assignedTo || 'Unassigned'}</td>
+                <td>{request.managerName || 'Unassigned'}</td>
                 <td>{new Date(request.createdAt).toLocaleDateString()}</td>
                 <td>
                   {(user?.role === 'ROLE_ADMIN' || request.createdByUserId === user?.id) && (

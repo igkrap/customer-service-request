@@ -23,9 +23,9 @@ public class ServiceRequest {
 
     private Priority priority;
 
-    private Long userId;
+    private Long customerId;
 
-    private String assignedTo;
+    private Long managerId;
 
     private Long createdByUserId;
 

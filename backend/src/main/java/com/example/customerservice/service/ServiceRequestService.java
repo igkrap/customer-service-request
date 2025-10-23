@@ -35,8 +35,14 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
-    public List<ServiceRequestDTO> getServiceRequestsByUserId(Long userId) {
-        return serviceRequestMapper.findByUserId(userId).stream()
+    public List<ServiceRequestDTO> getServiceRequestsByCustomerId(Long customerId) {
+        return serviceRequestMapper.findByCustomerId(customerId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ServiceRequestDTO> getServiceRequestsByManagerId(Long managerId) {
+        return serviceRequestMapper.findByManagerId(managerId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -65,11 +71,25 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto, Long userId) {
-        User user = userMapper.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+        User customer = userMapper.findById(dto.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+
+        if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+            throw new RuntimeException("User is not a customer");
+        }
+
+        // Validate manager if provided
+        if (dto.getManagerId() != null) {
+            User manager = userMapper.findById(dto.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("Manager not found with id: " + dto.getManagerId()));
+
+            if (manager.getRole() != User.Role.ROLE_MANAGER) {
+                throw new RuntimeException("Assigned user is not a manager");
+            }
+        }
 
         ServiceRequest serviceRequest = convertToEntity(dto);
-        serviceRequest.setUserId(user.getId());
+        serviceRequest.setCustomerId(customer.getId());
         serviceRequest.setCreatedByUserId(userId);
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
@@ -87,11 +107,25 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO createServiceRequest(ServiceRequestDTO dto) {
-        User user = userMapper.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+        User customer = userMapper.findById(dto.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+
+        if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+            throw new RuntimeException("User is not a customer");
+        }
+
+        // Validate manager if provided
+        if (dto.getManagerId() != null) {
+            User manager = userMapper.findById(dto.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("Manager not found with id: " + dto.getManagerId()));
+
+            if (manager.getRole() != User.Role.ROLE_MANAGER) {
+                throw new RuntimeException("Assigned user is not a manager");
+            }
+        }
 
         ServiceRequest serviceRequest = convertToEntity(dto);
-        serviceRequest.setUserId(user.getId());
+        serviceRequest.setCustomerId(customer.getId());
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
@@ -117,7 +151,7 @@ public class ServiceRequestService {
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
-        serviceRequest.setAssignedTo(dto.getAssignedTo());
+        serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
         // Set resolvedAt when status changes to RESOLVED or CLOSED
@@ -130,10 +164,25 @@ public class ServiceRequestService {
             }
         }
 
-        if (dto.getUserId() != null && !serviceRequest.getUserId().equals(dto.getUserId())) {
-            User user = userMapper.findById(dto.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
-            serviceRequest.setUserId(user.getId());
+        // Validate customer if changed
+        if (dto.getCustomerId() != null && !serviceRequest.getCustomerId().equals(dto.getCustomerId())) {
+            User customer = userMapper.findById(dto.getCustomerId())
+                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + dto.getCustomerId()));
+
+            if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+                throw new RuntimeException("User is not a customer");
+            }
+            serviceRequest.setCustomerId(customer.getId());
+        }
+
+        // Validate manager if changed
+        if (dto.getManagerId() != null) {
+            User manager = userMapper.findById(dto.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("Manager not found with id: " + dto.getManagerId()));
+
+            if (manager.getRole() != User.Role.ROLE_MANAGER) {
+                throw new RuntimeException("Assigned user is not a manager");
+            }
         }
 
         serviceRequestMapper.update(serviceRequest);
@@ -154,17 +203,25 @@ public class ServiceRequestService {
         dto.setDescription(serviceRequest.getDescription());
         dto.setStatus(serviceRequest.getStatus());
         dto.setPriority(serviceRequest.getPriority());
-        dto.setUserId(serviceRequest.getUserId());
+        dto.setCustomerId(serviceRequest.getCustomerId());
+        dto.setManagerId(serviceRequest.getManagerId());
 
-        // Load user details for DTO
-        User user = userMapper.findById(serviceRequest.getUserId())
+        // Load customer details for DTO
+        User customer = userMapper.findById(serviceRequest.getCustomerId())
                 .orElse(null);
-        if (user != null) {
-            dto.setUserName(user.getUsername());
-            dto.setUserEmail(user.getEmail());
+        if (customer != null) {
+            dto.setCustomerName(customer.getUsername());
         }
 
-        dto.setAssignedTo(serviceRequest.getAssignedTo());
+        // Load manager details for DTO
+        if (serviceRequest.getManagerId() != null) {
+            User manager = userMapper.findById(serviceRequest.getManagerId())
+                    .orElse(null);
+            if (manager != null) {
+                dto.setManagerName(manager.getUsername());
+            }
+        }
+
         dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
@@ -178,7 +235,7 @@ public class ServiceRequestService {
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
-        serviceRequest.setAssignedTo(dto.getAssignedTo());
+        serviceRequest.setManagerId(dto.getManagerId());
         return serviceRequest;
     }
 }

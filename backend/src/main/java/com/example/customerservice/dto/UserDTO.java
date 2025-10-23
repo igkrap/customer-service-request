@@ -16,6 +16,8 @@ public class UserDTO {
     private String username;
     private String email;
     private User.Role role;
+    private Long assignedManagerId;
+    private String assignedManagerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 function UserList() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
@@ -12,7 +13,8 @@ function UserList() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: ''
+    role: '',
+    assignedManagerId: ''
   });
 
   useEffect(() => {
@@ -24,6 +26,11 @@ function UserList() {
       setLoading(true);
       const response = await userAPI.getAll();
       setUsers(response.data);
+
+      // Fetch managers for assignment dropdown
+      const managersResponse = await userAPI.getAllManagers();
+      setManagers(managersResponse.data);
+
       setError(null);
     } catch (err) {
       setError('Failed to fetch users: ' + err.message);
@@ -37,7 +44,8 @@ function UserList() {
     setFormData({
       email: userToEdit.email,
       password: '',
-      role: userToEdit.role
+      role: userToEdit.role,
+      assignedManagerId: userToEdit.assignedManagerId || ''
     });
     setShowEditForm(true);
   };
@@ -67,9 +75,19 @@ function UserList() {
         await userAPI.updateRole(editingUser.id, { role: formData.role });
       }
 
+      // Update manager assignment if role is customer and assignment changed
+      if (formData.role === 'ROLE_CUSTOMER') {
+        const newManagerId = formData.assignedManagerId ? parseInt(formData.assignedManagerId) : null;
+        const oldManagerId = editingUser.assignedManagerId || null;
+
+        if (newManagerId !== oldManagerId) {
+          await userAPI.assignManager(editingUser.id, newManagerId);
+        }
+      }
+
       setShowEditForm(false);
       setEditingUser(null);
-      setFormData({ email: '', password: '', role: '' });
+      setFormData({ email: '', password: '', role: '', assignedManagerId: '' });
       fetchUsers();
       setError(null);
     } catch (err) {
@@ -97,12 +115,28 @@ function UserList() {
   const handleCancel = () => {
     setShowEditForm(false);
     setEditingUser(null);
-    setFormData({ email: '', password: '', role: '' });
+    setFormData({ email: '', password: '', role: '', assignedManagerId: '' });
   };
 
   const getRoleBadge = (role) => {
-    const roleClass = role === 'ROLE_ADMIN' ? 'badge-admin' : 'badge-user';
-    const displayRole = role === 'ROLE_ADMIN' ? 'Admin' : 'User';
+    let roleClass, displayRole;
+    switch (role) {
+      case 'ROLE_ADMIN':
+        roleClass = 'badge-admin';
+        displayRole = 'Admin';
+        break;
+      case 'ROLE_MANAGER':
+        roleClass = 'badge-manager';
+        displayRole = 'Manager';
+        break;
+      case 'ROLE_CUSTOMER':
+        roleClass = 'badge-customer';
+        displayRole = 'Customer';
+        break;
+      default:
+        roleClass = 'badge-user';
+        displayRole = 'User';
+    }
     return <span className={`badge ${roleClass}`}>{displayRole}</span>;
   };
 
@@ -147,10 +181,28 @@ function UserList() {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="ROLE_USER">User</option>
+                    <option value="ROLE_CUSTOMER">Customer</option>
+                    <option value="ROLE_MANAGER">Manager</option>
                     <option value="ROLE_ADMIN">Admin</option>
                   </select>
                 </div>
+                {formData.role === 'ROLE_CUSTOMER' && (
+                  <div className="form-group">
+                    <label>Assigned Manager</label>
+                    <select
+                      name="assignedManagerId"
+                      value={formData.assignedManagerId}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">No manager assigned</option>
+                      {managers.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.username} - {m.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="btn-group">
                   <button type="submit" className="btn btn-success">
                     Save Changes
@@ -171,6 +223,7 @@ function UserList() {
               <th>Username</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Assigned Manager</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -182,6 +235,11 @@ function UserList() {
                 <td>{u.username}</td>
                 <td>{u.email}</td>
                 <td>{getRoleBadge(u.role)}</td>
+                <td>
+                  {u.role === 'ROLE_CUSTOMER'
+                    ? (u.assignedManagerName || 'None')
+                    : '-'}
+                </td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button

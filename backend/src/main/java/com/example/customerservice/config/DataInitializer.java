@@ -27,23 +27,39 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail("admin@example.com");
             admin.setPassword(passwordEncoder.encode("1234"));
             admin.setRole(User.Role.ROLE_ADMIN);
+            admin.setAssignedManagerId(null);
             admin.setCreatedAt(LocalDateTime.now());
             admin.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(admin);
             System.out.println("Admin user created: admin / 1234");
         }
 
-        // Check if regular user already exists
-        if (!userMapper.existsByUsername("user")) {
-            User user = new User();
-            user.setUsername("user");
-            user.setEmail("user@example.com");
-            user.setPassword(passwordEncoder.encode("1234"));
-            user.setRole(User.Role.ROLE_USER);
-            user.setCreatedAt(LocalDateTime.now());
-            user.setUpdatedAt(LocalDateTime.now());
-            userMapper.insert(user);
-            System.out.println("Regular user created: user / 1234");
+        // Check if manager user already exists
+        if (!userMapper.existsByUsername("manager")) {
+            User manager = new User();
+            manager.setUsername("manager");
+            manager.setEmail("manager@example.com");
+            manager.setPassword(passwordEncoder.encode("1234"));
+            manager.setRole(User.Role.ROLE_MANAGER);
+            manager.setAssignedManagerId(null);
+            manager.setCreatedAt(LocalDateTime.now());
+            manager.setUpdatedAt(LocalDateTime.now());
+            userMapper.insert(manager);
+            System.out.println("Manager user created: manager / 1234");
+        }
+
+        // Check if customer user already exists
+        if (!userMapper.existsByUsername("customer")) {
+            User customer = new User();
+            customer.setUsername("customer");
+            customer.setEmail("customer@example.com");
+            customer.setPassword(passwordEncoder.encode("1234"));
+            customer.setRole(User.Role.ROLE_CUSTOMER);
+            customer.setAssignedManagerId(null);
+            customer.setCreatedAt(LocalDateTime.now());
+            customer.setUpdatedAt(LocalDateTime.now());
+            userMapper.insert(customer);
+            System.out.println("Customer user created: customer / 1234");
         }
     }
 }

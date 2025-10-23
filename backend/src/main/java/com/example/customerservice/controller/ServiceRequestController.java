@@ -36,9 +36,14 @@ public class ServiceRequestController {
         if (isAdmin(authentication)) {
             // Admin can see all requests
             requests = serviceRequestService.getAllServiceRequests();
+        } else if (user.getRole() == User.Role.ROLE_MANAGER) {
+            // Managers can see requests assigned to them
+            requests = serviceRequestService.getServiceRequestsByManagerId(user.getId());
+        } else if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+            // Customers can only see their own requests
+            requests = serviceRequestService.getServiceRequestsByCustomerId(user.getId());
         } else {
-            // Regular users can only see their own requests
-            requests = serviceRequestService.getServiceRequestsByCreatedByUserId(user.getId());
+            requests = List.of();
         }
         return ResponseEntity.ok(requests);
     }
@@ -59,9 +64,15 @@ public class ServiceRequestController {
         }
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ServiceRequestDTO>> getServiceRequestsByUserId(@PathVariable Long userId) {
-        List<ServiceRequestDTO> requests = serviceRequestService.getServiceRequestsByUserId(userId);
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<ServiceRequestDTO>> getServiceRequestsByCustomerId(@PathVariable Long customerId) {
+        List<ServiceRequestDTO> requests = serviceRequestService.getServiceRequestsByCustomerId(customerId);
+        return ResponseEntity.ok(requests);
+    }
+
+    @GetMapping("/manager/{managerId}")
+    public ResponseEntity<List<ServiceRequestDTO>> getServiceRequestsByManagerId(@PathVariable Long managerId) {
+        List<ServiceRequestDTO> requests = serviceRequestService.getServiceRequestsByManagerId(managerId);
         return ResponseEntity.ok(requests);
     }
 
@@ -84,6 +95,11 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
+            // If customer is creating, use their own ID
+            if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+                dto.setCustomerId(user.getId());
+            }
+
             ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto, user.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
         } catch (RuntimeException e) {
@@ -100,7 +116,9 @@ public class ServiceRequestController {
 
             // Check if user has permission to update
             ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
-            if (!isAdmin(authentication) && !existingRequest.getCreatedByUserId().equals(user.getId())) {
+            if (!isAdmin(authentication) &&
+                user.getRole() == User.Role.ROLE_CUSTOMER &&
+                !existingRequest.getCustomerId().equals(user.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only update your own requests");
             }
 
@@ -120,7 +138,9 @@ public class ServiceRequestController {
 
             // Check if user has permission to delete
             ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
-            if (!isAdmin(authentication) && !existingRequest.getCreatedByUserId().equals(user.getId())) {
+            if (!isAdmin(authentication) &&
+                user.getRole() == User.Role.ROLE_CUSTOMER &&
+                !existingRequest.getCustomerId().equals(user.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only delete your own requests");
             }
 
