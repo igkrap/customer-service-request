@@ -122,12 +122,36 @@ public class UserController {
         return ResponseEntity.ok(customers);
     }
 
-    @PutMapping("/{customerId}/assign-manager")
+    @PutMapping("/{customerId}/assign-managers")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> assignManager(@PathVariable Long customerId,
-                                           @Valid @RequestBody AssignManagerRequest request) {
+    public ResponseEntity<?> assignManagers(@PathVariable Long customerId,
+                                            @Valid @RequestBody AssignManagerRequest request) {
         try {
-            UserDTO updatedCustomer = userService.assignManager(customerId, request.getManagerId());
+            UserDTO updatedCustomer = userService.assignManagers(customerId, request.getManagerIds());
+            return ResponseEntity.ok(updatedCustomer);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{customerId}/managers/{managerId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> addManagerToCustomer(@PathVariable Long customerId,
+                                                   @PathVariable Long managerId) {
+        try {
+            UserDTO updatedCustomer = userService.addManagerToCustomer(customerId, managerId);
+            return ResponseEntity.ok(updatedCustomer);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{customerId}/managers/{managerId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> removeManagerFromCustomer(@PathVariable Long customerId,
+                                                        @PathVariable Long managerId) {
+        try {
+            UserDTO updatedCustomer = userService.removeManagerFromCustomer(customerId, managerId);
             return ResponseEntity.ok(updatedCustomer);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

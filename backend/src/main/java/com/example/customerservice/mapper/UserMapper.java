@@ -33,23 +33,39 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE role = 'ROLE_MANAGER'")
     List<User> findAllManagers();
 
-    @Select("SELECT * FROM users WHERE assigned_manager_id = #{managerId}")
+    @Select("SELECT u.* FROM users u INNER JOIN customer_managers cm ON u.id = cm.customer_id WHERE cm.manager_id = #{managerId}")
     List<User> findCustomersByManagerId(Long managerId);
 
-    @Insert("INSERT INTO users (username, email, password, role, assigned_manager_id, created_at, updated_at) " +
-            "VALUES (#{username}, #{email}, #{password}, #{role}, #{assignedManagerId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO users (username, email, password, role, created_at, updated_at) " +
+            "VALUES (#{username}, #{email}, #{password}, #{role}, #{createdAt}, #{updatedAt})")
     @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(User user);
 
     @Update("UPDATE users SET username = #{username}, email = #{email}, " +
-            "role = #{role}, assigned_manager_id = #{assignedManagerId}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "role = #{role}, updated_at = #{updatedAt} WHERE id = #{id}")
     int update(User user);
 
     @Update("UPDATE users SET password = #{password}, updated_at = #{updatedAt} WHERE id = #{id}")
     int updatePassword(User user);
 
-    @Update("UPDATE users SET assigned_manager_id = #{managerId}, updated_at = #{updatedAt} WHERE id = #{id}")
-    int updateAssignedManager(@Param("id") Long id, @Param("managerId") Long managerId, @Param("updatedAt") java.time.LocalDateTime updatedAt);
+    // Customer-Manager relationship methods
+    @Insert("INSERT INTO customer_managers (customer_id, manager_id, created_at) " +
+            "VALUES (#{customerId}, #{managerId}, #{createdAt})")
+    int assignManagerToCustomer(@Param("customerId") Long customerId,
+                                 @Param("managerId") Long managerId,
+                                 @Param("createdAt") java.time.LocalDateTime createdAt);
+
+    @Delete("DELETE FROM customer_managers WHERE customer_id = #{customerId} AND manager_id = #{managerId}")
+    int removeManagerFromCustomer(@Param("customerId") Long customerId, @Param("managerId") Long managerId);
+
+    @Delete("DELETE FROM customer_managers WHERE customer_id = #{customerId}")
+    int removeAllManagersFromCustomer(@Param("customerId") Long customerId);
+
+    @Select("SELECT manager_id FROM customer_managers WHERE customer_id = #{customerId}")
+    List<Long> getManagerIdsByCustomerId(Long customerId);
+
+    @Select("SELECT u.* FROM users u INNER JOIN customer_managers cm ON u.id = cm.manager_id WHERE cm.customer_id = #{customerId}")
+    List<User> getManagersByCustomerId(Long customerId);
 
     @Delete("DELETE FROM users WHERE id = #{id}")
     int deleteById(Long id);

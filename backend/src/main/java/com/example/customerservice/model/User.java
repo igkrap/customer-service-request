@@ -30,8 +30,6 @@ public class User {
 
     private Role role;
 
-    private Long assignedManagerId;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
