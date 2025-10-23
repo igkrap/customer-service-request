@@ -34,6 +34,8 @@ public class ServiceRequestDTO {
 
     private String assignedTo;
 
+    private Long createdByUserId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;

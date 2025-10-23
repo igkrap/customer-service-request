@@ -9,8 +9,9 @@ import ServiceRequestList from './components/ServiceRequestList';
 import './styles/App.css';
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState('customers');
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'ROLE_ADMIN';
+  const [activeTab, setActiveTab] = useState(isAdmin ? 'customers' : 'requests');
 
   return (
     <div className="App">
@@ -18,12 +19,14 @@ function Dashboard() {
         <h1>Customer Service Request Management System</h1>
         <div className="header-controls">
           <nav className="nav">
-            <button
-              className={activeTab === 'customers' ? 'active' : ''}
-              onClick={() => setActiveTab('customers')}
-            >
-              Customers
-            </button>
+            {isAdmin && (
+              <button
+                className={activeTab === 'customers' ? 'active' : ''}
+                onClick={() => setActiveTab('customers')}
+              >
+                Customers
+              </button>
+            )}
             <button
               className={activeTab === 'requests' ? 'active' : ''}
               onClick={() => setActiveTab('requests')}
@@ -32,7 +35,7 @@ function Dashboard() {
             </button>
           </nav>
           <div className="user-info">
-            <span>Welcome, {user?.username}</span>
+            <span>Welcome, {user?.username} ({isAdmin ? 'Admin' : 'User'})</span>
             <button onClick={logout} className="logout-button">
               Logout
             </button>
@@ -41,7 +44,7 @@ function Dashboard() {
       </header>
 
       <main>
-        {activeTab === 'customers' && <CustomerList />}
+        {activeTab === 'customers' && isAdmin && <CustomerList />}
         {activeTab === 'requests' && <ServiceRequestList />}
       </main>
     </div>
