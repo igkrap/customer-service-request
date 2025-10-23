@@ -283,3 +283,70 @@ body {
 .logout-button:hover {
   background-color: rgba(192, 57, 43, 1);
 }
+
+.badge-admin {
+  background-color: #9b59b6;
+  color: white;
+}
+
+.badge-user {
+  background-color: #3498db;
+  color: white;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.profile-info {
+  background-color: #ecf0f1;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.profile-info h3 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.profile-info p {
+  margin: 5px 0;
+  color: #34495e;
+}
+
+.profile-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.profile-section h3 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
