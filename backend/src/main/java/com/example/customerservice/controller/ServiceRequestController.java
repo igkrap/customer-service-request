@@ -2,11 +2,15 @@ package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
 import com.example.customerservice.model.ServiceRequest;
+import com.example.customerservice.model.User;
 import com.example.customerservice.service.ServiceRequestService;
+import com.example.customerservice.mapper.UserMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,10 +23,30 @@ public class ServiceRequestController {
     @Autowired
     private ServiceRequestService serviceRequestService;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @GetMapping
-    public ResponseEntity<List<ServiceRequestDTO>> getAllServiceRequests() {
-        List<ServiceRequestDTO> requests = serviceRequestService.getAllServiceRequests();
+    public ResponseEntity<List<ServiceRequestDTO>> getAllServiceRequests(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userMapper.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<ServiceRequestDTO> requests;
+        if (isAdmin(authentication)) {
+            // Admin can see all requests
+            requests = serviceRequestService.getAllServiceRequests();
+        } else {
+            // Regular users can only see their own requests
+            requests = serviceRequestService.getServiceRequestsByUserId(user.getId());
+        }
         return ResponseEntity.ok(requests);
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN"));
     }
 
     @GetMapping("/{id}")
@@ -54,9 +78,13 @@ public class ServiceRequestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createServiceRequest(@Valid @RequestBody ServiceRequestDTO dto) {
+    public ResponseEntity<?> createServiceRequest(@Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
-            ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto);
+            String username = authentication.getName();
+            User user = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto, user.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -64,8 +92,18 @@ public class ServiceRequestController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateServiceRequest(@PathVariable Long id, @Valid @RequestBody ServiceRequestDTO dto) {
+    public ResponseEntity<?> updateServiceRequest(@PathVariable Long id, @Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
+            String username = authentication.getName();
+            User user = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user has permission to update
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !existingRequest.getCreatedByUserId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only update your own requests");
+            }
+
             ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequest(id, dto);
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {
@@ -74,8 +112,18 @@ public class ServiceRequestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteServiceRequest(@PathVariable Long id) {
+    public ResponseEntity<?> deleteServiceRequest(@PathVariable Long id, Authentication authentication) {
         try {
+            String username = authentication.getName();
+            User user = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user has permission to delete
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !existingRequest.getCreatedByUserId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only delete your own requests");
+            }
+
             serviceRequestService.deleteServiceRequest(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {

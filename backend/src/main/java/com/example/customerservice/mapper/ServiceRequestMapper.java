@@ -29,13 +29,16 @@ public interface ServiceRequestMapper {
     @Select("SELECT * FROM service_requests WHERE assigned_to = #{assignedTo}")
     List<ServiceRequest> findByAssignedTo(String assignedTo);
 
+    @Select("SELECT * FROM service_requests WHERE created_by_user_id = #{userId}")
+    List<ServiceRequest> findByCreatedByUserId(Long userId);
+
     @Select("SELECT COUNT(*) > 0 FROM service_requests WHERE id = #{id}")
     boolean existsById(Long id);
 
     @Insert("INSERT INTO service_requests (title, description, status, priority, customer_id, " +
-            "assigned_to, created_at, updated_at, resolved_at) " +
+            "assigned_to, created_by_user_id, created_at, updated_at, resolved_at) " +
             "VALUES (#{title}, #{description}, #{status}, #{priority}, #{customerId}, " +
-            "#{assignedTo}, #{createdAt}, #{updatedAt}, #{resolvedAt})")
+            "#{assignedTo}, #{createdByUserId}, #{createdAt}, #{updatedAt}, #{resolvedAt})")
     @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(ServiceRequest serviceRequest);
 

@@ -26,15 +26,27 @@ function ServiceRequestList() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [requestsResponse, customersResponse] = await Promise.all([
-        serviceRequestAPI.getAll(),
-        customerAPI.getAll()
-      ]);
+      const requestsResponse = await serviceRequestAPI.getAll();
       setRequests(requestsResponse.data);
-      setCustomers(customersResponse.data);
+
+      // Try to fetch customers, but silently fail if forbidden (user doesn't have permission)
+      try {
+        const customersResponse = await customerAPI.getAll();
+        setCustomers(customersResponse.data);
+      } catch (err) {
+        if (err.response?.status === 403) {
+          // User doesn't have permission to view customers, that's okay
+          setCustomers([]);
+        } else {
+          throw err;
+        }
+      }
+
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data: ' + err.message);
+      if (err.response?.status !== 403) {
+        setError('Failed to fetch data: ' + err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -246,19 +258,24 @@ function ServiceRequestList() {
                 <td>{request.assignedTo || 'Unassigned'}</td>
                 <td>{new Date(request.createdAt).toLocaleDateString()}</td>
                 <td>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleEdit(request)}
-                  >
-                    Edit
-                  </button>
-                  {user?.role === 'ROLE_ADMIN' && (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(request.id)}
-                    >
-                      Delete
-                    </button>
+                  {(user?.role === 'ROLE_ADMIN' || request.createdByUserId === user?.id) && (
+                    <>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleEdit(request)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDelete(request.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                  {user?.role !== 'ROLE_ADMIN' && request.createdByUserId !== user?.id && (
+                    <span style={{color: '#999', fontSize: '14px'}}>-</span>
                   )}
                 </td>
               </tr>
