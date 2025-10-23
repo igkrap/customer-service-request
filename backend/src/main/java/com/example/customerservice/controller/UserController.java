@@ -1,6 +1,7 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.AssignManagerRequest;
+import com.example.customerservice.dto.AssignCustomersRequest;
 import com.example.customerservice.dto.UpdateUserEmailRequest;
 import com.example.customerservice.dto.UpdateUserPasswordRequest;
 import com.example.customerservice.dto.UpdateUserRoleRequest;
@@ -165,6 +166,18 @@ public class UserController {
         try {
             UserDTO updatedCustomer = userService.removeManagerFromCustomer(customerId, managerId);
             return ResponseEntity.ok(updatedCustomer);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/managers/{managerId}/assign-customers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> assignCustomersToManager(@PathVariable Long managerId,
+                                                       @Valid @RequestBody AssignCustomersRequest request) {
+        try {
+            UserDTO updatedManager = userService.assignCustomersToManager(managerId, request.getCustomerIds());
+            return ResponseEntity.ok(updatedManager);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

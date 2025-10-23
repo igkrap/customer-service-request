@@ -19,6 +19,8 @@ public class UserDTO {
     private User.Role role;
     private List<Long> managerIds;
     private List<String> managerNames;
+    private List<Long> customerIds;
+    private List<String> customerNames;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

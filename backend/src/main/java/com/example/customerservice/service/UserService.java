@@ -106,6 +106,35 @@ public class UserService {
         return convertToDTO(customer);
     }
 
+    public UserDTO assignCustomersToManager(Long managerId, List<Long> customerIds) {
+        User manager = userMapper.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found with id: " + managerId));
+
+        if (manager.getRole() != User.Role.ROLE_MANAGER) {
+            throw new RuntimeException("User is not a manager");
+        }
+
+        // Validate all customers exist and have ROLE_CUSTOMER
+        for (Long customerId : customerIds) {
+            User customer = userMapper.findById(customerId)
+                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+
+            if (customer.getRole() != User.Role.ROLE_CUSTOMER) {
+                throw new RuntimeException("User with id " + customerId + " is not a customer");
+            }
+        }
+
+        // Remove all existing customer assignments for this manager
+        userMapper.removeAllCustomersFromManager(managerId);
+
+        // Assign new customers
+        for (Long customerId : customerIds) {
+            userMapper.assignManagerToCustomer(customerId, managerId, LocalDateTime.now());
+        }
+
+        return convertToDTO(manager);
+    }
+
     public UserDTO updateUserRole(Long id, User.Role role) {
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -171,6 +200,18 @@ public class UserService {
                     .map(User::getUsername)
                     .collect(Collectors.toList());
             dto.setManagerNames(managerNames);
+        }
+
+        // Load customers if user is a manager
+        if (user.getRole() == User.Role.ROLE_MANAGER) {
+            List<Long> customerIds = userMapper.getCustomerIdsByManagerId(user.getId());
+            dto.setCustomerIds(customerIds);
+
+            List<User> customers = userMapper.findCustomersByManagerId(user.getId());
+            List<String> customerNames = customers.stream()
+                    .map(User::getUsername)
+                    .collect(Collectors.toList());
+            dto.setCustomerNames(customerNames);
         }
 
         dto.setCreatedAt(user.getCreatedAt());

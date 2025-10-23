@@ -61,8 +61,14 @@ public interface UserMapper {
     @Delete("DELETE FROM customer_managers WHERE customer_id = #{customerId}")
     int removeAllManagersFromCustomer(@Param("customerId") Long customerId);
 
+    @Delete("DELETE FROM customer_managers WHERE manager_id = #{managerId}")
+    int removeAllCustomersFromManager(@Param("managerId") Long managerId);
+
     @Select("SELECT manager_id FROM customer_managers WHERE customer_id = #{customerId}")
     List<Long> getManagerIdsByCustomerId(Long customerId);
+
+    @Select("SELECT customer_id FROM customer_managers WHERE manager_id = #{managerId}")
+    List<Long> getCustomerIdsByManagerId(Long managerId);
 
     @Select("SELECT u.* FROM users u INNER JOIN customer_managers cm ON u.id = cm.manager_id WHERE cm.customer_id = #{customerId}")
     List<User> getManagersByCustomerId(Long customerId);
