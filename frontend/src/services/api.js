@@ -68,6 +68,7 @@ export const serviceRequestAPI = {
   getByPriority: (priority) => api.get(`/service-requests/priority/${priority}`),
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
+  updateStatus: (id, status) => api.patch(`/service-requests/${id}/status`, { status }),
   delete: (id) => api.delete(`/service-requests/${id}`),
 };
 

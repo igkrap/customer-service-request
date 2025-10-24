@@ -1,6 +1,7 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.dto.UpdateServiceRequestStatusRequest;
 import com.example.customerservice.model.ServiceRequest;
 import com.example.customerservice.model.User;
 import com.example.customerservice.service.ServiceRequestService;
@@ -95,11 +96,15 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // If customer is creating, use their own ID and force status to OPEN
-            if (user.getRole() == User.Role.ROLE_CUSTOMER) {
-                dto.setCustomerId(user.getId());
-                dto.setStatus(ServiceRequest.RequestStatus.OPEN);
+            // Only customers can create service requests
+            if (user.getRole() != User.Role.ROLE_CUSTOMER) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only customers can create service requests");
             }
+
+            // Use customer's own ID and force status to OPEN
+            dto.setCustomerId(user.getId());
+            dto.setStatus(ServiceRequest.RequestStatus.OPEN);
 
             ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto, user.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
@@ -115,12 +120,18 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Check if user has permission to update
+            // Only customers can fully update service requests
+            if (user.getRole() != User.Role.ROLE_CUSTOMER && !isAdmin(authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only customers can update service requests. Managers should use the status update endpoint.");
+            }
+
+            // Check if customer is updating their own request
             ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
-            if (!isAdmin(authentication) &&
-                user.getRole() == User.Role.ROLE_CUSTOMER &&
+            if (user.getRole() == User.Role.ROLE_CUSTOMER &&
                 !existingRequest.getCustomerId().equals(user.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only update your own requests");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only update your own requests");
             }
 
             ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequest(id, dto);
@@ -149,6 +160,45 @@ public class ServiceRequestController {
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> updateServiceRequestStatus(@PathVariable Long id,
+                                                          @Valid @RequestBody UpdateServiceRequestStatusRequest request,
+                                                          Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User user = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Only managers can update status
+            if (user.getRole() != User.Role.ROLE_MANAGER && !isAdmin(authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only managers can update service request status");
+            }
+
+            // Managers can only set status to IN_PROGRESS or CLOSED
+            if (user.getRole() == User.Role.ROLE_MANAGER) {
+                if (request.getStatus() != ServiceRequest.RequestStatus.IN_PROGRESS &&
+                    request.getStatus() != ServiceRequest.RequestStatus.CLOSED) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("Managers can only set status to IN_PROGRESS or CLOSED");
+                }
+
+                // Verify that the manager is assigned to this request
+                ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+                if (existingRequest.getManagerId() == null ||
+                    !existingRequest.getManagerId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("You can only update status of requests assigned to you");
+                }
+            }
+
+            ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(id, request.getStatus());
+            return ResponseEntity.ok(updatedRequest);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

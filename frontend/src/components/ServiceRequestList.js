@@ -157,6 +157,32 @@ function ServiceRequestList() {
     });
   };
 
+  const handleStatusChange = async (requestId, newStatus) => {
+    try {
+      await serviceRequestAPI.updateStatus(requestId, newStatus);
+      fetchData();
+      setError(null);
+    } catch (err) {
+      setError('Failed to update status: ' + (err.response?.data || err.message));
+    }
+  };
+
+  const canEditRequest = (request) => {
+    // Admin can edit all requests
+    if (user?.role === 'ROLE_ADMIN') return true;
+    // Customer can edit their own requests
+    if (user?.role === 'ROLE_CUSTOMER' && request.customerId === user?.id) return true;
+    return false;
+  };
+
+  const canChangeStatus = (request) => {
+    // Admin can always change status
+    if (user?.role === 'ROLE_ADMIN') return true;
+    // Manager can change status if assigned to the request
+    if (user?.role === 'ROLE_MANAGER' && request.managerId === user?.id) return true;
+    return false;
+  };
+
   const getStatusBadge = (status) => {
     const statusClass = status.toLowerCase().replace('_', '-');
     return <span className={`badge badge-${statusClass}`}>{status}</span>;
@@ -174,7 +200,7 @@ function ServiceRequestList() {
         <h2>Service Request Management</h2>
         {error && <div className="error">{error}</div>}
 
-        {!showForm && (
+        {!showForm && user?.role === 'ROLE_CUSTOMER' && (
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
             Create New Service Request
           </button>
@@ -218,23 +244,6 @@ function ServiceRequestList() {
                 onChange={handleInputChange}
               />
             </div>
-            {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
-              <div className="form-group">
-                <label>Status *</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="OPEN">Open</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="RESOLVED">Resolved</option>
-                  <option value="CLOSED">Closed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-            )}
             <div className="form-group">
               <label>Priority *</label>
               <select
@@ -299,7 +308,7 @@ function ServiceRequestList() {
                 <td>{request.managerName || 'Unassigned'}</td>
                 <td>{new Date(request.createdAt).toLocaleDateString()}</td>
                 <td>
-                  {(user?.role === 'ROLE_ADMIN' || request.createdByUserId === user?.id) && (
+                  {canEditRequest(request) && (
                     <>
                       <button
                         className="btn btn-primary"
@@ -315,7 +324,29 @@ function ServiceRequestList() {
                       </button>
                     </>
                   )}
-                  {user?.role !== 'ROLE_ADMIN' && request.createdByUserId !== user?.id && (
+                  {canChangeStatus(request) && user?.role === 'ROLE_MANAGER' && (
+                    <>
+                      {request.status !== 'IN_PROGRESS' && (
+                        <button
+                          className="btn btn-success"
+                          onClick={() => handleStatusChange(request.id, 'IN_PROGRESS')}
+                          style={{marginLeft: '5px'}}
+                        >
+                          Start
+                        </button>
+                      )}
+                      {request.status !== 'CLOSED' && (
+                        <button
+                          className="btn btn-warning"
+                          onClick={() => handleStatusChange(request.id, 'CLOSED')}
+                          style={{marginLeft: '5px'}}
+                        >
+                          Close
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {!canEditRequest(request) && !canChangeStatus(request) && (
                     <span style={{color: '#999', fontSize: '14px'}}>-</span>
                   )}
                 </td>
