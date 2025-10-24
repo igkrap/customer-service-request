@@ -57,6 +57,8 @@ public class SecurityConfig {
                         // Method-level @PreAuthorize annotations will handle fine-grained authorization
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/service-requests/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/companies/**").authenticated()
+                        .requestMatchers("/api/projects/**").authenticated()
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );

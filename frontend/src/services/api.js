@@ -72,4 +72,23 @@ export const serviceRequestAPI = {
   delete: (id) => api.delete(`/service-requests/${id}`),
 };
 
+// Company API
+export const companyAPI = {
+  getAll: () => api.get('/companies'),
+  getById: (id) => api.get(`/companies/${id}`),
+  create: (company) => api.post('/companies', company),
+  update: (id, company) => api.put(`/companies/${id}`, company),
+  delete: (id) => api.delete(`/companies/${id}`),
+};
+
+// Project API
+export const projectAPI = {
+  getAll: () => api.get('/projects'),
+  getById: (id) => api.get(`/projects/${id}`),
+  getByCompanyId: (companyId) => api.get(`/projects/company/${companyId}`),
+  create: (project) => api.post('/projects', project),
+  update: (id, project) => api.put(`/projects/${id}`, project),
+  delete: (id) => api.delete(`/projects/${id}`),
+};
+
 export default api;

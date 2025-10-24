@@ -7,6 +7,8 @@ import PrivateRoute from './components/PrivateRoute';
 import ServiceRequestList from './components/ServiceRequestList';
 import UserList from './components/UserList';
 import UserProfile from './components/UserProfile';
+import CompanyList from './components/CompanyList';
+import ProjectList from './components/ProjectList';
 import './styles/App.css';
 
 function Dashboard() {
@@ -27,12 +29,26 @@ function Dashboard() {
               Service Requests
             </button>
             {isAdmin && (
-              <button
-                className={activeTab === 'users' ? 'active' : ''}
-                onClick={() => setActiveTab('users')}
-              >
-                User Management
-              </button>
+              <>
+                <button
+                  className={activeTab === 'users' ? 'active' : ''}
+                  onClick={() => setActiveTab('users')}
+                >
+                  User Management
+                </button>
+                <button
+                  className={activeTab === 'companies' ? 'active' : ''}
+                  onClick={() => setActiveTab('companies')}
+                >
+                  Companies
+                </button>
+                <button
+                  className={activeTab === 'projects' ? 'active' : ''}
+                  onClick={() => setActiveTab('projects')}
+                >
+                  Projects
+                </button>
+              </>
             )}
             <button
               className={activeTab === 'profile' ? 'active' : ''}
@@ -53,6 +69,8 @@ function Dashboard() {
       <main>
         {activeTab === 'requests' && <ServiceRequestList />}
         {activeTab === 'users' && isAdmin && <UserList />}
+        {activeTab === 'companies' && isAdmin && <CompanyList />}
+        {activeTab === 'projects' && isAdmin && <ProjectList />}
         {activeTab === 'profile' && <UserProfile />}
       </main>
     </div>

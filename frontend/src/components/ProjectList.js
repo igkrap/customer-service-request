@@ -1,0 +1,265 @@
+import React, { useState, useEffect } from 'react';
+import { projectAPI, companyAPI } from '../services/api';
+
+function ProjectList() {
+  const [projects, setProjects] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [formData, setFormData] = useState({
+    companyId: '',
+    projectName: '',
+    serviceType: 'MAINTENANCE',
+    contractStartDate: '',
+    contractEndDate: '',
+    contractManDays: ''
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [projectsResponse, companiesResponse] = await Promise.all([
+        projectAPI.getAll(),
+        companyAPI.getAll()
+      ]);
+      setProjects(projectsResponse.data);
+      setCompanies(companiesResponse.data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch data: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const submitData = {
+        ...formData,
+        companyId: parseInt(formData.companyId),
+        contractManDays: parseFloat(formData.contractManDays)
+      };
+
+      if (editingProject) {
+        await projectAPI.update(editingProject.id, submitData);
+      } else {
+        await projectAPI.create(submitData);
+      }
+
+      setFormData({
+        companyId: '',
+        projectName: '',
+        serviceType: 'MAINTENANCE',
+        contractStartDate: '',
+        contractEndDate: '',
+        contractManDays: ''
+      });
+      setShowForm(false);
+      setEditingProject(null);
+      fetchData();
+    } catch (err) {
+      setError('Failed to save project: ' + (err.response?.data || err.message));
+    }
+  };
+
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    setFormData({
+      companyId: project.companyId.toString(),
+      projectName: project.projectName,
+      serviceType: project.serviceType,
+      contractStartDate: project.contractStartDate,
+      contractEndDate: project.contractEndDate,
+      contractManDays: project.contractManDays.toString()
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectAPI.delete(id);
+        fetchData();
+      } catch (err) {
+        setError('Failed to delete project: ' + (err.response?.data || err.message));
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingProject(null);
+    setFormData({
+      companyId: '',
+      projectName: '',
+      serviceType: 'MAINTENANCE',
+      contractStartDate: '',
+      contractEndDate: '',
+      contractManDays: ''
+    });
+  };
+
+  const getServiceTypeBadge = (type) => {
+    const typeClass = type === 'MAINTENANCE' ? 'badge-info' : 'badge-warning';
+    const typeLabel = type === 'MAINTENANCE' ? 'Maintenance' : 'Defect Repair';
+    return <span className={`badge ${typeClass}`}>{typeLabel}</span>;
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+
+  return (
+    <div className="container">
+      <div className="card">
+        <h2>Project Management</h2>
+        {error && <div className="error">{error}</div>}
+
+        {!showForm && (
+          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            Create New Project
+          </button>
+        )}
+
+        {showForm && (
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Company *</label>
+              <select
+                name="companyId"
+                value={formData.companyId}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Select a company</option>
+                {companies.map(company => (
+                  <option key={company.id} value={company.id}>
+                    {company.companyName} ({company.companyCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Project Name *</label>
+              <input
+                type="text"
+                name="projectName"
+                value={formData.projectName}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Service Type *</label>
+              <select
+                name="serviceType"
+                value={formData.serviceType}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="MAINTENANCE">Maintenance (유지보수)</option>
+                <option value="DEFECT_REPAIR">Defect Repair (하자보수)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Contract Start Date *</label>
+              <input
+                type="date"
+                name="contractStartDate"
+                value={formData.contractStartDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Contract End Date *</label>
+              <input
+                type="date"
+                name="contractEndDate"
+                value={formData.contractEndDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Contract Man-Days (m/d) *</label>
+              <input
+                type="number"
+                name="contractManDays"
+                value={formData.contractManDays}
+                onChange={handleInputChange}
+                step="0.1"
+                min="0"
+                required
+              />
+            </div>
+            <div className="btn-group">
+              <button type="submit" className="btn btn-success">
+                {editingProject ? 'Update' : 'Create'} Project
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Project Name</th>
+              <th>Company</th>
+              <th>Service Type</th>
+              <th>Contract Period</th>
+              <th>Man-Days</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {projects.map(project => (
+              <tr key={project.id}>
+                <td>{project.id}</td>
+                <td>{project.projectName}</td>
+                <td>{project.companyName}</td>
+                <td>{getServiceTypeBadge(project.serviceType)}</td>
+                <td>
+                  {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
+                </td>
+                <td>{project.contractManDays} m/d</td>
+                <td>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleEdit(project)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(project.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default ProjectList;
