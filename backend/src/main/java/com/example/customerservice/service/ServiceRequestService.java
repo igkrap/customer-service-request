@@ -189,6 +189,28 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+        serviceRequest.setStatus(status);
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
+
+        // Set resolvedAt when status changes to RESOLVED or CLOSED
+        if ((status == ServiceRequest.RequestStatus.RESOLVED ||
+             status == ServiceRequest.RequestStatus.CLOSED) &&
+            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
+             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+            if (serviceRequest.getResolvedAt() == null) {
+                serviceRequest.setResolvedAt(LocalDateTime.now());
+            }
+        }
+
+        serviceRequestMapper.update(serviceRequest);
+        return convertToDTO(serviceRequest);
+    }
+
     public void deleteServiceRequest(Long id) {
         if (!serviceRequestMapper.existsById(id)) {
             throw new RuntimeException("Service request not found with id: " + id);
