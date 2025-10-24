@@ -200,7 +200,7 @@ function ServiceRequestList() {
         <h2>Service Request Management</h2>
         {error && <div className="error">{error}</div>}
 
-        {!showForm && user?.role === 'ROLE_CUSTOMER' && (
+        {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
             Create New Service Request
           </button>
@@ -258,6 +258,23 @@ function ServiceRequestList() {
                 <option value="URGENT">Urgent</option>
               </select>
             </div>
+            {user?.role === 'ROLE_ADMIN' && (
+              <div className="form-group">
+                <label>Status *</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label>Manager</label>
               <select
@@ -333,6 +350,15 @@ function ServiceRequestList() {
                           style={{marginLeft: '5px'}}
                         >
                           Start
+                        </button>
+                      )}
+                      {request.status !== 'RESOLVED' && (
+                        <button
+                          className="btn btn-info"
+                          onClick={() => handleStatusChange(request.id, 'RESOLVED')}
+                          style={{marginLeft: '5px'}}
+                        >
+                          Complete
                         </button>
                       )}
                       {request.status !== 'CLOSED' && (

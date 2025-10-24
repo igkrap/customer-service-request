@@ -96,15 +96,27 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Only customers can create service requests
-            if (user.getRole() != User.Role.ROLE_CUSTOMER) {
+            // Only customers and admins can create service requests
+            if (user.getRole() != User.Role.ROLE_CUSTOMER && user.getRole() != User.Role.ROLE_ADMIN) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Only customers can create service requests");
+                        .body("Only customers and admins can create service requests");
             }
 
-            // Use customer's own ID and force status to OPEN
-            dto.setCustomerId(user.getId());
-            dto.setStatus(ServiceRequest.RequestStatus.OPEN);
+            // For customers, use their own ID and force status to OPEN
+            if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+                dto.setCustomerId(user.getId());
+                dto.setStatus(ServiceRequest.RequestStatus.OPEN);
+            }
+            // For admins, validate that customerId is provided
+            else if (user.getRole() == User.Role.ROLE_ADMIN) {
+                if (dto.getCustomerId() == null) {
+                    return ResponseEntity.badRequest().body("Customer ID is required");
+                }
+                // Admins can set initial status, default to OPEN if not provided
+                if (dto.getStatus() == null) {
+                    dto.setStatus(ServiceRequest.RequestStatus.OPEN);
+                }
+            }
 
             ServiceRequestDTO createdRequest = serviceRequestService.createServiceRequest(dto, user.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
@@ -172,18 +184,19 @@ public class ServiceRequestController {
             User user = userMapper.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Only managers can update status
+            // Only managers and admins can update status
             if (user.getRole() != User.Role.ROLE_MANAGER && !isAdmin(authentication)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Only managers can update service request status");
+                        .body("Only managers and admins can update service request status");
             }
 
-            // Managers can only set status to IN_PROGRESS or CLOSED
+            // Managers can only set status to IN_PROGRESS, RESOLVED, or CLOSED
             if (user.getRole() == User.Role.ROLE_MANAGER) {
                 if (request.getStatus() != ServiceRequest.RequestStatus.IN_PROGRESS &&
+                    request.getStatus() != ServiceRequest.RequestStatus.RESOLVED &&
                     request.getStatus() != ServiceRequest.RequestStatus.CLOSED) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body("Managers can only set status to IN_PROGRESS or CLOSED");
+                            .body("Managers can only set status to IN_PROGRESS, RESOLVED, or CLOSED");
                 }
 
                 // Verify that the manager is assigned to this request
