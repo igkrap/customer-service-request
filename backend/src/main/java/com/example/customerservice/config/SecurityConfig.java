@@ -53,9 +53,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Admin-only endpoints
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/service-requests/**").hasAnyRole("USER", "ADMIN")
+                        // All authenticated users can access these endpoints
+                        // Method-level @PreAuthorize annotations will handle fine-grained authorization
+                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/service-requests/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );
