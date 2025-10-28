@@ -1,5 +1,6 @@
 package com.example.customerservice.controller;
 
+import com.example.customerservice.dto.ApproveUserRequest;
 import com.example.customerservice.dto.AssignManagerRequest;
 import com.example.customerservice.dto.AssignCustomersRequest;
 import com.example.customerservice.dto.UpdateUserEmailRequest;
@@ -191,6 +192,35 @@ public class UserController {
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserDTO>> getPendingUsers() {
+        List<UserDTO> pendingUsers = userService.getPendingUsers();
+        return ResponseEntity.ok(pendingUsers);
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveUser(@PathVariable Long id, @Valid @RequestBody ApproveUserRequest request) {
+        try {
+            UserDTO approvedUser = userService.approveUser(id, request.getCompanyId());
+            return ResponseEntity.ok(approvedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> rejectUser(@PathVariable Long id) {
+        try {
+            UserDTO rejectedUser = userService.rejectUser(id);
+            return ResponseEntity.ok(rejectedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

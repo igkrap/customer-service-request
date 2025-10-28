@@ -1,7 +1,9 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.UserDTO;
+import com.example.customerservice.mapper.CompanyMapper;
 import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.model.Company;
 import com.example.customerservice.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +20,9 @@ public class UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private CompanyMapper companyMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -183,12 +188,56 @@ public class UserService {
         userMapper.deleteById(id);
     }
 
+    public List<UserDTO> getPendingUsers() {
+        return userMapper.findByApprovalStatus("PENDING").stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public UserDTO approveUser(Long id, Long companyId) {
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        // Validate company exists
+        if (!companyMapper.existsById(companyId)) {
+            throw new RuntimeException("Company not found with id: " + companyId);
+        }
+
+        user.setCompanyId(companyId);
+        user.setApprovalStatus(User.ApprovalStatus.APPROVED);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.update(user);
+        return convertToDTO(user);
+    }
+
+    public UserDTO rejectUser(Long id) {
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        user.setApprovalStatus(User.ApprovalStatus.REJECTED);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.update(user);
+        return convertToDTO(user);
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setCompanyId(user.getCompanyId());
+        dto.setApprovalStatus(user.getApprovalStatus());
+
+        // Load company information if user has a company
+        if (user.getCompanyId() != null) {
+            companyMapper.findById(user.getCompanyId()).ifPresent(company -> {
+                dto.setCompanyName(company.getCompanyName());
+                dto.setCompanyCode(company.getCompanyCode());
+            });
+        }
 
         // Load managers if user is a customer
         if (user.getRole() == User.Role.ROLE_CUSTOMER) {
