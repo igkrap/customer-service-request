@@ -9,7 +9,6 @@ import UserList from './components/UserList';
 import UserProfile from './components/UserProfile';
 import CompanyList from './components/CompanyList';
 import ProjectList from './components/ProjectList';
-import PendingUserList from './components/PendingUserList';
 import './styles/App.css';
 
 function Dashboard() {
@@ -36,12 +35,6 @@ function Dashboard() {
                   onClick={() => setActiveTab('users')}
                 >
                   User Management
-                </button>
-                <button
-                  className={activeTab === 'approvals' ? 'active' : ''}
-                  onClick={() => setActiveTab('approvals')}
-                >
-                  Pending Approvals
                 </button>
                 <button
                   className={activeTab === 'companies' ? 'active' : ''}
@@ -76,7 +69,6 @@ function Dashboard() {
       <main>
         {activeTab === 'requests' && <ServiceRequestList />}
         {activeTab === 'users' && isAdmin && <UserList />}
-        {activeTab === 'approvals' && isAdmin && <PendingUserList />}
         {activeTab === 'companies' && isAdmin && <CompanyList />}
         {activeTab === 'projects' && isAdmin && <ProjectList />}
         {activeTab === 'profile' && <UserProfile />}
