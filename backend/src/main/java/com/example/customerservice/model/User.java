@@ -30,11 +30,21 @@ public class User {
 
     private Role role;
 
+    private Long companyId;
+
+    private ApprovalStatus approvalStatus;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     public enum Role {
         ROLE_CUSTOMER, ROLE_MANAGER, ROLE_ADMIN
+    }
+
+    public enum ApprovalStatus {
+        PENDING,    // 승인 대기
+        APPROVED,   // 승인 완료
+        REJECTED    // 승인 거절
     }
 }

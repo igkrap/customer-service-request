@@ -34,6 +34,9 @@ public class ServiceRequestDTO {
     private Long managerId;
     private String managerName;
 
+    private Long projectId;
+    private String projectName;
+
     private Long createdByUserId;
 
     private LocalDateTime createdAt;

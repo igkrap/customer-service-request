@@ -44,30 +44,35 @@ public class AuthService {
             throw new RuntimeException("Email is already registered");
         }
 
-        // Create new user
+        // Create new user with PENDING approval status
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(User.Role.ROLE_CUSTOMER);
+        user.setApprovalStatus(User.ApprovalStatus.PENDING); // Set to PENDING for admin approval
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.insert(user);
 
-        // Generate JWT token
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPassword())
-                .authorities(user.getRole().name())
-                .build();
-
-        String token = jwtUtil.generateToken(userDetails);
-
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
+        // Return response without token - user needs approval first
+        return new AuthResponse(null, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Get user details first to check approval status
+        User user = userMapper.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check approval status
+        if (user.getApprovalStatus() == User.ApprovalStatus.PENDING) {
+            throw new RuntimeException("Your account is pending admin approval. Please wait for approval.");
+        }
+        if (user.getApprovalStatus() == User.ApprovalStatus.REJECTED) {
+            throw new RuntimeException("Your account has been rejected. Please contact the administrator.");
+        }
+
         // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
@@ -77,10 +82,6 @@ public class AuthService {
 
         // Generate JWT token
         String token = jwtUtil.generateToken(userDetails);
-
-        // Get user details
-        User user = userMapper.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
     }

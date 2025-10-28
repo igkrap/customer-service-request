@@ -17,6 +17,10 @@ public class UserDTO {
     private String username;
     private String email;
     private User.Role role;
+    private Long companyId;
+    private String companyName;
+    private String companyCode;
+    private User.ApprovalStatus approvalStatus;
     private List<Long> managerIds;
     private List<String> managerNames;
     private List<Long> customerIds;

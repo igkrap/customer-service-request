@@ -36,13 +36,16 @@ public interface UserMapper {
     @Select("SELECT u.* FROM users u INNER JOIN customer_managers cm ON u.id = cm.customer_id WHERE cm.manager_id = #{managerId}")
     List<User> findCustomersByManagerId(Long managerId);
 
-    @Insert("INSERT INTO users (username, email, password, role, created_at, updated_at) " +
-            "VALUES (#{username}, #{email}, #{password}, #{role}, #{createdAt}, #{updatedAt})")
+    @Select("SELECT * FROM users WHERE approval_status = #{approvalStatus}")
+    List<User> findByApprovalStatus(@Param("approvalStatus") String approvalStatus);
+
+    @Insert("INSERT INTO users (username, email, password, role, company_id, approval_status, created_at, updated_at) " +
+            "VALUES (#{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{createdAt}, #{updatedAt})")
     @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(User user);
 
     @Update("UPDATE users SET username = #{username}, email = #{email}, " +
-            "role = #{role}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "role = #{role}, company_id = #{companyId}, approval_status = #{approvalStatus}, updated_at = #{updatedAt} WHERE id = #{id}")
     int update(User user);
 
     @Update("UPDATE users SET password = #{password}, updated_at = #{updatedAt} WHERE id = #{id}")
