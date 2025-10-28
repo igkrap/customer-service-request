@@ -8,6 +8,7 @@ function UserList() {
   const [customers, setCustomers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanies, setSelectedCompanies] = useState({});
+  const [selectedRoles, setSelectedRoles] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
@@ -142,6 +143,20 @@ function UserList() {
     setFormData({ email: '', password: '', role: '', customerIds: [] });
   };
 
+  const handleRoleChange = (userId, role) => {
+    setSelectedRoles({
+      ...selectedRoles,
+      [userId]: role
+    });
+
+    // Clear company selection if role is not CUSTOMER
+    if (role !== 'ROLE_CUSTOMER') {
+      const newSelectedCompanies = { ...selectedCompanies };
+      delete newSelectedCompanies[userId];
+      setSelectedCompanies(newSelectedCompanies);
+    }
+  };
+
   const handleCompanyChange = (userId, companyId) => {
     setSelectedCompanies({
       ...selectedCompanies,
@@ -150,22 +165,32 @@ function UserList() {
   };
 
   const handleApprove = async (userId) => {
+    const role = selectedRoles[userId];
     const companyId = selectedCompanies[userId];
 
-    if (!companyId) {
-      setError('Please select a company for this user');
+    if (!role) {
+      setError('Please select a role for this user');
+      return;
+    }
+
+    // Company is required only for CUSTOMER role
+    if (role === 'ROLE_CUSTOMER' && !companyId) {
+      setError('Please select a company for CUSTOMER role');
       return;
     }
 
     try {
-      await userAPI.approve(userId, parseInt(companyId), 'APPROVED');
+      await userAPI.approve(userId, role, companyId ? parseInt(companyId) : null, 'APPROVED');
       fetchUsers();
       setError(null);
 
-      // Remove the selected company from state
-      const newSelected = { ...selectedCompanies };
-      delete newSelected[userId];
-      setSelectedCompanies(newSelected);
+      // Remove the selections from state
+      const newSelectedRoles = { ...selectedRoles };
+      const newSelectedCompanies = { ...selectedCompanies };
+      delete newSelectedRoles[userId];
+      delete newSelectedCompanies[userId];
+      setSelectedRoles(newSelectedRoles);
+      setSelectedCompanies(newSelectedCompanies);
     } catch (err) {
       setError('Failed to approve user: ' + (err.response?.data || err.message));
     }
@@ -330,12 +355,28 @@ function UserList() {
                 <td>{u.id}</td>
                 <td>{u.username}</td>
                 <td>{u.email}</td>
-                <td>{getRoleBadge(u.role)}</td>
+                <td>
+                  {u.approvalStatus === 'PENDING' ? (
+                    <select
+                      value={selectedRoles[u.id] || ''}
+                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                      style={{ fontSize: '12px', padding: '2px 5px' }}
+                    >
+                      <option value="">Select role</option>
+                      <option value="ROLE_CUSTOMER">Customer</option>
+                      <option value="ROLE_MANAGER">Manager</option>
+                      <option value="ROLE_ADMIN">Admin</option>
+                    </select>
+                  ) : (
+                    getRoleBadge(u.role)
+                  )}
+                </td>
                 <td>
                   {u.approvalStatus === 'PENDING' ? (
                     <select
                       value={selectedCompanies[u.id] || ''}
                       onChange={(e) => handleCompanyChange(u.id, e.target.value)}
+                      disabled={!selectedRoles[u.id] || selectedRoles[u.id] !== 'ROLE_CUSTOMER'}
                       style={{ fontSize: '12px', padding: '2px 5px' }}
                     >
                       <option value="">Select company</option>
@@ -374,7 +415,7 @@ function UserList() {
                       <button
                         className="btn btn-success"
                         onClick={() => handleApprove(u.id)}
-                        disabled={!selectedCompanies[u.id]}
+                        disabled={!selectedRoles[u.id] || (selectedRoles[u.id] === 'ROLE_CUSTOMER' && !selectedCompanies[u.id])}
                         style={{ fontSize: '12px', padding: '4px 8px' }}
                       >
                         Approve

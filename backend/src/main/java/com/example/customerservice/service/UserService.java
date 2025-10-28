@@ -194,16 +194,27 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDTO approveUser(Long id, Long companyId) {
+    public UserDTO approveUser(Long id, User.Role role, Long companyId) {
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-        // Validate company exists
-        if (!companyMapper.existsById(companyId)) {
-            throw new RuntimeException("Company not found with id: " + companyId);
+        // Set role
+        user.setRole(role);
+
+        // Validate and set company only for CUSTOMER role
+        if (role == User.Role.ROLE_CUSTOMER) {
+            if (companyId == null) {
+                throw new RuntimeException("Company ID is required for CUSTOMER role");
+            }
+            if (!companyMapper.existsById(companyId)) {
+                throw new RuntimeException("Company not found with id: " + companyId);
+            }
+            user.setCompanyId(companyId);
+        } else {
+            // For MANAGER and ADMIN, company is not required
+            user.setCompanyId(null);
         }
 
-        user.setCompanyId(companyId);
         user.setApprovalStatus(User.ApprovalStatus.APPROVED);
         user.setUpdatedAt(LocalDateTime.now());
 

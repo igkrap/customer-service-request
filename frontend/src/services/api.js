@@ -57,7 +57,7 @@ export const userAPI = {
   updatePassword: (id, password) => api.put(`/users/${id}/password`, password),
   delete: (id) => api.delete(`/users/${id}`),
   getPending: () => api.get('/users/pending'),
-  approve: (id, companyId, approvalStatus) => api.post(`/users/${id}/approve`, { companyId, approvalStatus }),
+  approve: (id, role, companyId, approvalStatus) => api.post(`/users/${id}/approve`, { role, companyId, approvalStatus }),
   reject: (id) => api.post(`/users/${id}/reject`),
 };
 
