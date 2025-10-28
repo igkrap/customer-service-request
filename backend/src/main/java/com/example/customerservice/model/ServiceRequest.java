@@ -27,6 +27,8 @@ public class ServiceRequest {
 
     private Long managerId;
 
+    private Long projectId;
+
     private Long createdByUserId;
 
     private LocalDateTime createdAt;

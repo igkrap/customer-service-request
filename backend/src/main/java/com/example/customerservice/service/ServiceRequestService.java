@@ -1,8 +1,10 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.mapper.ProjectMapper;
 import com.example.customerservice.mapper.ServiceRequestMapper;
 import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.model.Project;
 import com.example.customerservice.model.ServiceRequest;
 import com.example.customerservice.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ public class ServiceRequestService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ProjectMapper projectMapper;
 
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
@@ -244,6 +249,16 @@ public class ServiceRequestService {
             }
         }
 
+        // Load project details for DTO
+        dto.setProjectId(serviceRequest.getProjectId());
+        if (serviceRequest.getProjectId() != null) {
+            Project project = projectMapper.findById(serviceRequest.getProjectId())
+                    .orElse(null);
+            if (project != null) {
+                dto.setProjectName(project.getProjectName());
+            }
+        }
+
         dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
@@ -258,6 +273,7 @@ public class ServiceRequestService {
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
+        serviceRequest.setProjectId(dto.getProjectId());
         return serviceRequest;
     }
 }

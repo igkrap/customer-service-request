@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { serviceRequestAPI, userAPI } from '../services/api';
+import { serviceRequestAPI, userAPI, projectAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function ServiceRequestList() {
@@ -7,6 +7,7 @@ function ServiceRequestList() {
   const [requests, setRequests] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [managers, setManagers] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -17,7 +18,8 @@ function ServiceRequestList() {
     status: 'OPEN',
     priority: 'MEDIUM',
     customerId: '',
-    managerId: ''
+    managerId: '',
+    projectId: ''
   });
 
   useEffect(() => {
@@ -72,6 +74,25 @@ function ServiceRequestList() {
         }
       }
 
+      // Fetch projects based on user's company
+      if (user?.id) {
+        try {
+          const userResponse = await userAPI.getById(user.id);
+          const userData = userResponse.data;
+
+          if (userData.companyId) {
+            const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+            setProjects(projectsResponse.data);
+          } else {
+            setProjects([]);
+          }
+        } catch (err) {
+          if (err.response?.status !== 403) {
+            console.error('Failed to fetch projects:', err);
+          }
+        }
+      }
+
       setError(null);
     } catch (err) {
       if (err.response?.status !== 403) {
@@ -95,7 +116,8 @@ function ServiceRequestList() {
       const submitData = {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
-        managerId: formData.managerId ? parseInt(formData.managerId) : null
+        managerId: formData.managerId ? parseInt(formData.managerId) : null,
+        projectId: formData.projectId ? parseInt(formData.projectId) : null
       };
 
       if (editingRequest) {
@@ -110,7 +132,8 @@ function ServiceRequestList() {
         status: 'OPEN',
         priority: 'MEDIUM',
         customerId: '',
-        managerId: ''
+        managerId: '',
+        projectId: ''
       });
       setShowForm(false);
       setEditingRequest(null);
@@ -128,7 +151,8 @@ function ServiceRequestList() {
       status: request.status,
       priority: request.priority,
       customerId: request.customerId.toString(),
-      managerId: request.managerId ? request.managerId.toString() : ''
+      managerId: request.managerId ? request.managerId.toString() : '',
+      projectId: request.projectId ? request.projectId.toString() : ''
     });
     setShowForm(true);
   };
@@ -153,7 +177,8 @@ function ServiceRequestList() {
       status: 'OPEN',
       priority: 'MEDIUM',
       customerId: '',
-      managerId: ''
+      managerId: '',
+      projectId: ''
     });
   };
 
@@ -276,6 +301,21 @@ function ServiceRequestList() {
               </div>
             )}
             <div className="form-group">
+              <label>Project</label>
+              <select
+                name="projectId"
+                value={formData.projectId}
+                onChange={handleInputChange}
+              >
+                <option value="">Select a project (optional)</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.projectName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
               <label>Manager</label>
               <select
                 name="managerId"
@@ -307,6 +347,7 @@ function ServiceRequestList() {
               <th>ID</th>
               <th>Title</th>
               <th>Customer</th>
+              <th>Project</th>
               <th>Status</th>
               <th>Priority</th>
               <th>Manager</th>
@@ -320,6 +361,7 @@ function ServiceRequestList() {
                 <td>{request.id}</td>
                 <td>{request.title}</td>
                 <td>{request.customerName}</td>
+                <td>{request.projectName || 'N/A'}</td>
                 <td>{getStatusBadge(request.status)}</td>
                 <td>{getPriorityBadge(request.priority)}</td>
                 <td>{request.managerName || 'Unassigned'}</td>
