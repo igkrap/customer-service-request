@@ -140,11 +140,26 @@ public class UserService {
         return convertToDTO(manager);
     }
 
-    public UserDTO updateUserRole(Long id, User.Role role) {
+    public UserDTO updateUserRole(Long id, User.Role role, Long companyId) {
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
         user.setRole(role);
+
+        // Handle company assignment based on role
+        if (role == User.Role.ROLE_CUSTOMER) {
+            if (companyId == null) {
+                throw new RuntimeException("Company ID is required for CUSTOMER role");
+            }
+            if (!companyMapper.existsById(companyId)) {
+                throw new RuntimeException("Company not found with id: " + companyId);
+            }
+            user.setCompanyId(companyId);
+        } else {
+            // For MANAGER and ADMIN, clear company assignment
+            user.setCompanyId(null);
+        }
+
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.update(user);

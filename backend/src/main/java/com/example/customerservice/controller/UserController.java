@@ -65,7 +65,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateUserRole(@PathVariable Long id, @Valid @RequestBody UpdateUserRoleRequest request) {
         try {
-            UserDTO updatedUser = userService.updateUserRole(id, request.getRole());
+            UserDTO updatedUser = userService.updateUserRole(id, request.getRole(), request.getCompanyId());
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

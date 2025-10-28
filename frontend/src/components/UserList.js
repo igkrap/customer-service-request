@@ -53,6 +53,7 @@ function UserList() {
       email: userToEdit.email,
       password: '',
       role: userToEdit.role,
+      companyId: userToEdit.companyId || '',
       customerIds: userToEdit.customerIds || []
     });
     setShowEditForm(true);
@@ -91,9 +92,12 @@ function UserList() {
         await userAPI.updatePassword(editingUser.id, { password: formData.password });
       }
 
-      // Update role if changed
-      if (formData.role !== editingUser.role) {
-        await userAPI.updateRole(editingUser.id, { role: formData.role });
+      // Update role (and company if applicable) if changed
+      if (formData.role !== editingUser.role || formData.companyId !== editingUser.companyId) {
+        await userAPI.updateRole(editingUser.id, {
+          role: formData.role,
+          companyId: formData.companyId ? parseInt(formData.companyId) : null
+        });
       }
 
       // Update customer assignments if role is manager
@@ -112,7 +116,7 @@ function UserList() {
 
       setShowEditForm(false);
       setEditingUser(null);
-      setFormData({ email: '', password: '', role: '', customerIds: [] });
+      setFormData({ email: '', password: '', role: '', companyId: '', customerIds: [] });
       fetchUsers();
       setError(null);
     } catch (err) {
@@ -140,7 +144,7 @@ function UserList() {
   const handleCancel = () => {
     setShowEditForm(false);
     setEditingUser(null);
-    setFormData({ email: '', password: '', role: '', customerIds: [] });
+    setFormData({ email: '', password: '', role: '', companyId: '', customerIds: [] });
   };
 
   const handleRoleChange = (userId, role) => {
@@ -298,6 +302,24 @@ function UserList() {
                     <option value="ROLE_ADMIN">Admin</option>
                   </select>
                 </div>
+                {formData.role === 'ROLE_CUSTOMER' && (
+                  <div className="form-group">
+                    <label>Company *</label>
+                    <select
+                      name="companyId"
+                      value={formData.companyId}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Company</option>
+                      {companies.map(company => (
+                        <option key={company.id} value={company.id}>
+                          {company.companyName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {formData.role === 'ROLE_MANAGER' && (
                   <div className="form-group">
                     <label>Assigned Customers (hold Ctrl/Cmd to select multiple)</label>
