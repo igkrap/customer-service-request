@@ -44,12 +44,12 @@ public class AuthService {
             throw new RuntimeException("Email is already registered");
         }
 
-        // Create new user with PENDING approval status
+        // Create new user with PENDING approval status (role will be assigned during approval)
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(User.Role.ROLE_CUSTOMER);
+        // Role will be set by admin during approval process
         user.setApprovalStatus(User.ApprovalStatus.PENDING); // Set to PENDING for admin approval
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -57,7 +57,7 @@ public class AuthService {
         userMapper.insert(user);
 
         // Return response without token - user needs approval first
-        return new AuthResponse(null, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(null, user.getId(), user.getUsername(), user.getEmail(), null);
     }
 
     public AuthResponse login(LoginRequest request) {

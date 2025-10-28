@@ -206,7 +206,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> approveUser(@PathVariable Long id, @Valid @RequestBody ApproveUserRequest request) {
         try {
-            UserDTO approvedUser = userService.approveUser(id, request.getCompanyId());
+            UserDTO approvedUser = userService.approveUser(id, request.getRole(), request.getCompanyId());
             return ResponseEntity.ok(approvedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

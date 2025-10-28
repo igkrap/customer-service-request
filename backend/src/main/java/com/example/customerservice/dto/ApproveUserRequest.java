@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApproveUserRequest {
 
-    @NotNull(message = "Company ID is required")
+    @NotNull(message = "Role is required")
+    private User.Role role;
+
+    // Company ID is only required for CUSTOMER role
     private Long companyId;
 
     @NotNull(message = "Approval status is required")
