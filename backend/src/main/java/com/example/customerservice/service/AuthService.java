@@ -67,10 +67,10 @@ public class AuthService {
 
         // Check approval status
         if (user.getApprovalStatus() == User.ApprovalStatus.PENDING) {
-            throw new RuntimeException("Your account is pending admin approval. Please wait for approval.");
+            throw new RuntimeException("관리자의 승인이 필요합니다.");
         }
         if (user.getApprovalStatus() == User.ApprovalStatus.REJECTED) {
-            throw new RuntimeException("Your account has been rejected. Please contact the administrator.");
+            throw new RuntimeException("계정이 거부되었습니다. 관리자에게 문의하세요.");
         }
 
         // Authenticate user

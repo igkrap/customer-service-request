@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { userAPI } from '../services/api';
+import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function UserList() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanies, setSelectedCompanies] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
@@ -24,11 +26,16 @@ function UserList() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.getAll();
-      setUsers(response.data);
+      const [usersResponse, companiesResponse] = await Promise.all([
+        userAPI.getAll(),
+        companyAPI.getAll()
+      ]);
+
+      setUsers(usersResponse.data);
+      setCompanies(companiesResponse.data);
 
       // Fetch customers for assignment dropdown
-      const allCustomers = response.data.filter(u => u.role === 'ROLE_CUSTOMER');
+      const allCustomers = usersResponse.data.filter(u => u.role === 'ROLE_CUSTOMER');
       setCustomers(allCustomers);
 
       setError(null);
@@ -133,6 +140,69 @@ function UserList() {
     setShowEditForm(false);
     setEditingUser(null);
     setFormData({ email: '', password: '', role: '', customerIds: [] });
+  };
+
+  const handleCompanyChange = (userId, companyId) => {
+    setSelectedCompanies({
+      ...selectedCompanies,
+      [userId]: companyId
+    });
+  };
+
+  const handleApprove = async (userId) => {
+    const companyId = selectedCompanies[userId];
+
+    if (!companyId) {
+      setError('Please select a company for this user');
+      return;
+    }
+
+    try {
+      await userAPI.approve(userId, parseInt(companyId), 'APPROVED');
+      fetchUsers();
+      setError(null);
+
+      // Remove the selected company from state
+      const newSelected = { ...selectedCompanies };
+      delete newSelected[userId];
+      setSelectedCompanies(newSelected);
+    } catch (err) {
+      setError('Failed to approve user: ' + (err.response?.data || err.message));
+    }
+  };
+
+  const handleReject = async (userId) => {
+    if (window.confirm('Are you sure you want to reject this user?')) {
+      try {
+        await userAPI.reject(userId);
+        fetchUsers();
+        setError(null);
+      } catch (err) {
+        setError('Failed to reject user: ' + (err.response?.data || err.message));
+      }
+    }
+  };
+
+  const getApprovalBadge = (status) => {
+    let statusClass, displayStatus;
+    switch (status) {
+      case 'APPROVED':
+        statusClass = 'badge-success';
+        displayStatus = 'Approved';
+        break;
+      case 'PENDING':
+        statusClass = 'badge-warning';
+        displayStatus = 'Pending';
+        break;
+      case 'REJECTED':
+        statusClass = 'badge-danger';
+        displayStatus = 'Rejected';
+        break;
+      default:
+        statusClass = 'badge-user';
+        displayStatus = status;
+    }
+    return <span className={`badge ${statusClass}`}>{displayStatus}</span>;
   };
 
   const getRoleBadge = (role) => {
@@ -247,6 +317,8 @@ function UserList() {
               <th>Username</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Company</th>
+              <th>Status</th>
               <th>Relationships</th>
               <th>Created</th>
               <th>Actions</th>
@@ -259,6 +331,25 @@ function UserList() {
                 <td>{u.username}</td>
                 <td>{u.email}</td>
                 <td>{getRoleBadge(u.role)}</td>
+                <td>
+                  {u.approvalStatus === 'PENDING' ? (
+                    <select
+                      value={selectedCompanies[u.id] || ''}
+                      onChange={(e) => handleCompanyChange(u.id, e.target.value)}
+                      style={{ fontSize: '12px', padding: '2px 5px' }}
+                    >
+                      <option value="">Select company</option>
+                      {companies.map(company => (
+                        <option key={company.id} value={company.id}>
+                          {company.companyName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    u.companyName || 'N/A'
+                  )}
+                </td>
+                <td>{getApprovalBadge(u.approvalStatus)}</td>
                 <td>
                   {u.role === 'ROLE_CUSTOMER' && (
                     <span>
@@ -278,19 +369,41 @@ function UserList() {
                 </td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleEdit(u)}
-                  >
-                    Edit
-                  </button>
-                  {u.id !== user?.id && (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(u.id)}
-                    >
-                      Delete
-                    </button>
+                  {u.approvalStatus === 'PENDING' ? (
+                    <>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => handleApprove(u.id)}
+                        disabled={!selectedCompanies[u.id]}
+                        style={{ fontSize: '12px', padding: '4px 8px' }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleReject(u.id)}
+                        style={{ fontSize: '12px', padding: '4px 8px' }}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleEdit(u)}
+                      >
+                        Edit
+                      </button>
+                      {u.id !== user?.id && (
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(u.id)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>

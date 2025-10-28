@@ -60,8 +60,15 @@ function Register() {
       const response = await authAPI.signup(signupData);
       const { token, id, username, email, role } = response.data;
 
-      login({ id, username, email, role }, token);
-      navigate('/');
+      // Check if token is null (user needs approval)
+      if (!token) {
+        alert('Registration successful! Your account is pending admin approval. You will be able to login once approved.');
+        navigate('/login');
+      } else {
+        // Old users or approved users get token immediately
+        login({ id, username, email, role }, token);
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data || 'Registration failed. Please try again.');
     } finally {
