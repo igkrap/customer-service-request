@@ -13,4 +13,7 @@ public class UpdateUserRoleRequest {
 
     @NotNull(message = "Role is required")
     private User.Role role;
+
+    // Company ID is only required for CUSTOMER role
+    private Long companyId;
 }
