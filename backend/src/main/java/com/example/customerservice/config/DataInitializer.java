@@ -27,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail("admin@example.com");
             admin.setPassword(passwordEncoder.encode("1234"));
             admin.setRole(User.Role.ROLE_ADMIN);
+            admin.setApprovalStatus(User.ApprovalStatus.APPROVED);
             admin.setCreatedAt(LocalDateTime.now());
             admin.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(admin);
@@ -40,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
             manager.setEmail("manager@example.com");
             manager.setPassword(passwordEncoder.encode("1234"));
             manager.setRole(User.Role.ROLE_MANAGER);
+            manager.setApprovalStatus(User.ApprovalStatus.APPROVED);
             manager.setCreatedAt(LocalDateTime.now());
             manager.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(manager);
@@ -53,6 +55,7 @@ public class DataInitializer implements CommandLineRunner {
             customer.setEmail("customer@example.com");
             customer.setPassword(passwordEncoder.encode("1234"));
             customer.setRole(User.Role.ROLE_CUSTOMER);
+            customer.setApprovalStatus(User.ApprovalStatus.APPROVED);
             customer.setCreatedAt(LocalDateTime.now());
             customer.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(customer);
