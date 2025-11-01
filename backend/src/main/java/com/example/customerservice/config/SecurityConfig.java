@@ -51,14 +51,24 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
-                        // All authenticated users can access these endpoints
-                        // Method-level @PreAuthorize annotations will handle fine-grained authorization
+
+                        // User endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on most endpoints in UserController
                         .requestMatchers("/api/users/**").authenticated()
+
+                        // Service Request endpoints - require CUSTOMER, MANAGER, or ADMIN role
                         .requestMatchers("/api/service-requests/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
+
+                        // Company endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on CompanyController
                         .requestMatchers("/api/companies/**").authenticated()
+
+                        // Project endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on ProjectController
                         .requestMatchers("/api/projects/**").authenticated()
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );
