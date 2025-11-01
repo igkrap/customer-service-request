@@ -20,7 +20,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Data initialization removed - users should be created through signup
+        // Check and create/update admin user
         if (!userMapper.existsByUsername("admin")) {
             User admin = new User();
             admin.setUsername("admin");
@@ -32,9 +32,19 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(admin);
             System.out.println("Admin user created: admin / 1234");
+        } else {
+            // Update existing admin user to ensure role is set
+            User admin = userMapper.findByUsername("admin").orElse(null);
+            if (admin != null && admin.getRole() == null) {
+                admin.setRole(User.Role.ROLE_ADMIN);
+                admin.setApprovalStatus(User.ApprovalStatus.APPROVED);
+                admin.setUpdatedAt(LocalDateTime.now());
+                userMapper.update(admin);
+                System.out.println("Admin user role updated to ROLE_ADMIN");
+            }
         }
 
-        // Check if manager user already exists
+        // Check and create/update manager user
         if (!userMapper.existsByUsername("manager")) {
             User manager = new User();
             manager.setUsername("manager");
@@ -46,9 +56,19 @@ public class DataInitializer implements CommandLineRunner {
             manager.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(manager);
             System.out.println("Manager user created: manager / 1234");
+        } else {
+            // Update existing manager user to ensure role is set
+            User manager = userMapper.findByUsername("manager").orElse(null);
+            if (manager != null && manager.getRole() == null) {
+                manager.setRole(User.Role.ROLE_MANAGER);
+                manager.setApprovalStatus(User.ApprovalStatus.APPROVED);
+                manager.setUpdatedAt(LocalDateTime.now());
+                userMapper.update(manager);
+                System.out.println("Manager user role updated to ROLE_MANAGER");
+            }
         }
 
-        // Check if customer user already exists
+        // Check and create/update customer user
         if (!userMapper.existsByUsername("customer")) {
             User customer = new User();
             customer.setUsername("customer");
@@ -60,6 +80,16 @@ public class DataInitializer implements CommandLineRunner {
             customer.setUpdatedAt(LocalDateTime.now());
             userMapper.insert(customer);
             System.out.println("Customer user created: customer / 1234");
+        } else {
+            // Update existing customer user to ensure role is set
+            User customer = userMapper.findByUsername("customer").orElse(null);
+            if (customer != null && customer.getRole() == null) {
+                customer.setRole(User.Role.ROLE_CUSTOMER);
+                customer.setApprovalStatus(User.ApprovalStatus.APPROVED);
+                customer.setUpdatedAt(LocalDateTime.now());
+                userMapper.update(customer);
+                System.out.println("Customer user role updated to ROLE_CUSTOMER");
+            }
         }
     }
 }
