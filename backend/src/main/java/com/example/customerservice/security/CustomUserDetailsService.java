@@ -22,6 +22,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userMapper.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
+        // If user has no role (pending approval), deny access
+        if (user.getRole() == null) {
+            throw new UsernameNotFoundException("User role not assigned. Please contact administrator.");
+        }
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
