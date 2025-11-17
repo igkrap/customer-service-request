@@ -1,6 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { serviceRequestAPI, userAPI, projectAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Typography,
+  Paper,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  IconButton
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  PlayArrow as StartIcon,
+  Check as CompleteIcon,
+  Close as CloseIcon,
+  Visibility as ViewIcon
+} from '@mui/icons-material';
 
 function ServiceRequestList() {
   const { user } = useAuth();
@@ -11,6 +42,8 @@ function ServiceRequestList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -35,13 +68,11 @@ function ServiceRequestList() {
       // Fetch managers for the dropdown
       try {
         if (user?.role === 'ROLE_CUSTOMER') {
-          // For customers, only show their assigned managers
           if (user.id) {
             const userResponse = await userAPI.getById(user.id);
             const userData = userResponse.data;
 
             if (userData.managerIds && userData.managerIds.length > 0) {
-              // Fetch all managers and filter to assigned ones
               const managersResponse = await userAPI.getAllManagers();
               const assignedManagers = managersResponse.data.filter(m =>
                 userData.managerIds.includes(m.id)
@@ -52,7 +83,6 @@ function ServiceRequestList() {
             }
           }
         } else {
-          // For admin and manager, show all managers
           const managersResponse = await userAPI.getAllManagers();
           setManagers(managersResponse.data);
         }
@@ -192,238 +222,408 @@ function ServiceRequestList() {
     }
   };
 
+  const handleRowClick = (params) => {
+    setSelectedRequest(params.row);
+    setShowDetailDialog(true);
+  };
+
   const canEditRequest = (request) => {
-    // Admin can edit all requests
     if (user?.role === 'ROLE_ADMIN') return true;
-    // Customer can edit their own requests
     if (user?.role === 'ROLE_CUSTOMER' && request.customerId === user?.id) return true;
     return false;
   };
 
   const canChangeStatus = (request) => {
-    // Admin can always change status
     if (user?.role === 'ROLE_ADMIN') return true;
-    // Manager can change status if assigned to the request
     if (user?.role === 'ROLE_MANAGER' && request.managerId === user?.id) return true;
     return false;
   };
 
-  const getStatusBadge = (status) => {
-    const statusClass = status.toLowerCase().replace('_', '-');
-    return <span className={`badge badge-${statusClass}`}>{status}</span>;
+  const getStatusChip = (status) => {
+    const colorMap = {
+      'OPEN': 'primary',
+      'IN_PROGRESS': 'info',
+      'RESOLVED': 'success',
+      'CLOSED': 'default',
+      'CANCELLED': 'error'
+    };
+    return <Chip label={status} color={colorMap[status] || 'default'} size="small" />;
   };
 
-  const getPriorityBadge = (priority) => {
-    return <span className={`badge badge-${priority.toLowerCase()}`}>{priority}</span>;
+  const getPriorityChip = (priority) => {
+    const colorMap = {
+      'LOW': 'default',
+      'MEDIUM': 'info',
+      'HIGH': 'warning',
+      'URGENT': 'error'
+    };
+    return <Chip label={priority} color={colorMap[priority] || 'default'} size="small" />;
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  const columns = [
+    { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
+    { field: 'title', headerName: 'Title', flex: 2, minWidth: 150 },
+    { field: 'customerName', headerName: 'Customer', flex: 1.2, minWidth: 120 },
+    {
+      field: 'projectName',
+      headerName: 'Project',
+      flex: 1.2,
+      minWidth: 120,
+      valueGetter: (params) => params.row.projectName || 'N/A'
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      minWidth: 120,
+      renderCell: (params) => getStatusChip(params.value)
+    },
+    {
+      field: 'priority',
+      headerName: 'Priority',
+      flex: 0.8,
+      minWidth: 100,
+      renderCell: (params) => getPriorityChip(params.value)
+    },
+    {
+      field: 'managerName',
+      headerName: 'Manager',
+      flex: 1.2,
+      minWidth: 120,
+      valueGetter: (params) => params.row.managerName || 'Unassigned'
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Created',
+      flex: 1,
+      minWidth: 100,
+      valueGetter: (params) => new Date(params.value).toLocaleDateString()
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1.5,
+      minWidth: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {canEditRequest(params.row) && (
+            <>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(params.row);
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(params.row.id);
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+          {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
+            <>
+              {params.row.status !== 'IN_PROGRESS' && (
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(params.row.id, 'IN_PROGRESS');
+                  }}
+                  title="Start"
+                >
+                  <StartIcon fontSize="small" />
+                </IconButton>
+              )}
+              {params.row.status !== 'RESOLVED' && (
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(params.row.id, 'RESOLVED');
+                  }}
+                  title="Complete"
+                >
+                  <CompleteIcon fontSize="small" />
+                </IconButton>
+              )}
+              {params.row.status !== 'CLOSED' && (
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(params.row.id, 'CLOSED');
+                  }}
+                  title="Close"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </>
+          )}
+        </Box>
+      )
+    }
+  ];
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="container">
-      <div className="card">
-        <h2>Service Request Management</h2>
-        {error && <div className="error">{error}</div>}
+    <Box sx={{ p: 3 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" component="h2">
+            Service Request Management
+          </Typography>
+          {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setShowForm(true)}
+            >
+              Create New Request
+            </Button>
+          )}
+        </Box>
 
-        {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            Create New Service Request
-          </button>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {showForm && (
+        {/* Create/Edit Form Dialog */}
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
           <form onSubmit={handleSubmit}>
-            {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
-              <div className="form-group">
-                <label>Customer *</label>
-                <select
-                  name="customerId"
-                  value={formData.customerId}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select a customer</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.username} - {c.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="form-group">
-              <label>Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Priority *</label>
-              <select
-                name="priority"
-                value={formData.priority}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-            {user?.role === 'ROLE_ADMIN' && (
-              <div className="form-group">
-                <label>Status *</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="OPEN">Open</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="RESOLVED">Resolved</option>
-                  <option value="CLOSED">Closed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-            )}
-            <div className="form-group">
-              <label>Project</label>
-              <select
-                name="projectId"
-                value={formData.projectId}
-                onChange={handleInputChange}
-              >
-                <option value="">Select a project (optional)</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.projectName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Manager</label>
-              <select
-                name="managerId"
-                value={formData.managerId}
-                onChange={handleInputChange}
-              >
-                <option value="">Select a manager (optional)</option>
-                {managers.map(m => (
-                  <option key={m.id} value={m.id}>
-                    {m.username} - {m.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-success">
-                {editingRequest ? 'Update' : 'Create'} Request
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
+            <DialogTitle>
+              {editingRequest ? 'Edit Service Request' : 'Create New Service Request'}
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
+                  <FormControl fullWidth required>
+                    <InputLabel>Customer</InputLabel>
+                    <Select
+                      name="customerId"
+                      value={formData.customerId}
+                      onChange={handleInputChange}
+                      label="Customer"
+                    >
+                      <MenuItem value="">Select a customer</MenuItem>
+                      {customers.map(c => (
+                        <MenuItem key={c.id} value={c.id}>
+                          {c.username} - {c.email}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Title</th>
-              <th>Customer</th>
-              <th>Project</th>
-              <th>Status</th>
-              <th>Priority</th>
-              <th>Manager</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map(request => (
-              <tr key={request.id}>
-                <td>{request.id}</td>
-                <td>{request.title}</td>
-                <td>{request.customerName}</td>
-                <td>{request.projectName || 'N/A'}</td>
-                <td>{getStatusBadge(request.status)}</td>
-                <td>{getPriorityBadge(request.priority)}</td>
-                <td>{request.managerName || 'Unassigned'}</td>
-                <td>{new Date(request.createdAt).toLocaleDateString()}</td>
-                <td>
-                  {canEditRequest(request) && (
-                    <>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => handleEdit(request)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDelete(request.id)}
-                      >
-                        Delete
-                      </button>
-                    </>
+                <TextField
+                  fullWidth
+                  required
+                  label="Title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                />
+
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="Description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                />
+
+                <FormControl fullWidth required>
+                  <InputLabel>Priority</InputLabel>
+                  <Select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleInputChange}
+                    label="Priority"
+                  >
+                    <MenuItem value="LOW">Low</MenuItem>
+                    <MenuItem value="MEDIUM">Medium</MenuItem>
+                    <MenuItem value="HIGH">High</MenuItem>
+                    <MenuItem value="URGENT">Urgent</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {user?.role === 'ROLE_ADMIN' && (
+                  <FormControl fullWidth required>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      label="Status"
+                    >
+                      <MenuItem value="OPEN">Open</MenuItem>
+                      <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                      <MenuItem value="RESOLVED">Resolved</MenuItem>
+                      <MenuItem value="CLOSED">Closed</MenuItem>
+                      <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+
+                <FormControl fullWidth>
+                  <InputLabel>Project</InputLabel>
+                  <Select
+                    name="projectId"
+                    value={formData.projectId}
+                    onChange={handleInputChange}
+                    label="Project"
+                  >
+                    <MenuItem value="">Select a project (optional)</MenuItem>
+                    {projects.map(project => (
+                      <MenuItem key={project.id} value={project.id}>
+                        {project.projectName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Manager</InputLabel>
+                  <Select
+                    name="managerId"
+                    value={formData.managerId}
+                    onChange={handleInputChange}
+                    label="Manager"
+                  >
+                    <MenuItem value="">Select a manager (optional)</MenuItem>
+                    {managers.map(m => (
+                      <MenuItem key={m.id} value={m.id}>
+                        {m.username} - {m.email}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancel}>Cancel</Button>
+              <Button type="submit" variant="contained">
+                {editingRequest ? 'Update' : 'Create'}
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        {/* Detail View Dialog */}
+        <Dialog open={showDetailDialog} onClose={() => setShowDetailDialog(false)} maxWidth="md" fullWidth>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">Service Request Details</Typography>
+              <IconButton onClick={() => setShowDetailDialog(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {selectedRequest && (
+              <Box sx={{ pt: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">ID</Typography>
+                    <Typography variant="body1">{selectedRequest.id}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Created At</Typography>
+                    <Typography variant="body1">
+                      {new Date(selectedRequest.createdAt).toLocaleString()}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">Title</Typography>
+                    <Typography variant="body1" fontWeight="bold">{selectedRequest.title}</Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">Description</Typography>
+                    <Typography variant="body1">
+                      {selectedRequest.description || 'No description provided'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Customer</Typography>
+                    <Typography variant="body1">{selectedRequest.customerName}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Manager</Typography>
+                    <Typography variant="body1">{selectedRequest.managerName || 'Unassigned'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Project</Typography>
+                    <Typography variant="body1">{selectedRequest.projectName || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      {getStatusChip(selectedRequest.status)}
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      {getPriorityChip(selectedRequest.priority)}
+                    </Box>
+                  </Grid>
+                  {selectedRequest.resolvedAt && (
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">Resolved At</Typography>
+                      <Typography variant="body1">
+                        {new Date(selectedRequest.resolvedAt).toLocaleString()}
+                      </Typography>
+                    </Grid>
                   )}
-                  {canChangeStatus(request) && user?.role === 'ROLE_MANAGER' && (
-                    <>
-                      {request.status !== 'IN_PROGRESS' && (
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handleStatusChange(request.id, 'IN_PROGRESS')}
-                          style={{marginLeft: '5px'}}
-                        >
-                          Start
-                        </button>
-                      )}
-                      {request.status !== 'RESOLVED' && (
-                        <button
-                          className="btn btn-info"
-                          onClick={() => handleStatusChange(request.id, 'RESOLVED')}
-                          style={{marginLeft: '5px'}}
-                        >
-                          Complete
-                        </button>
-                      )}
-                      {request.status !== 'CLOSED' && (
-                        <button
-                          className="btn btn-warning"
-                          onClick={() => handleStatusChange(request.id, 'CLOSED')}
-                          style={{marginLeft: '5px'}}
-                        >
-                          Close
-                        </button>
-                      )}
-                    </>
-                  )}
-                  {!canEditRequest(request) && !canChangeStatus(request) && (
-                    <span style={{color: '#999', fontSize: '14px'}}>-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* DataGrid */}
+        <Box sx={{ height: 600, width: '100%' }}>
+          <DataGrid
+            rows={requests}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            onRowClick={handleRowClick}
+            sx={{
+              '& .MuiDataGrid-row:hover': {
+                cursor: 'pointer',
+                backgroundColor: 'action.hover'
+              }
+            }}
+          />
+        </Box>
+      </Paper>
+    </Box>
   );
 }
 
