@@ -59,6 +59,50 @@ function ServiceRequestList() {
     fetchData();
   }, []);
 
+  // Dynamically fetch projects when customer is selected (for ADMIN creating requests for customers)
+  useEffect(() => {
+    const fetchProjectsForCustomer = async () => {
+      if (!formData.customerId) {
+        // No customer selected, load projects based on logged-in user
+        if (user?.id) {
+          try {
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              setProjects(projectsResponse.data);
+            } else {
+              setProjects([]);
+            }
+          } catch (err) {
+            console.error('Failed to fetch projects:', err);
+          }
+        }
+      } else {
+        // Customer selected, load projects for that customer's company
+        try {
+          const customerResponse = await userAPI.getById(parseInt(formData.customerId));
+          const customerData = customerResponse.data;
+
+          if (customerData.companyId) {
+            const projectsResponse = await projectAPI.getByCompanyId(customerData.companyId);
+            setProjects(projectsResponse.data);
+          } else {
+            setProjects([]);
+          }
+        } catch (err) {
+          console.error('Failed to fetch projects for selected customer:', err);
+          setProjects([]);
+        }
+      }
+    };
+
+    if (showForm) {
+      fetchProjectsForCustomer();
+    }
+  }, [formData.customerId, showForm, user?.id]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -134,10 +178,21 @@ function ServiceRequestList() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    // If customer changes, clear the selected project (since projects are company-specific)
+    if (name === 'customerId') {
+      setFormData({
+        ...formData,
+        [name]: value,
+        projectId: ''
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
