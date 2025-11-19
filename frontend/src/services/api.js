@@ -59,6 +59,8 @@ export const userAPI = {
   getPending: () => api.get('/users/pending'),
   approve: (id, role, companyId, approvalStatus) => api.post(`/users/${id}/approve`, { role, companyId, approvalStatus }),
   reject: (id) => api.post(`/users/${id}/reject`),
+  assignProjects: (id, projectIds) => api.put(`/users/${id}/assign-projects`, { projectIds }),
+  getProjects: (id) => api.get(`/users/${id}/projects`),
 };
 
 // Service Request API

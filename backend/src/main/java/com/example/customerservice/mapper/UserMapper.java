@@ -78,4 +78,20 @@ public interface UserMapper {
 
     @Delete("DELETE FROM users WHERE id = #{id}")
     int deleteById(Long id);
+
+    // User-Project mapping methods
+    @Insert("INSERT INTO user_projects (user_id, project_id, created_at) VALUES (#{userId}, #{projectId}, #{createdAt})")
+    int assignProjectToUser(@Param("userId") Long userId, @Param("projectId") Long projectId, @Param("createdAt") LocalDateTime createdAt);
+
+    @Delete("DELETE FROM user_projects WHERE user_id = #{userId} AND project_id = #{projectId}")
+    int removeProjectFromUser(@Param("userId") Long userId, @Param("projectId") Long projectId);
+
+    @Delete("DELETE FROM user_projects WHERE user_id = #{userId}")
+    int removeAllProjectsFromUser(@Param("userId") Long userId);
+
+    @Select("SELECT project_id FROM user_projects WHERE user_id = #{userId}")
+    List<Long> getProjectIdsByUserId(Long userId);
+
+    @Select("SELECT user_id FROM user_projects WHERE project_id = #{projectId}")
+    List<Long> getUserIdsByProjectId(Long projectId);
 }

@@ -9,11 +9,14 @@ import UserList from './components/UserList';
 import UserProfile from './components/UserProfile';
 import CompanyList from './components/CompanyList';
 import ProjectList from './components/ProjectList';
+import MyProjectList from './components/MyProjectList';
+import AdminProjectMapping from './components/AdminProjectMapping';
 import './styles/App.css';
 
 function Dashboard() {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const isCustomerOrManager = user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_MANAGER';
   const [activeTab, setActiveTab] = useState('requests');
 
   return (
@@ -28,6 +31,14 @@ function Dashboard() {
             >
               Service Requests
             </button>
+            {isCustomerOrManager && (
+              <button
+                className={activeTab === 'myprojects' ? 'active' : ''}
+                onClick={() => setActiveTab('myprojects')}
+              >
+                My Projects
+              </button>
+            )}
             {isAdmin && (
               <>
                 <button
@@ -47,6 +58,12 @@ function Dashboard() {
                   onClick={() => setActiveTab('projects')}
                 >
                   Projects
+                </button>
+                <button
+                  className={activeTab === 'userprojects' ? 'active' : ''}
+                  onClick={() => setActiveTab('userprojects')}
+                >
+                  User-Project Mapping
                 </button>
               </>
             )}
@@ -68,9 +85,11 @@ function Dashboard() {
 
       <main>
         {activeTab === 'requests' && <ServiceRequestList />}
+        {activeTab === 'myprojects' && isCustomerOrManager && <MyProjectList />}
         {activeTab === 'users' && isAdmin && <UserList />}
         {activeTab === 'companies' && isAdmin && <CompanyList />}
         {activeTab === 'projects' && isAdmin && <ProjectList />}
+        {activeTab === 'userprojects' && isAdmin && <AdminProjectMapping />}
         {activeTab === 'profile' && <UserProfile />}
       </main>
     </div>

@@ -293,4 +293,26 @@ public class UserService {
         dto.setUpdatedAt(user.getUpdatedAt());
         return dto;
     }
+
+    // User-Project mapping methods
+    public void assignProjectsToUser(Long userId, List<Long> projectIds) {
+        User user = userMapper.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Remove all existing project assignments
+        userMapper.removeAllProjectsFromUser(userId);
+
+        // Assign new projects
+        for (Long projectId : projectIds) {
+            userMapper.assignProjectToUser(userId, projectId, LocalDateTime.now());
+        }
+    }
+
+    public List<Long> getProjectIdsByUserId(Long userId) {
+        return userMapper.getProjectIdsByUserId(userId);
+    }
+
+    public List<Long> getUserIdsByProjectId(Long projectId) {
+        return userMapper.getUserIdsByProjectId(projectId);
+    }
 }
