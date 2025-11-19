@@ -324,35 +324,35 @@ function ServiceRequestList() {
       headerName: 'Project',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.row.projectName || 'N/A'
+      valueGetter: (params) => params.row?.projectName || 'N/A'
     },
     {
       field: 'status',
       headerName: 'Status',
       flex: 1,
       minWidth: 120,
-      renderCell: (params) => getStatusChip(params.value)
+      renderCell: (params) => params.value ? getStatusChip(params.value) : null
     },
     {
       field: 'priority',
       headerName: 'Priority',
       flex: 0.8,
       minWidth: 100,
-      renderCell: (params) => getPriorityChip(params.value)
+      renderCell: (params) => params.value ? getPriorityChip(params.value) : null
     },
     {
       field: 'managerName',
       headerName: 'Manager',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.row.managerName || 'Unassigned'
+      valueGetter: (params) => params.row?.managerName || 'Unassigned'
     },
     {
       field: 'createdAt',
       headerName: 'Created',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => new Date(params.value).toLocaleDateString()
+      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'actions',
@@ -360,77 +360,81 @@ function ServiceRequestList() {
       flex: 1.5,
       minWidth: 150,
       sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          {canEditRequest(params.row) && (
-            <>
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(params.row);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(params.row.id);
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </>
-          )}
-          {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
-            <>
-              {params.row.status !== 'IN_PROGRESS' && (
+      renderCell: (params) => {
+        if (!params.row) return null;
+
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {canEditRequest(params.row) && (
+              <>
                 <IconButton
                   size="small"
-                  color="success"
+                  color="primary"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleStatusChange(params.row.id, 'IN_PROGRESS');
+                    handleEdit(params.row);
                   }}
-                  title="Start"
                 >
-                  <StartIcon fontSize="small" />
+                  <EditIcon fontSize="small" />
                 </IconButton>
-              )}
-              {params.row.status !== 'RESOLVED' && (
                 <IconButton
                   size="small"
-                  color="info"
+                  color="error"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleStatusChange(params.row.id, 'RESOLVED');
+                    handleDelete(params.row.id);
                   }}
-                  title="Complete"
                 >
-                  <CompleteIcon fontSize="small" />
+                  <DeleteIcon fontSize="small" />
                 </IconButton>
-              )}
-              {params.row.status !== 'CLOSED' && (
-                <IconButton
-                  size="small"
-                  color="warning"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusChange(params.row.id, 'CLOSED');
-                  }}
-                  title="Close"
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              )}
-            </>
-          )}
-        </Box>
-      )
+              </>
+            )}
+            {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
+              <>
+                {params.row.status !== 'IN_PROGRESS' && (
+                  <IconButton
+                    size="small"
+                    color="success"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(params.row.id, 'IN_PROGRESS');
+                    }}
+                    title="Start"
+                  >
+                    <StartIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {params.row.status !== 'RESOLVED' && (
+                  <IconButton
+                    size="small"
+                    color="info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(params.row.id, 'RESOLVED');
+                    }}
+                    title="Complete"
+                  >
+                    <CompleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {params.row.status !== 'CLOSED' && (
+                  <IconButton
+                    size="small"
+                    color="warning"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(params.row.id, 'CLOSED');
+                    }}
+                    title="Close"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </>
+            )}
+          </Box>
+        );
+      }
     }
   ];
 
