@@ -41,7 +41,7 @@ function UserList() {
 
       setError(null);
     } catch (err) {
-      setError('Failed to fetch users: ' + err.message);
+      setError('사용자 목록 불러오기 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -120,23 +120,23 @@ function UserList() {
       fetchUsers();
       setError(null);
     } catch (err) {
-      setError('Failed to update user: ' + err.message);
+      setError('사용자 수정 실패: ' + err.message);
     }
   };
 
   const handleDelete = async (id) => {
     if (id === user?.id) {
-      setError('You cannot delete your own account');
+      setError('자신의 계정은 삭제할 수 없습니다');
       return;
     }
 
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('이 사용자를 삭제하시겠습니까?')) {
       try {
         await userAPI.delete(id);
         fetchUsers();
         setError(null);
       } catch (err) {
-        setError('Failed to delete user: ' + err.message);
+        setError('사용자 삭제 실패: ' + err.message);
       }
     }
   };
@@ -173,13 +173,13 @@ function UserList() {
     const companyId = selectedCompanies[userId];
 
     if (!role) {
-      setError('Please select a role for this user');
+      setError('사용자의 역할을 선택하세요');
       return;
     }
 
     // Company is required only for CUSTOMER role
     if (role === 'ROLE_CUSTOMER' && !companyId) {
-      setError('Please select a company for CUSTOMER role');
+      setError('고객 역할에는 회사를 선택해야 합니다');
       return;
     }
 
@@ -196,18 +196,18 @@ function UserList() {
       setSelectedRoles(newSelectedRoles);
       setSelectedCompanies(newSelectedCompanies);
     } catch (err) {
-      setError('Failed to approve user: ' + (err.response?.data || err.message));
+      setError('사용자 승인 실패: ' + (err.response?.data || err.message));
     }
   };
 
   const handleReject = async (userId) => {
-    if (window.confirm('Are you sure you want to reject this user?')) {
+    if (window.confirm('이 사용자를 거부하시겠습니까?')) {
       try {
         await userAPI.reject(userId);
         fetchUsers();
         setError(null);
       } catch (err) {
-        setError('Failed to reject user: ' + (err.response?.data || err.message));
+        setError('사용자 거부 실패: ' + (err.response?.data || err.message));
       }
     }
   };
@@ -217,15 +217,15 @@ function UserList() {
     switch (status) {
       case 'APPROVED':
         statusClass = 'badge-success';
-        displayStatus = 'Approved';
+        displayStatus = '승인됨';
         break;
       case 'PENDING':
         statusClass = 'badge-warning';
-        displayStatus = 'Pending';
+        displayStatus = '대기 중';
         break;
       case 'REJECTED':
         statusClass = 'badge-danger';
-        displayStatus = 'Rejected';
+        displayStatus = '거부됨';
         break;
       default:
         statusClass = 'badge-user';
@@ -239,38 +239,38 @@ function UserList() {
     switch (role) {
       case 'ROLE_ADMIN':
         roleClass = 'badge-admin';
-        displayRole = 'Admin';
+        displayRole = '관리자';
         break;
       case 'ROLE_MANAGER':
         roleClass = 'badge-manager';
-        displayRole = 'Manager';
+        displayRole = '매니저';
         break;
       case 'ROLE_CUSTOMER':
         roleClass = 'badge-customer';
-        displayRole = 'Customer';
+        displayRole = '고객';
         break;
       default:
         roleClass = 'badge-user';
-        displayRole = 'User';
+        displayRole = '사용자';
     }
     return <span className={`badge ${roleClass}`}>{displayRole}</span>;
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">로딩 중...</div>;
 
   return (
     <div className="container">
       <div className="card">
-        <h2>User Management</h2>
+        <h2>사용자 관리</h2>
         {error && <div className="error">{error}</div>}
 
         {showEditForm && editingUser && (
           <div className="modal-overlay" onClick={handleCancel}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h3>Edit User: {editingUser.username}</h3>
+              <h3>사용자 수정: {editingUser.username}</h3>
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label>Email *</label>
+                  <label>이메일 *</label>
                   <input
                     type="email"
                     name="email"
@@ -280,38 +280,38 @@ function UserList() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>New Password (leave blank to keep current)</label>
+                  <label>새 비밀번호 (현재 비밀번호를 유지하려면 비워두세요)</label>
                   <input
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Enter new password or leave blank"
+                    placeholder="새 비밀번호를 입력하거나 비워두세요"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Role *</label>
+                  <label>역할 *</label>
                   <select
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="ROLE_CUSTOMER">Customer</option>
-                    <option value="ROLE_MANAGER">Manager</option>
-                    <option value="ROLE_ADMIN">Admin</option>
+                    <option value="ROLE_CUSTOMER">고객</option>
+                    <option value="ROLE_MANAGER">매니저</option>
+                    <option value="ROLE_ADMIN">관리자</option>
                   </select>
                 </div>
                 {formData.role === 'ROLE_CUSTOMER' && (
                   <div className="form-group">
-                    <label>Company *</label>
+                    <label>회사 *</label>
                     <select
                       name="companyId"
                       value={formData.companyId}
                       onChange={handleInputChange}
                       required
                     >
-                      <option value="">Select Company</option>
+                      <option value="">회사 선택</option>
                       {companies.map(company => (
                         <option key={company.id} value={company.id}>
                           {company.companyName}
@@ -322,7 +322,7 @@ function UserList() {
                 )}
                 {formData.role === 'ROLE_MANAGER' && (
                   <div className="form-group">
-                    <label>Assigned Customers (hold Ctrl/Cmd to select multiple)</label>
+                    <label>담당 고객 (Ctrl/Cmd를 눌러 여러 개 선택)</label>
                     <select
                       name="customerIds"
                       value={formData.customerIds.map(String)}
@@ -339,17 +339,17 @@ function UserList() {
                     </select>
                     <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
                       {formData.customerIds.length > 0
-                        ? `${formData.customerIds.length} customer(s) selected`
-                        : 'No customers selected'}
+                        ? `${formData.customerIds.length}명의 고객 선택됨`
+                        : '선택된 고객 없음'}
                     </small>
                   </div>
                 )}
                 <div className="btn-group">
                   <button type="submit" className="btn btn-success">
-                    Save Changes
+                    변경사항 저장
                   </button>
                   <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                    Cancel
+                    취소
                   </button>
                 </div>
               </form>
@@ -361,14 +361,14 @@ function UserList() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Company</th>
-              <th>Status</th>
-              <th>Relationships</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>사용자명</th>
+              <th>이메일</th>
+              <th>역할</th>
+              <th>회사</th>
+              <th>상태</th>
+              <th>관계</th>
+              <th>생성일</th>
+              <th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -384,10 +384,10 @@ function UserList() {
                       onChange={(e) => handleRoleChange(u.id, e.target.value)}
                       style={{ fontSize: '12px', padding: '2px 5px' }}
                     >
-                      <option value="">Select role</option>
-                      <option value="ROLE_CUSTOMER">Customer</option>
-                      <option value="ROLE_MANAGER">Manager</option>
-                      <option value="ROLE_ADMIN">Admin</option>
+                      <option value="">역할 선택</option>
+                      <option value="ROLE_CUSTOMER">고객</option>
+                      <option value="ROLE_MANAGER">매니저</option>
+                      <option value="ROLE_ADMIN">관리자</option>
                     </select>
                   ) : (
                     getRoleBadge(u.role)
@@ -401,7 +401,7 @@ function UserList() {
                       disabled={!selectedRoles[u.id] || selectedRoles[u.id] !== 'ROLE_CUSTOMER'}
                       style={{ fontSize: '12px', padding: '2px 5px' }}
                     >
-                      <option value="">Select company</option>
+                      <option value="">회사 선택</option>
                       {companies.map(company => (
                         <option key={company.id} value={company.id}>
                           {company.companyName}
@@ -409,23 +409,23 @@ function UserList() {
                       ))}
                     </select>
                   ) : (
-                    u.companyName || 'N/A'
+                    u.companyName || '없음'
                   )}
                 </td>
                 <td>{getApprovalBadge(u.approvalStatus)}</td>
                 <td>
                   {u.role === 'ROLE_CUSTOMER' && (
                     <span>
-                      Managers: {u.managerNames && u.managerNames.length > 0
+                      매니저: {u.managerNames && u.managerNames.length > 0
                         ? u.managerNames.join(', ')
-                        : 'None'}
+                        : '없음'}
                     </span>
                   )}
                   {u.role === 'ROLE_MANAGER' && (
                     <span>
-                      Customers: {u.customerNames && u.customerNames.length > 0
+                      고객: {u.customerNames && u.customerNames.length > 0
                         ? u.customerNames.join(', ')
-                        : 'None'}
+                        : '없음'}
                     </span>
                   )}
                   {u.role === 'ROLE_ADMIN' && '-'}
@@ -440,14 +440,14 @@ function UserList() {
                         disabled={!selectedRoles[u.id] || (selectedRoles[u.id] === 'ROLE_CUSTOMER' && !selectedCompanies[u.id])}
                         style={{ fontSize: '12px', padding: '4px 8px' }}
                       >
-                        Approve
+                        승인
                       </button>
                       <button
                         className="btn btn-danger"
                         onClick={() => handleReject(u.id)}
                         style={{ fontSize: '12px', padding: '4px 8px' }}
                       >
-                        Reject
+                        거부
                       </button>
                     </>
                   ) : (
@@ -456,14 +456,14 @@ function UserList() {
                         className="btn btn-primary"
                         onClick={() => handleEdit(u)}
                       >
-                        Edit
+                        수정
                       </button>
                       {u.id !== user?.id && (
                         <button
                           className="btn btn-danger"
                           onClick={() => handleDelete(u.id)}
                         >
-                          Delete
+                          삭제
                         </button>
                       )}
                     </>

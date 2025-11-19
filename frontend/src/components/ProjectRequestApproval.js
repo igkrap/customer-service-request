@@ -46,7 +46,7 @@ function ProjectRequestApproval() {
       setError(null);
     } catch (err) {
       if (err.response?.status !== 403) {
-        setError('Failed to fetch data: ' + err.message);
+        setError('데이터 가져오기 실패: ' + err.message);
       }
     } finally {
       setLoading(false);
@@ -71,10 +71,10 @@ function ProjectRequestApproval() {
     try {
       if (approvalAction === 'approve') {
         await projectRequestAPI.approve(selectedRequest.id, approvalNotes);
-        setSuccess('Project request approved successfully! Project has been created.');
+        setSuccess('프로젝트 요청이 성공적으로 승인되었습니다! 프로젝트가 생성되었습니다.');
       } else {
         await projectRequestAPI.reject(selectedRequest.id, approvalNotes);
-        setSuccess('Project request rejected.');
+        setSuccess('프로젝트 요청이 거부되었습니다.');
       }
 
       setShowApprovalDialog(false);
@@ -85,7 +85,7 @@ function ProjectRequestApproval() {
 
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to process approval: ' + (err.response?.data || err.message));
+      setError('승인 처리 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -100,51 +100,56 @@ function ProjectRequestApproval() {
       'APPROVED': 'success',
       'REJECTED': 'error'
     };
-    return <Chip label={status} color={colorMap[status] || 'default'} size="small" />;
+    const labelMap = {
+      'PENDING': '대기중',
+      'APPROVED': '승인됨',
+      'REJECTED': '거부됨'
+    };
+    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
-    { field: 'requestedByUsername', headerName: 'Requested By', flex: 1.2, minWidth: 120 },
-    { field: 'companyName', headerName: 'Company', flex: 1.5, minWidth: 120 },
-    { field: 'projectName', headerName: 'Project Name', flex: 2, minWidth: 150 },
+    { field: 'requestedByUsername', headerName: '요청자', flex: 1.2, minWidth: 120 },
+    { field: 'companyName', headerName: '회사', flex: 1.5, minWidth: 120 },
+    { field: 'projectName', headerName: '프로젝트명', flex: 2, minWidth: 150 },
     {
       field: 'serviceType',
-      headerName: 'Service Type',
+      headerName: '서비스 유형',
       flex: 1,
       minWidth: 120,
       valueGetter: (params) => params.value === 'MAINTENANCE' ? '유지보수' : '하자보수'
     },
     {
       field: 'contractStartDate',
-      headerName: 'Start Date',
+      headerName: '시작일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'contractManDays',
-      headerName: 'Man-Days',
+      headerName: '인일',
       flex: 0.8,
       minWidth: 80
     },
     {
       field: 'requestStatus',
-      headerName: 'Status',
+      headerName: '상태',
       flex: 1,
       minWidth: 100,
       renderCell: (params) => params.value ? getStatusChip(params.value) : null
     },
     {
       field: 'createdAt',
-      headerName: 'Created',
+      headerName: '생성일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'actions',
-      headerName: 'Actions',
+      headerName: '작업',
       flex: 1.5,
       minWidth: 150,
       sortable: false,
@@ -160,7 +165,7 @@ function ProjectRequestApproval() {
                 e.stopPropagation();
                 handleApprove(params.row);
               }}
-              title="Approve"
+              title="승인"
             >
               <ApproveIcon fontSize="small" />
             </IconButton>
@@ -171,7 +176,7 @@ function ProjectRequestApproval() {
                 e.stopPropagation();
                 handleReject(params.row);
               }}
-              title="Reject"
+              title="거부"
             >
               <RejectIcon fontSize="small" />
             </IconButton>
@@ -182,7 +187,7 @@ function ProjectRequestApproval() {
                 e.stopPropagation();
                 handleRowClick({ row: params.row });
               }}
-              title="View Details"
+              title="상세 보기"
             >
               <ViewIcon fontSize="small" />
             </IconButton>
@@ -205,7 +210,7 @@ function ProjectRequestApproval() {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
-            Project Request Approval
+            프로젝트 요청 승인
           </Typography>
         </Box>
 
@@ -213,13 +218,13 @@ function ProjectRequestApproval() {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          Review and approve or reject project requests from customers. Approved requests will create new projects.
+          고객의 프로젝트 요청을 검토하고 승인 또는 거부하세요. 승인된 요청은 새 프로젝트를 생성합니다.
         </Alert>
 
         {/* Approval Dialog */}
         <Dialog open={showApprovalDialog} onClose={() => setShowApprovalDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>
-            {approvalAction === 'approve' ? 'Approve Project Request' : 'Reject Project Request'}
+            {approvalAction === 'approve' ? '프로젝트 요청 승인' : '프로젝트 요청 거부'}
           </DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
@@ -227,30 +232,30 @@ function ProjectRequestApproval() {
                 {selectedRequest?.projectName}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Company: {selectedRequest?.companyName}
+                회사: {selectedRequest?.companyName}
               </Typography>
               <TextField
                 fullWidth
                 multiline
                 rows={3}
-                label="Notes (Optional)"
+                label="메모 (선택사항)"
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
                 sx={{ mt: 2 }}
                 placeholder={approvalAction === 'approve' ?
-                  'Add any notes about the approval...' :
-                  'Please provide a reason for rejection...'}
+                  '승인에 대한 메모를 추가하세요...' :
+                  '거부 사유를 입력하세요...'}
               />
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowApprovalDialog(false)}>Cancel</Button>
+            <Button onClick={() => setShowApprovalDialog(false)}>취소</Button>
             <Button
               variant="contained"
               color={approvalAction === 'approve' ? 'success' : 'error'}
               onClick={handleSubmitApproval}
             >
-              {approvalAction === 'approve' ? 'Approve' : 'Reject'}
+              {approvalAction === 'approve' ? '승인' : '거부'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -259,7 +264,7 @@ function ProjectRequestApproval() {
         <Dialog open={showDetailDialog} onClose={() => setShowDetailDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Project Request Details</Typography>
+              <Typography variant="h6">프로젝트 요청 상세</Typography>
               <IconButton onClick={() => setShowDetailDialog(false)}>
                 <RejectIcon />
               </IconButton>
@@ -274,47 +279,47 @@ function ProjectRequestApproval() {
                     <Typography variant="body1">{selectedRequest.id}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">상태</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       {getStatusChip(selectedRequest.requestStatus)}
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Requested By</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">요청자</Typography>
                     <Typography variant="body1">{selectedRequest.requestedByUsername}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Company</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">회사</Typography>
                     <Typography variant="body1">{selectedRequest.companyName}</Typography>
                   </Grid>
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">Project Name</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">프로젝트명</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedRequest.projectName}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Service Type</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">서비스 유형</Typography>
                     <Typography variant="body1">
-                      {selectedRequest.serviceType === 'MAINTENANCE' ? '유지보수 (Maintenance)' : '하자보수 (Defect Repair)'}
+                      {selectedRequest.serviceType === 'MAINTENANCE' ? '유지보수' : '하자보수'}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Contract Man-Days</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">계약 인일</Typography>
                     <Typography variant="body1">{selectedRequest.contractManDays}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Contract Start Date</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">계약 시작일</Typography>
                     <Typography variant="body1">
                       {new Date(selectedRequest.contractStartDate).toLocaleDateString()}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Contract End Date</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">계약 종료일</Typography>
                     <Typography variant="body1">
                       {new Date(selectedRequest.contractEndDate).toLocaleDateString()}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Created At</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">생성일</Typography>
                     <Typography variant="body1">
                       {new Date(selectedRequest.createdAt).toLocaleString()}
                     </Typography>
@@ -323,13 +328,13 @@ function ProjectRequestApproval() {
                     <>
                       <Grid item xs={6}>
                         <Typography variant="subtitle2" color="text.secondary">
-                          {selectedRequest.requestStatus === 'APPROVED' ? 'Approved By' : 'Rejected By'}
+                          {selectedRequest.requestStatus === 'APPROVED' ? '승인자' : '거부자'}
                         </Typography>
                         <Typography variant="body1">{selectedRequest.approvedByUsername}</Typography>
                       </Grid>
                       {selectedRequest.approvalNotes && (
                         <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="text.secondary">Notes</Typography>
+                          <Typography variant="subtitle2" color="text.secondary">메모</Typography>
                           <Typography variant="body1">{selectedRequest.approvalNotes}</Typography>
                         </Grid>
                       )}
@@ -351,7 +356,7 @@ function ProjectRequestApproval() {
                     handleApprove(selectedRequest);
                   }}
                 >
-                  Approve
+                  승인
                 </Button>
                 <Button
                   color="error"
@@ -362,11 +367,11 @@ function ProjectRequestApproval() {
                     handleReject(selectedRequest);
                   }}
                 >
-                  Reject
+                  거부
                 </Button>
               </>
             )}
-            <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+            <Button onClick={() => setShowDetailDialog(false)}>닫기</Button>
           </DialogActions>
         </Dialog>
 
