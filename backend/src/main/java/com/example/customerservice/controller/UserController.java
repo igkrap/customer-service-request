@@ -227,7 +227,7 @@ public class UserController {
 
     @PutMapping("/{id}/assign-projects")
     public ResponseEntity<?> assignProjectsToUser(@PathVariable Long id,
-                                                    @Valid @RequestBody Map<String, List<Long>> request,
+                                                    @Valid @RequestBody Map<String, List<Integer>> request,
                                                     Authentication authentication) {
         try {
             String username = authentication.getName();
@@ -241,7 +241,12 @@ public class UserController {
                         .body("You can only assign projects to yourself");
             }
 
-            List<Long> projectIds = request.get("projectIds");
+            // Convert Integer list to Long list
+            List<Integer> projectIdsInt = request.get("projectIds");
+            List<Long> projectIds = projectIdsInt.stream()
+                    .map(Integer::longValue)
+                    .collect(java.util.stream.Collectors.toList());
+
             userService.assignProjectsToUser(id, projectIds);
             return ResponseEntity.ok().body("Projects assigned successfully");
         } catch (RuntimeException e) {
