@@ -67,6 +67,17 @@ CREATE TABLE IF NOT EXISTS projects (
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
+-- Create user_projects table for many-to-many relationship between users and projects
+CREATE TABLE IF NOT EXISTS user_projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    project_id INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    UNIQUE(user_id, project_id)
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -83,3 +94,5 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(pri
 CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_requests(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
+CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON user_projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_projects_project_id ON user_projects(project_id);

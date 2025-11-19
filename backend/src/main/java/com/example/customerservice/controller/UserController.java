@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -221,6 +222,50 @@ public class UserController {
             return ResponseEntity.ok(rejectedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/assign-projects")
+    public ResponseEntity<?> assignProjectsToUser(@PathVariable Long id,
+                                                    @Valid @RequestBody Map<String, List<Long>> request,
+                                                    Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User currentUser = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Admin can assign projects to any user
+            // Customer and Manager can only assign projects to themselves
+            if (currentUser.getRole() != User.Role.ROLE_ADMIN && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only assign projects to yourself");
+            }
+
+            List<Long> projectIds = request.get("projectIds");
+            userService.assignProjectsToUser(id, projectIds);
+            return ResponseEntity.ok().body("Projects assigned successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/projects")
+    public ResponseEntity<List<Long>> getProjectsByUserId(@PathVariable Long id, Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User currentUser = userMapper.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Admin can view any user's projects
+            // Customer and Manager can only view their own projects
+            if (currentUser.getRole() != User.Role.ROLE_ADMIN && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            List<Long> projectIds = userService.getProjectIdsByUserId(id);
+            return ResponseEntity.ok(projectIds);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }
