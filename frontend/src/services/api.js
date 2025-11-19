@@ -96,4 +96,15 @@ export const projectAPI = {
   delete: (id) => api.delete(`/projects/${id}`),
 };
 
+// Project Request API
+export const projectRequestAPI = {
+  getAll: () => api.get('/project-requests'),
+  getById: (id) => api.get(`/project-requests/${id}`),
+  create: (projectRequest) => api.post('/project-requests', projectRequest),
+  update: (id, projectRequest) => api.put(`/project-requests/${id}`, projectRequest),
+  approve: (id, approvalNotes) => api.post(`/project-requests/${id}/approve`, { approvalNotes }),
+  reject: (id, approvalNotes) => api.post(`/project-requests/${id}/reject`, { approvalNotes }),
+  delete: (id) => api.delete(`/project-requests/${id}`),
+};
+
 export default api;

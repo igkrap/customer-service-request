@@ -14,18 +14,21 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/projects")
 @CrossOrigin(origins = "http://localhost:3000")
-@PreAuthorize("hasRole('ADMIN')")
 public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
 
+    // MANAGER can view all projects, CUSTOMER can view through company endpoint
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<List<ProjectDTO>> getAllProjects() {
         List<ProjectDTO> projects = projectService.getAllProjects();
         return ResponseEntity.ok(projects);
     }
 
+    // All authenticated users can view project details
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDTO> getProjectById(@PathVariable Long id) {
         try {
@@ -36,12 +39,16 @@ public class ProjectController {
         }
     }
 
+    // CUSTOMER and MANAGER can view projects by company
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<ProjectDTO>> getProjectsByCompanyId(@PathVariable Long companyId) {
         List<ProjectDTO> projects = projectService.getProjectsByCompanyId(companyId);
         return ResponseEntity.ok(projects);
     }
 
+    // Only ADMIN can create projects
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createProject(@Valid @RequestBody ProjectDTO dto) {
         try {
@@ -52,6 +59,8 @@ public class ProjectController {
         }
     }
 
+    // Only ADMIN can update projects
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProject(@PathVariable Long id, @Valid @RequestBody ProjectDTO dto) {
         try {
@@ -62,6 +71,8 @@ public class ProjectController {
         }
     }
 
+    // Only ADMIN can delete projects
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProject(@PathVariable Long id) {
         try {
