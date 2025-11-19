@@ -317,46 +317,46 @@ function ServiceRequestList() {
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
-    { field: 'title', headerName: 'Title', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: 'Customer', flex: 1.2, minWidth: 120 },
+    { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
+    { field: 'customerName', headerName: '고객', flex: 1.2, minWidth: 120 },
     {
       field: 'projectName',
-      headerName: 'Project',
+      headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.row?.projectName || 'N/A'
+      valueGetter: (params) => params.row?.projectName || '없음'
     },
     {
       field: 'status',
-      headerName: 'Status',
+      headerName: '상태',
       flex: 1,
       minWidth: 120,
       renderCell: (params) => params.value ? getStatusChip(params.value) : null
     },
     {
       field: 'priority',
-      headerName: 'Priority',
+      headerName: '우선순위',
       flex: 0.8,
       minWidth: 100,
       renderCell: (params) => params.value ? getPriorityChip(params.value) : null
     },
     {
       field: 'managerName',
-      headerName: 'Manager',
+      headerName: '담당자',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.row?.managerName || 'Unassigned'
+      valueGetter: (params) => params.row?.managerName || '미배정'
     },
     {
       field: 'createdAt',
-      headerName: 'Created',
+      headerName: '생성일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'actions',
-      headerName: 'Actions',
+      headerName: '작업',
       flex: 1.5,
       minWidth: 150,
       sortable: false,
@@ -451,7 +451,7 @@ function ServiceRequestList() {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
-            Service Request Management
+            서비스 요청 관리
           </Typography>
           {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
             <Button
@@ -459,7 +459,7 @@ function ServiceRequestList() {
               startIcon={<AddIcon />}
               onClick={() => setShowForm(true)}
             >
-              Create New Request
+              새 요청 생성
             </Button>
           )}
         </Box>
@@ -470,20 +470,20 @@ function ServiceRequestList() {
         <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
-              {editingRequest ? 'Edit Service Request' : 'Create New Service Request'}
+              {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
             </DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                 {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
                   <FormControl fullWidth required>
-                    <InputLabel>Customer</InputLabel>
+                    <InputLabel>고객</InputLabel>
                     <Select
                       name="customerId"
                       value={formData.customerId}
                       onChange={handleInputChange}
-                      label="Customer"
+                      label="고객"
                     >
-                      <MenuItem value="">Select a customer</MenuItem>
+                      <MenuItem value="">고객 선택</MenuItem>
                       {customers.map(c => (
                         <MenuItem key={c.id} value={c.id}>
                           {c.username} - {c.email}
@@ -496,7 +496,7 @@ function ServiceRequestList() {
                 <TextField
                   fullWidth
                   required
-                  label="Title"
+                  label="제목"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
@@ -506,54 +506,54 @@ function ServiceRequestList() {
                   fullWidth
                   multiline
                   rows={4}
-                  label="Description"
+                  label="설명"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                 />
 
                 <FormControl fullWidth required>
-                  <InputLabel>Priority</InputLabel>
+                  <InputLabel>우선순위</InputLabel>
                   <Select
                     name="priority"
                     value={formData.priority}
                     onChange={handleInputChange}
-                    label="Priority"
+                    label="우선순위"
                   >
-                    <MenuItem value="LOW">Low</MenuItem>
-                    <MenuItem value="MEDIUM">Medium</MenuItem>
-                    <MenuItem value="HIGH">High</MenuItem>
-                    <MenuItem value="URGENT">Urgent</MenuItem>
+                    <MenuItem value="LOW">낮음</MenuItem>
+                    <MenuItem value="MEDIUM">보통</MenuItem>
+                    <MenuItem value="HIGH">높음</MenuItem>
+                    <MenuItem value="URGENT">긴급</MenuItem>
                   </Select>
                 </FormControl>
 
                 {user?.role === 'ROLE_ADMIN' && (
                   <FormControl fullWidth required>
-                    <InputLabel>Status</InputLabel>
+                    <InputLabel>상태</InputLabel>
                     <Select
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      label="Status"
+                      label="상태"
                     >
-                      <MenuItem value="OPEN">Open</MenuItem>
-                      <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                      <MenuItem value="RESOLVED">Resolved</MenuItem>
-                      <MenuItem value="CLOSED">Closed</MenuItem>
-                      <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                      <MenuItem value="OPEN">열림</MenuItem>
+                      <MenuItem value="IN_PROGRESS">진행중</MenuItem>
+                      <MenuItem value="RESOLVED">해결됨</MenuItem>
+                      <MenuItem value="CLOSED">종료됨</MenuItem>
+                      <MenuItem value="CANCELLED">취소됨</MenuItem>
                     </Select>
                   </FormControl>
                 )}
 
                 <FormControl fullWidth>
-                  <InputLabel>Project</InputLabel>
+                  <InputLabel>프로젝트</InputLabel>
                   <Select
                     name="projectId"
                     value={formData.projectId}
                     onChange={handleInputChange}
-                    label="Project"
+                    label="프로젝트"
                   >
-                    <MenuItem value="">Select a project (optional)</MenuItem>
+                    <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
                     {projects.map(project => (
                       <MenuItem key={project.id} value={project.id}>
                         {project.projectName}
@@ -563,14 +563,14 @@ function ServiceRequestList() {
                 </FormControl>
 
                 <FormControl fullWidth>
-                  <InputLabel>Manager</InputLabel>
+                  <InputLabel>담당 매니저</InputLabel>
                   <Select
                     name="managerId"
                     value={formData.managerId}
                     onChange={handleInputChange}
-                    label="Manager"
+                    label="담당 매니저"
                   >
-                    <MenuItem value="">Select a manager (optional)</MenuItem>
+                    <MenuItem value="">담당 매니저 선택 (선택사항)</MenuItem>
                     {managers.map(m => (
                       <MenuItem key={m.id} value={m.id}>
                         {m.username} - {m.email}
@@ -581,9 +581,9 @@ function ServiceRequestList() {
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained">
-                {editingRequest ? 'Update' : 'Create'}
+                {editingRequest ? '수정' : '생성'}
               </Button>
             </DialogActions>
           </form>
@@ -593,7 +593,7 @@ function ServiceRequestList() {
         <Dialog open={showDetailDialog} onClose={() => setShowDetailDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Service Request Details</Typography>
+              <Typography variant="h6">서비스 요청 상세</Typography>
               <IconButton onClick={() => setShowDetailDialog(false)}>
                 <CloseIcon />
               </IconButton>
