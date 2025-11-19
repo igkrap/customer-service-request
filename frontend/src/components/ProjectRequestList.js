@@ -143,52 +143,52 @@ function ProjectRequestList() {
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
-    { field: 'projectName', headerName: 'Project Name', flex: 2, minWidth: 150 },
-    { field: 'companyName', headerName: 'Company', flex: 1.5, minWidth: 120 },
+    { field: 'projectName', headerName: '프로젝트명', flex: 2, minWidth: 150 },
+    { field: 'companyName', headerName: '회사', flex: 1.5, minWidth: 120 },
     {
       field: 'serviceType',
-      headerName: 'Service Type',
+      headerName: '서비스 유형',
       flex: 1,
       minWidth: 120,
       valueGetter: (params) => params.value === 'MAINTENANCE' ? '유지보수' : '하자보수'
     },
     {
       field: 'contractStartDate',
-      headerName: 'Start Date',
+      headerName: '시작일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'contractEndDate',
-      headerName: 'End Date',
+      headerName: '종료일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'contractManDays',
-      headerName: 'Man-Days',
+      headerName: '맨데이',
       flex: 0.8,
       minWidth: 80
     },
     {
       field: 'requestStatus',
-      headerName: 'Status',
+      headerName: '상태',
       flex: 1,
       minWidth: 100,
       renderCell: (params) => params.value ? getStatusChip(params.value) : null
     },
     {
       field: 'createdAt',
-      headerName: 'Created',
+      headerName: '생성일',
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       field: 'actions',
-      headerName: 'Actions',
+      headerName: '작업',
       flex: 1,
       minWidth: 100,
       sortable: false,
@@ -236,7 +236,7 @@ function ProjectRequestList() {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
-            My Project Requests
+            내 프로젝트 등록 요청
           </Typography>
           {!showForm && (
             <Button
@@ -244,7 +244,7 @@ function ProjectRequestList() {
               startIcon={<AddIcon />}
               onClick={() => setShowForm(true)}
             >
-              Request New Project
+              새 프로젝트 등록 요청
             </Button>
           )}
         </Box>
@@ -252,36 +252,36 @@ function ProjectRequestList() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          Request new projects for your company. Admin will review and approve your requests.
+          회사의 새 프로젝트 등록을 요청하세요. 관리자가 검토 후 승인합니다.
         </Alert>
 
         {/* Create/Edit Form Dialog */}
         <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
-              {editingRequest ? 'Edit Project Request' : 'Request New Project'}
+              {editingRequest ? '프로젝트 등록 요청 수정' : '새 프로젝트 등록 요청'}
             </DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                 <TextField
                   fullWidth
                   required
-                  label="Project Name"
+                  label="프로젝트명"
                   name="projectName"
                   value={formData.projectName}
                   onChange={handleInputChange}
                 />
 
                 <FormControl fullWidth required>
-                  <InputLabel>Service Type</InputLabel>
+                  <InputLabel>서비스 유형</InputLabel>
                   <Select
                     name="serviceType"
                     value={formData.serviceType}
                     onChange={handleInputChange}
-                    label="Service Type"
+                    label="서비스 유형"
                   >
-                    <MenuItem value="MAINTENANCE">유지보수 (Maintenance)</MenuItem>
-                    <MenuItem value="DEFECT_REPAIR">하자보수 (Defect Repair)</MenuItem>
+                    <MenuItem value="MAINTENANCE">유지보수</MenuItem>
+                    <MenuItem value="DEFECT_REPAIR">하자보수</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -289,7 +289,7 @@ function ProjectRequestList() {
                   fullWidth
                   required
                   type="date"
-                  label="Contract Start Date"
+                  label="계약 시작일"
                   name="contractStartDate"
                   value={formData.contractStartDate}
                   onChange={handleInputChange}
@@ -300,7 +300,7 @@ function ProjectRequestList() {
                   fullWidth
                   required
                   type="date"
-                  label="Contract End Date"
+                  label="계약 종료일"
                   name="contractEndDate"
                   value={formData.contractEndDate}
                   onChange={handleInputChange}
@@ -311,7 +311,7 @@ function ProjectRequestList() {
                   fullWidth
                   required
                   type="number"
-                  label="Contract Man-Days"
+                  label="계약 맨데이"
                   name="contractManDays"
                   value={formData.contractManDays}
                   onChange={handleInputChange}
@@ -320,9 +320,9 @@ function ProjectRequestList() {
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained">
-                {editingRequest ? 'Update' : 'Submit Request'}
+                {editingRequest ? '수정' : '요청 제출'}
               </Button>
             </DialogActions>
           </form>
