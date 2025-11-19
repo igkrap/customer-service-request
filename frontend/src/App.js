@@ -11,11 +11,14 @@ import CompanyList from './components/CompanyList';
 import ProjectList from './components/ProjectList';
 import MyProjectList from './components/MyProjectList';
 import AdminProjectMapping from './components/AdminProjectMapping';
+import ProjectRequestList from './components/ProjectRequestList';
+import ProjectRequestApproval from './components/ProjectRequestApproval';
 import './styles/App.css';
 
 function Dashboard() {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const isCustomer = user?.role === 'ROLE_CUSTOMER';
   const isCustomerOrManager = user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_MANAGER';
   const [activeTab, setActiveTab] = useState('requests');
 
@@ -31,6 +34,14 @@ function Dashboard() {
             >
               Service Requests
             </button>
+            {isCustomer && (
+              <button
+                className={activeTab === 'projectrequests' ? 'active' : ''}
+                onClick={() => setActiveTab('projectrequests')}
+              >
+                Project Requests
+              </button>
+            )}
             {isCustomerOrManager && (
               <button
                 className={activeTab === 'myprojects' ? 'active' : ''}
@@ -41,6 +52,12 @@ function Dashboard() {
             )}
             {isAdmin && (
               <>
+                <button
+                  className={activeTab === 'projectrequestapproval' ? 'active' : ''}
+                  onClick={() => setActiveTab('projectrequestapproval')}
+                >
+                  Project Request Approval
+                </button>
                 <button
                   className={activeTab === 'users' ? 'active' : ''}
                   onClick={() => setActiveTab('users')}
@@ -85,7 +102,9 @@ function Dashboard() {
 
       <main>
         {activeTab === 'requests' && <ServiceRequestList />}
+        {activeTab === 'projectrequests' && isCustomer && <ProjectRequestList />}
         {activeTab === 'myprojects' && isCustomerOrManager && <MyProjectList />}
+        {activeTab === 'projectrequestapproval' && isAdmin && <ProjectRequestApproval />}
         {activeTab === 'users' && isAdmin && <UserList />}
         {activeTab === 'companies' && isAdmin && <CompanyList />}
         {activeTab === 'projects' && isAdmin && <ProjectList />}

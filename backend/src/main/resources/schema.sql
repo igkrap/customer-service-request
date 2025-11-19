@@ -78,6 +78,26 @@ CREATE TABLE IF NOT EXISTS user_projects (
     UNIQUE(user_id, project_id)
 );
 
+-- Create project_requests table for customers to request new projects
+CREATE TABLE IF NOT EXISTS project_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requested_by_user_id INTEGER NOT NULL,
+    company_id INTEGER NOT NULL,
+    project_name VARCHAR(255) NOT NULL,
+    service_type VARCHAR(50) NOT NULL,
+    contract_start_date DATE NOT NULL,
+    contract_end_date DATE NOT NULL,
+    contract_man_days DECIMAL(10, 2) NOT NULL,
+    request_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    approved_by_user_id INTEGER,
+    approval_notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (requested_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -96,3 +116,7 @@ CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code)
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON user_projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_project_id ON user_projects(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_requests_requested_by_user_id ON project_requests(requested_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_project_requests_company_id ON project_requests(company_id);
+CREATE INDEX IF NOT EXISTS idx_project_requests_request_status ON project_requests(request_status);
+CREATE INDEX IF NOT EXISTS idx_project_requests_approved_by_user_id ON project_requests(approved_by_user_id);
