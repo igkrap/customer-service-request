@@ -216,6 +216,40 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status, Long managerId) {
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+
+        // Check if already IN_PROGRESS and prevent other managers from taking over
+        if (status == ServiceRequest.RequestStatus.IN_PROGRESS) {
+            if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                // Already in progress
+                if (serviceRequest.getManagerId() != null && !serviceRequest.getManagerId().equals(managerId)) {
+                    throw new RuntimeException("This request is already being handled by another manager");
+                }
+            }
+            // Assign manager when moving to IN_PROGRESS
+            serviceRequest.setManagerId(managerId);
+        }
+
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+        serviceRequest.setStatus(status);
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
+
+        // Set resolvedAt when status changes to RESOLVED or CLOSED
+        if ((status == ServiceRequest.RequestStatus.RESOLVED ||
+             status == ServiceRequest.RequestStatus.CLOSED) &&
+            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
+             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+            if (serviceRequest.getResolvedAt() == null) {
+                serviceRequest.setResolvedAt(LocalDateTime.now());
+            }
+        }
+
+        serviceRequestMapper.update(serviceRequest);
+        return convertToDTO(serviceRequest);
+    }
+
     public void deleteServiceRequest(Long id) {
         if (!serviceRequestMapper.existsById(id)) {
             throw new RuntimeException("Service request not found with id: " + id);
