@@ -338,7 +338,10 @@ function ServiceRequestList() {
       headerName: '생성일',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+      valueGetter: (params) => {
+        if (!params.row || !params.value) return '';
+        return new Date(params.value).toLocaleDateString();
+      }
     },
     {
       field: 'actions',
