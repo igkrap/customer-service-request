@@ -146,21 +146,24 @@ function ProjectList() {
       headerName: '계약 기간',
       width: 250,
       valueGetter: (params) => {
-        console.log('contractPeriod params:', params);
-        // Handle both cases: params as object or params.row as object
-        const row = params?.row || params;
-        if (!row || !row.contractStartDate || !row.contractEndDate) {
-          console.log('contractPeriod - missing data:', { row, hasStart: !!row?.contractStartDate, hasEnd: !!row?.contractEndDate });
+        // params can be undefined during initialization
+        if (!params || !params.row) {
           return '';
         }
+
+        const row = params.row;
+
+        // Check if required fields exist
+        if (!row.contractStartDate || !row.contractEndDate) {
+          return '';
+        }
+
         try {
           const start = new Date(row.contractStartDate).toLocaleDateString();
           const end = new Date(row.contractEndDate).toLocaleDateString();
-          const result = `${start} - ${end}`;
-          console.log('contractPeriod result:', result);
-          return result;
+          return `${start} - ${end}`;
         } catch (error) {
-          console.error('Error formatting contract period:', error);
+          console.error('Error formatting contract period:', error, row);
           return '';
         }
       }
