@@ -61,8 +61,8 @@ function ServiceRequestList() {
   // Dynamically fetch projects when customer is selected (for ADMIN creating requests for customers)
   useEffect(() => {
     const fetchProjectsForCustomer = async () => {
-      // Only fetch projects for Admin/Manager
-      if (user?.role !== 'ROLE_ADMIN' && user?.role !== 'ROLE_MANAGER') {
+      // Only for Admin when creating request for a customer
+      if (user?.role !== 'ROLE_ADMIN') {
         return;
       }
 
@@ -84,14 +84,20 @@ function ServiceRequestList() {
           }
         }
       } else {
-        // Customer selected, load projects for that customer's company
+        // Customer selected, load projects for that customer (mapped projects only)
         try {
           const customerResponse = await userAPI.getById(parseInt(formData.customerId));
           const customerData = customerResponse.data;
 
-          if (customerData.companyId) {
+          // Get customer's assigned projects
+          const userProjectsResponse = await userAPI.getProjects(parseInt(formData.customerId));
+          const assignedProjectIds = userProjectsResponse.data;
+
+          if (customerData.companyId && assignedProjectIds.length > 0) {
             const projectsResponse = await projectAPI.getByCompanyId(customerData.companyId);
-            setProjects(projectsResponse.data);
+            // Filter to only show assigned projects
+            const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+            setProjects(assignedProjects);
           } else {
             setProjects([]);
           }
@@ -102,7 +108,7 @@ function ServiceRequestList() {
       }
     };
 
-    if (showForm) {
+    if (showForm && user?.role === 'ROLE_ADMIN') {
       fetchProjectsForCustomer();
     }
   }, [formData.customerId, showForm, user?.id, user?.role]);
@@ -125,17 +131,36 @@ function ServiceRequestList() {
         }
       }
 
-      // Fetch projects for Admin/Manager only (customers don't select projects)
-      if (user?.id && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MANAGER')) {
+      // Fetch projects based on user's role
+      if (user?.id) {
         try {
-          const userResponse = await userAPI.getById(user.id);
-          const userData = userResponse.data;
+          if (user.role === 'ROLE_CUSTOMER') {
+            // Customer: Only show assigned (mapped) projects
+            const userProjectsResponse = await userAPI.getProjects(user.id);
+            const assignedProjectIds = userProjectsResponse.data;
 
-          if (userData.companyId) {
-            const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-            setProjects(projectsResponse.data);
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId && assignedProjectIds.length > 0) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              // Filter to only show assigned projects
+              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+              setProjects(assignedProjects);
+            } else {
+              setProjects([]);
+            }
           } else {
-            setProjects([]);
+            // Admin/Manager: Show all projects from company
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              setProjects(projectsResponse.data);
+            } else {
+              setProjects([]);
+            }
           }
         } catch (err) {
           if (err.response?.status !== 403) {
@@ -535,24 +560,22 @@ function ServiceRequestList() {
                   </FormControl>
                 )}
 
-                {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
-                  <FormControl fullWidth>
-                    <InputLabel>프로젝트</InputLabel>
-                    <Select
-                      name="projectId"
-                      value={formData.projectId}
-                      onChange={handleInputChange}
-                      label="프로젝트"
-                    >
-                      <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
-                      {projects.map(project => (
-                        <MenuItem key={project.id} value={project.id}>
-                          {project.projectName}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
+                <FormControl fullWidth>
+                  <InputLabel>프로젝트</InputLabel>
+                  <Select
+                    name="projectId"
+                    value={formData.projectId}
+                    onChange={handleInputChange}
+                    label="프로젝트"
+                  >
+                    <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
+                    {projects.map(project => (
+                      <MenuItem key={project.id} value={project.id}>
+                        {project.projectName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
             </DialogContent>
             <DialogActions>
