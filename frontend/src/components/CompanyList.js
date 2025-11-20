@@ -112,7 +112,7 @@ function CompanyList() {
       field: 'createdAt',
       headerName: '생성일',
       width: 180,
-      valueFormatter: (params) => formatDateTime(params.value)
+      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
     },
     {
       field: 'actions',

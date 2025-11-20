@@ -292,7 +292,7 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.value || '없음'
+      valueGetter: (params) => params?.value || '없음'
     },
     {
       field: 'status',
@@ -314,6 +314,7 @@ function ServiceRequestList() {
       flex: 1.3,
       minWidth: 130,
       valueGetter: (params) => {
+        if (!params) return '미배정';
         const name = params.value;
         return (name && name.trim() !== '') ? name : '미배정';
       }
@@ -324,7 +325,7 @@ function ServiceRequestList() {
       flex: 1.5,
       minWidth: 180,
       valueGetter: (params) => {
-        if (!params.value) return '';
+        if (!params || !params.value) return '';
         return formatDateTime(params.value);
       }
     },
