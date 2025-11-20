@@ -260,17 +260,16 @@ function AdminProjectMapping() {
                       <Typography variant="body2" color="text.secondary">
                         {selectedProjects.length}개 프로젝트 선택됨
                       </Typography>
-                      <Button
-                        variant="contained"
-                        startIcon={<SaveIcon />}
-                        onClick={handleSave}
-                        disabled={
-                          saving ||
-                          (currentUser?.role === 'ROLE_MANAGER' && parseInt(selectedUserId) === Number(currentUser?.id))
-                        }
-                      >
-                        {saving ? '저장 중...' : '프로젝트 할당 저장'}
-                      </Button>
+                      {!(currentUser?.role === 'ROLE_MANAGER' && parseInt(selectedUserId) === Number(currentUser?.id)) && (
+                        <Button
+                          variant="contained"
+                          startIcon={<SaveIcon />}
+                          onClick={handleSave}
+                          disabled={saving}
+                        >
+                          {saving ? '저장 중...' : '프로젝트 할당 저장'}
+                        </Button>
+                      )}
                     </Box>
                   </>
                 )}
