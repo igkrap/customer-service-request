@@ -31,8 +31,8 @@ public class ProjectRequestController {
     @GetMapping
     public ResponseEntity<List<ProjectRequestDTO>> getAllProjectRequests(Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             List<ProjectRequestDTO> requests;
@@ -55,8 +55,8 @@ public class ProjectRequestController {
     @GetMapping("/{id}")
     public ResponseEntity<ProjectRequestDTO> getProjectRequestById(@PathVariable Long id, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             ProjectRequestDTO request = projectRequestService.getProjectRequestById(id);
@@ -78,8 +78,8 @@ public class ProjectRequestController {
     @PostMapping
     public ResponseEntity<?> createProjectRequest(@Valid @RequestBody ProjectRequestDTO dto, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             ProjectRequestDTO createdRequest = projectRequestService.createProjectRequest(dto, currentUser.getId());
@@ -95,8 +95,8 @@ public class ProjectRequestController {
     public ResponseEntity<?> updateProjectRequest(@PathVariable Long id, @Valid @RequestBody ProjectRequestDTO dto,
                                                    Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             ProjectRequestDTO existingRequest = projectRequestService.getProjectRequestById(id);
@@ -119,8 +119,8 @@ public class ProjectRequestController {
     public ResponseEntity<?> approveProjectRequest(@PathVariable Long id, @RequestBody Map<String, String> request,
                                                     Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String approvalNotes = request.get("approvalNotes");
@@ -137,8 +137,8 @@ public class ProjectRequestController {
     public ResponseEntity<?> rejectProjectRequest(@PathVariable Long id, @RequestBody Map<String, String> request,
                                                    Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String approvalNotes = request.get("approvalNotes");
@@ -154,8 +154,8 @@ public class ProjectRequestController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProjectRequest(@PathVariable Long id, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             ProjectRequestDTO request = projectRequestService.getProjectRequestById(id);

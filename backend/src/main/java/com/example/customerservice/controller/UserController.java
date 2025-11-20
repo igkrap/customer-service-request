@@ -42,8 +42,8 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Check if user is admin or requesting their own info
@@ -78,8 +78,8 @@ public class UserController {
                                              @Valid @RequestBody UpdateUserEmailRequest request,
                                              Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Check if user is admin or updating their own email
@@ -103,8 +103,8 @@ public class UserController {
                                                 @Valid @RequestBody UpdateUserPasswordRequest request,
                                                 Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Check if user is admin or updating their own password
@@ -230,8 +230,8 @@ public class UserController {
                                                     @Valid @RequestBody Map<String, List<Integer>> request,
                                                     Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Admin can assign projects to any user
@@ -257,8 +257,8 @@ public class UserController {
     @GetMapping("/{id}/projects")
     public ResponseEntity<List<Long>> getProjectsByUserId(@PathVariable Long id, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User currentUser = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Admin can view any user's projects

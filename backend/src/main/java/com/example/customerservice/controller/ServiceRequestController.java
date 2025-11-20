@@ -29,8 +29,8 @@ public class ServiceRequestController {
 
     @GetMapping
     public ResponseEntity<List<ServiceRequestDTO>> getAllServiceRequests(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userMapper.findByUsername(username)
+        String userId = authentication.getName();
+        User user = userMapper.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<ServiceRequestDTO> requests;
@@ -92,8 +92,8 @@ public class ServiceRequestController {
     @PostMapping
     public ResponseEntity<?> createServiceRequest(@Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User user = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User user = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Only customers and admins can create service requests
@@ -128,8 +128,8 @@ public class ServiceRequestController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateServiceRequest(@PathVariable Long id, @Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User user = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User user = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Only customers can fully update service requests
@@ -156,8 +156,8 @@ public class ServiceRequestController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteServiceRequest(@PathVariable Long id, Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User user = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User user = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Check if user has permission to delete
@@ -180,8 +180,8 @@ public class ServiceRequestController {
                                                           @Valid @RequestBody UpdateServiceRequestStatusRequest request,
                                                           Authentication authentication) {
         try {
-            String username = authentication.getName();
-            User user = userMapper.findByUsername(username)
+            String userId = authentication.getName();
+            User user = userMapper.findByUserId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Only managers and admins can update status
