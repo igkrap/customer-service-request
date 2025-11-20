@@ -271,8 +271,8 @@ function UserList() {
   }
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'username', headerName: '사용자명', width: 130 },
+    { field: 'id', headerName: '사용자 ID', width: 90 },
+    { field: 'username', headerName: '사용자명 (표시용)', width: 180 },
     { field: 'email', headerName: '이메일', width: 200 },
     {
       field: 'role',
@@ -407,8 +407,8 @@ function UserList() {
   ];
 
   return (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
           사용자 관리
         </Typography>

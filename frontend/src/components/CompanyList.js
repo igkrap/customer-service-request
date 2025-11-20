@@ -103,8 +103,8 @@ function CompanyList() {
   }
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'companyName', headerName: '회사명', width: 200 },
+    { field: 'id', headerName: '회사 ID', width: 90 },
+    { field: 'companyName', headerName: '회사명 (표시용)', width: 220 },
     { field: 'companyCode', headerName: '회사 코드', width: 150 },
     { field: 'businessNumber', headerName: '사업자 번호', width: 200 },
     {
@@ -142,8 +142,8 @@ function CompanyList() {
   ];
 
   return (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
           회사 관리
         </Typography>

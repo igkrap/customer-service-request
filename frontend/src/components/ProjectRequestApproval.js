@@ -109,8 +109,8 @@ function ProjectRequestApproval() {
   };
 
   const columns = [
-    { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
-    { field: 'requestedByUsername', headerName: '요청자', flex: 1.2, minWidth: 120 },
+    { field: 'id', headerName: '프로젝트 요청 ID', flex: 0.8, minWidth: 100 },
+    { field: 'requestedByUsername', headerName: '요청자 (표시용)', flex: 1.3, minWidth: 130 },
     { field: 'companyName', headerName: '회사', flex: 1.5, minWidth: 120 },
     { field: 'projectName', headerName: '프로젝트명', flex: 2, minWidth: 150 },
     {
@@ -206,8 +206,8 @@ function ProjectRequestApproval() {
   }
 
   return (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
             프로젝트 요청 승인

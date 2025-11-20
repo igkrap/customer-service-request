@@ -73,7 +73,7 @@ function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 1,
           width: `calc(100% - ${drawerWidth}px)`,
           height: '100%',
           overflow: 'auto'

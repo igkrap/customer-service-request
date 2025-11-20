@@ -316,9 +316,9 @@ function ServiceRequestList() {
   };
 
   const columns = [
-    { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 60 },
+    { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '고객', flex: 1.2, minWidth: 120 },
+    { field: 'customerName', headerName: '고객 (표시용)', flex: 1.3, minWidth: 130 },
     {
       field: 'projectName',
       headerName: '프로젝트',
@@ -342,9 +342,9 @@ function ServiceRequestList() {
     },
     {
       field: 'managerName',
-      headerName: '담당자',
-      flex: 1.2,
-      minWidth: 120,
+      headerName: '담당자 (표시용)',
+      flex: 1.3,
+      minWidth: 130,
       valueGetter: (params) => {
         const name = params.row?.managerName;
         return (name && name.trim() !== '') ? name : '미배정';
@@ -450,8 +450,8 @@ function ServiceRequestList() {
   }
 
   return (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
             서비스 요청 관리

@@ -133,8 +133,8 @@ function AdminProjectMapping() {
   const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
 
   return (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
             사용자-프로젝트 매핑 관리
@@ -178,73 +178,103 @@ function AdminProjectMapping() {
             </FormControl>
           </Grid>
 
-          {selectedUserId && (
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
+          <Grid item xs={12}>
+            <Divider sx={{ my: 2 }} />
 
-              {selectedUser && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
-                  {selectedUser.companyName && ` - ${selectedUser.companyName}`}
-                </Alert>
-              )}
+            {selectedUserId ? (
+              <>
+                {selectedUser && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
+                    {selectedUser.companyName && ` - ${selectedUser.companyName}`}
+                  </Alert>
+                )}
 
-              {filteredProjects.length === 0 ? (
-                <Typography color="text.secondary">
-                  이 사용자에게 사용 가능한 프로젝트가 없습니다.
-                </Typography>
-              ) : (
-                <>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    사용 가능한 프로젝트 ({filteredProjects.length})
+                {filteredProjects.length === 0 ? (
+                  <Typography color="text.secondary">
+                    이 사용자에게 사용 가능한 프로젝트가 없습니다.
                   </Typography>
-
-                  <FormGroup>
-                    {filteredProjects.map(project => (
-                      <FormControlLabel
-                        key={project.id}
-                        control={
-                          <Checkbox
-                            checked={selectedProjects.includes(project.id)}
-                            onChange={() => handleToggle(project.id)}
-                            disabled={saving}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography variant="body1">
-                              {project.projectName}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              회사: {project.companyName} | 유형: {project.serviceType} |
-                              계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                              인일: {project.contractManDays}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    ))}
-                  </FormGroup>
-
-                  <Divider sx={{ my: 3 }} />
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedProjects.length}개 프로젝트 선택됨
+                ) : (
+                  <>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      사용 가능한 프로젝트 ({filteredProjects.length})
                     </Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<SaveIcon />}
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      {saving ? '저장 중...' : '프로젝트 할당 저장'}
-                    </Button>
-                  </Box>
-                </>
-              )}
-            </Grid>
-          )}
+
+                    <FormGroup>
+                      {filteredProjects.map(project => (
+                        <FormControlLabel
+                          key={project.id}
+                          control={
+                            <Checkbox
+                              checked={selectedProjects.includes(project.id)}
+                              onChange={() => handleToggle(project.id)}
+                              disabled={saving}
+                            />
+                          }
+                          label={
+                            <Box>
+                              <Typography variant="body1">
+                                {project.projectName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                회사: {project.companyName} | 유형: {project.serviceType} |
+                                계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                                인일: {project.contractManDays}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      ))}
+                    </FormGroup>
+
+                    <Divider sx={{ my: 3 }} />
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedProjects.length}개 프로젝트 선택됨
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<SaveIcon />}
+                        onClick={handleSave}
+                        disabled={saving}
+                      >
+                        {saving ? '저장 중...' : '프로젝트 할당 저장'}
+                      </Button>
+                    </Box>
+                  </>
+                )}
+              </>
+            ) : (
+              <Box>
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  위에서 사용자를 선택하면 해당 사용자에게 프로젝트를 할당할 수 있습니다.
+                </Alert>
+
+                {projects.length > 0 && (
+                  <>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      전체 프로젝트 목록 ({projects.length})
+                    </Typography>
+                    <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                      {projects.map(project => (
+                        <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                            {project.projectName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            회사: {project.companyName} | 유형: {project.serviceType} |
+                            계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                            인일: {project.contractManDays}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
+                )}
+              </Box>
+            )}
+          </Grid>
         </Grid>
       </Paper>
     </Box>
