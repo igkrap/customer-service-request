@@ -307,7 +307,19 @@ function UserList() {
       field: 'createdAt',
       headerName: '생성일',
       width: 180,
-      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
+      valueFormatter: (params) => {
+        if (!params) {
+          console.log('UserList createdAt - no params');
+          return '';
+        }
+        if (!params.value) {
+          console.log('UserList createdAt - no value, params:', params);
+          return '';
+        }
+        const result = formatDateTime(params.value);
+        console.log('UserList createdAt - value:', params.value, 'formatted:', result);
+        return result || '';
+      }
     },
     {
       field: 'actions',
