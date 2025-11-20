@@ -38,7 +38,6 @@ function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [managers, setManagers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,7 +51,6 @@ function ServiceRequestList() {
     status: 'OPEN',
     priority: 'MEDIUM',
     customerId: '',
-    managerId: '',
     projectId: ''
   });
 
@@ -109,16 +107,6 @@ function ServiceRequestList() {
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
       setRequests(requestsResponse.data);
-
-      // Fetch managers for the dropdown
-      try {
-        const managersResponse = await userAPI.getAllManagers();
-        setManagers(managersResponse.data);
-      } catch (err) {
-        if (err.response?.status !== 403) {
-          console.error('Failed to fetch managers:', err);
-        }
-      }
 
       // Fetch all users (customers) if admin
       if (user?.role === 'ROLE_ADMIN') {
@@ -185,7 +173,6 @@ function ServiceRequestList() {
       const submitData = {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
-        managerId: formData.managerId ? parseInt(formData.managerId) : null,
         projectId: formData.projectId ? parseInt(formData.projectId) : null
       };
 
@@ -201,7 +188,6 @@ function ServiceRequestList() {
         status: 'OPEN',
         priority: 'MEDIUM',
         customerId: '',
-        managerId: '',
         projectId: ''
       });
       setShowForm(false);
@@ -220,7 +206,6 @@ function ServiceRequestList() {
       status: request.status,
       priority: request.priority,
       customerId: request.customerId.toString(),
-      managerId: request.managerId ? request.managerId.toString() : '',
       projectId: request.projectId ? request.projectId.toString() : ''
     });
     setShowForm(true);
@@ -246,7 +231,6 @@ function ServiceRequestList() {
       status: 'OPEN',
       priority: 'MEDIUM',
       customerId: '',
-      managerId: '',
       projectId: ''
     });
   };
@@ -547,23 +531,6 @@ function ServiceRequestList() {
                     {projects.map(project => (
                       <MenuItem key={project.id} value={project.id}>
                         {project.projectName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <InputLabel>담당 매니저</InputLabel>
-                  <Select
-                    name="managerId"
-                    value={formData.managerId}
-                    onChange={handleInputChange}
-                    label="담당 매니저"
-                  >
-                    <MenuItem value="">담당 매니저 선택 (선택사항)</MenuItem>
-                    {managers.map(m => (
-                      <MenuItem key={m.id} value={m.id}>
-                        {m.username} - {m.email}
                       </MenuItem>
                     ))}
                   </Select>
