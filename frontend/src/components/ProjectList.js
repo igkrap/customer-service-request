@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Box, Paper, CircularProgress } from '@mui/material';
 import { projectAPI, companyAPI } from '../services/api';
 
 function ProjectList() {
@@ -119,11 +120,17 @@ function ProjectList() {
     return <span className={`badge ${typeClass}`}>{typeLabel}</span>;
   };
 
-  if (loading) return <div className="loading">로딩 중...</div>;
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="container">
-      <div className="card">
+    <Box sx={{ p: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <h2>프로젝트 관리</h2>
         {error && <div className="error">{error}</div>}
 
@@ -257,8 +264,8 @@ function ProjectList() {
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 }
 

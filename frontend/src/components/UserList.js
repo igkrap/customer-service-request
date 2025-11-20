@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Box, Paper, CircularProgress } from '@mui/material';
 import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -256,11 +257,17 @@ function UserList() {
     return <span className={`badge ${roleClass}`}>{displayRole}</span>;
   };
 
-  if (loading) return <div className="loading">로딩 중...</div>;
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="container">
-      <div className="card">
+    <Box sx={{ p: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <h2>사용자 관리</h2>
         {error && <div className="error">{error}</div>}
 
@@ -473,8 +480,8 @@ function UserList() {
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 }
 
