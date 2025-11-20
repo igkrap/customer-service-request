@@ -157,6 +157,7 @@ public class ServiceRequestService {
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
+        serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
         // Set resolvedAt when status changes to RESOLVED or CLOSED
@@ -188,6 +189,12 @@ public class ServiceRequestService {
             if (manager.getRole() != User.Role.ROLE_MANAGER) {
                 throw new RuntimeException("Assigned user is not a manager");
             }
+        }
+
+        // Validate project if changed
+        if (dto.getProjectId() != null) {
+            projectMapper.findById(dto.getProjectId())
+                    .orElseThrow(() -> new RuntimeException("Project not found with id: " + dto.getProjectId()));
         }
 
         serviceRequestMapper.update(serviceRequest);
