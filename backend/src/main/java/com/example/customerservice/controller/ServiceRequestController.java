@@ -38,8 +38,8 @@ public class ServiceRequestController {
             // Admin can see all requests
             requests = serviceRequestService.getAllServiceRequests();
         } else if (user.getRole() == User.Role.ROLE_MANAGER) {
-            // Managers can see requests assigned to them
-            requests = serviceRequestService.getServiceRequestsByManagerId(user.getId());
+            // Managers can see requests assigned to them OR related to their projects
+            requests = serviceRequestService.getServiceRequestsByManagerIdOrProjectAccess(user.getId());
         } else if (user.getRole() == User.Role.ROLE_CUSTOMER) {
             // Customers can only see their own requests
             requests = serviceRequestService.getServiceRequestsByCustomerId(user.getId());

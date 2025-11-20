@@ -52,6 +52,12 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestDTO> getServiceRequestsByManagerIdOrProjectAccess(Long managerId) {
+        return serviceRequestMapper.findByManagerIdOrProjectAccess(managerId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<ServiceRequestDTO> getServiceRequestsByStatus(ServiceRequest.RequestStatus status) {
         return serviceRequestMapper.findByStatus(status).stream()
                 .map(this::convertToDTO)

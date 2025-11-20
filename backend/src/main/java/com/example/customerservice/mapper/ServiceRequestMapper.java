@@ -23,6 +23,13 @@ public interface ServiceRequestMapper {
     @Select("SELECT * FROM service_requests WHERE manager_id = #{managerId}")
     List<ServiceRequest> findByManagerId(Long managerId);
 
+    // Find all service requests accessible by a manager (assigned to them OR related to their projects)
+    @Select("SELECT DISTINCT sr.* FROM service_requests sr " +
+            "LEFT JOIN user_projects up ON sr.project_id = up.project_id " +
+            "WHERE sr.manager_id = #{managerId} " +
+            "OR (sr.project_id IS NOT NULL AND up.user_id = #{managerId})")
+    List<ServiceRequest> findByManagerIdOrProjectAccess(Long managerId);
+
     @Select("SELECT * FROM service_requests WHERE status = #{status}")
     List<ServiceRequest> findByStatus(RequestStatus status);
 
