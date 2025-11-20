@@ -26,7 +26,7 @@ function AdminProjectMapping() {
   const [projects, setProjects] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedProjects, setSelectedProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
