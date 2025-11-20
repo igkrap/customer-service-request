@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress } from '@mui/material';
+import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { projectAPI, companyAPI } from '../services/api';
 
 function ProjectList() {
@@ -115,9 +118,9 @@ function ProjectList() {
   };
 
   const getServiceTypeBadge = (type) => {
-    const typeClass = type === 'MAINTENANCE' ? 'badge-info' : 'badge-warning';
+    const color = type === 'MAINTENANCE' ? 'info' : 'warning';
     const typeLabel = type === 'MAINTENANCE' ? '유지보수' : '하자보수';
-    return <span className={`badge ${typeClass}`}>{typeLabel}</span>;
+    return <Chip label={typeLabel} color={color} size="small" />;
   };
 
   if (loading) {
@@ -128,20 +131,82 @@ function ProjectList() {
     );
   }
 
+  const columns = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'projectName', headerName: '프로젝트명', width: 200 },
+    { field: 'companyName', headerName: '회사', width: 150 },
+    {
+      field: 'serviceType',
+      headerName: '서비스 유형',
+      width: 130,
+      renderCell: (params) => getServiceTypeBadge(params.value)
+    },
+    {
+      field: 'contractPeriod',
+      headerName: '계약 기간',
+      width: 250,
+      valueGetter: (params) => {
+        const start = new Date(params.row.contractStartDate).toLocaleDateString();
+        const end = new Date(params.row.contractEndDate).toLocaleDateString();
+        return `${start} - ${end}`;
+      }
+    },
+    {
+      field: 'contractManDays',
+      headerName: '맨데이',
+      width: 100,
+      valueFormatter: (params) => `${params.value} m/d`
+    },
+    {
+      field: 'actions',
+      headerName: '작업',
+      width: 120,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            color="primary"
+            size="small"
+            onClick={() => handleEdit(params.row)}
+            title="수정"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            color="error"
+            size="small"
+            onClick={() => handleDelete(params.row.id)}
+            title="삭제"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )
+    }
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <h2>프로젝트 관리</h2>
-        {error && <div className="error">{error}</div>}
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+          프로젝트 관리
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {!showForm && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowForm(true)}
+            sx={{ mb: 3, alignSelf: 'flex-start' }}
+          >
             새 프로젝트 등록
-          </button>
+          </Button>
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
             <div className="form-group">
               <label>회사 *</label>
               <select
@@ -223,47 +288,17 @@ function ProjectList() {
           </form>
         )}
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>프로젝트명</th>
-              <th>회사</th>
-              <th>서비스 유형</th>
-              <th>계약 기간</th>
-              <th>맨데이</th>
-              <th>작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map(project => (
-              <tr key={project.id}>
-                <td>{project.id}</td>
-                <td>{project.projectName}</td>
-                <td>{project.companyName}</td>
-                <td>{getServiceTypeBadge(project.serviceType)}</td>
-                <td>
-                  {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
-                </td>
-                <td>{project.contractManDays} m/d</td>
-                <td>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleEdit(project)}
-                  >
-                    수정
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(project.id)}
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Box sx={{ flex: 1 }}>
+          <DataGrid
+            rows={projects}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            autoHeight={false}
+            sx={{ height: '100%' }}
+          />
+        </Box>
       </Paper>
     </Box>
   );
