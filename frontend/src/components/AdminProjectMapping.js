@@ -79,11 +79,6 @@ function AdminProjectMapping() {
   };
 
   const handleToggle = (projectId) => {
-    // Don't allow managers to modify their own projects
-    if (currentUser?.role === 'ROLE_MANAGER' && parseInt(selectedUserId) === Number(currentUser?.id)) {
-      return;
-    }
-
     setSelectedProjects(prev => {
       if (prev.includes(projectId)) {
         return prev.filter(id => id !== projectId);
@@ -138,6 +133,7 @@ function AdminProjectMapping() {
 
   const filteredProjects = getFilteredProjects();
   const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
+  const isAdmin = currentUser?.role === 'ROLE_ADMIN';
 
   return (
     <Box sx={{ p: 1, height: '100%' }}>
@@ -159,152 +155,170 @@ function AdminProjectMapping() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-        <Alert severity="info" sx={{ mb: 3 }}>
-          사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
-          <br />
-          <strong>참고:</strong> 매니저는 자신의 프로젝트 할당을 수정할 수 없습니다.
-        </Alert>
+        {!isAdmin && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            이 페이지는 조회 전용입니다. 프로젝트 할당을 변경하려면 관리자에게 문의하세요.
+          </Alert>
+        )}
 
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <FormControl fullWidth sx={{ minWidth: 300, maxWidth: 600 }}>
-              <InputLabel>사용자 선택</InputLabel>
-              <Select
-                value={selectedUserId}
-                onChange={handleUserChange}
-                label="사용자 선택"
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 400,
-                      width: 600
-                    }
-                  }
-                }}
-              >
-                <MenuItem value="">
-                  <em>사용자를 선택하세요...</em>
-                </MenuItem>
-                {users.map(user => (
-                  <MenuItem key={user.id} value={user.id} sx={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    {user.username} - {user.email} ({user.role})
-                    {user.companyName && ` - ${user.companyName}`}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+        {isAdmin && (
+          <>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
+            </Alert>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <FormControl fullWidth sx={{ minWidth: 300, maxWidth: 600 }}>
+                  <InputLabel>사용자 선택</InputLabel>
+                  <Select
+                    value={selectedUserId}
+                    onChange={handleUserChange}
+                    label="사용자 선택"
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          maxHeight: 400,
+                          width: 600
+                        }
+                      }
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>사용자를 선택하세요...</em>
+                    </MenuItem>
+                    {users.map(user => (
+                      <MenuItem key={user.id} value={user.id} sx={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                        {user.username} - {user.email} ({user.role})
+                        {user.companyName && ` - ${user.companyName}`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            {selectedUserId ? (
-              <>
-                {selectedUser && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
-                    {selectedUser.companyName && ` - ${selectedUser.companyName}`}
-                  </Alert>
-                )}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
 
-                {filteredProjects.length === 0 ? (
-                  <Typography color="text.secondary">
-                    이 사용자에게 사용 가능한 프로젝트가 없습니다.
-                  </Typography>
-                ) : (
+                {selectedUserId ? (
                   <>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      사용 가능한 프로젝트 ({filteredProjects.length})
-                    </Typography>
+                    {selectedUser && (
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
+                        {selectedUser.companyName && ` - ${selectedUser.companyName}`}
+                      </Alert>
+                    )}
 
-                    <FormGroup>
-                      {filteredProjects.map(project => {
-                        const isDisabled = currentUser?.role === 'ROLE_MANAGER' &&
-                                          parseInt(selectedUserId) === Number(currentUser?.id);
-
-                        return (
-                          <FormControlLabel
-                            key={project.id}
-                            control={
-                              <Checkbox
-                                checked={selectedProjects.includes(project.id)}
-                                onChange={() => handleToggle(project.id)}
-                                disabled={saving || isDisabled}
-                              />
-                            }
-                            label={
-                              <Box>
-                                <Typography variant="body1">
-                                  {project.projectName}
-                                  {isDisabled && (
-                                    <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
-                                      (매니저는 자신의 프로젝트를 수정할 수 없습니다)
-                                    </Typography>
-                                  )}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  회사: {project.companyName} | 유형: {project.serviceType} |
-                                  계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                  인일: {project.contractManDays}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                        );
-                      })}
-                    </FormGroup>
-
-                    <Divider sx={{ my: 3 }} />
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedProjects.length}개 프로젝트 선택됨
+                    {filteredProjects.length === 0 ? (
+                      <Typography color="text.secondary">
+                        이 사용자에게 사용 가능한 프로젝트가 없습니다.
                       </Typography>
-                      {!(currentUser?.role === 'ROLE_MANAGER' && parseInt(selectedUserId) === Number(currentUser?.id)) && (
-                        <Button
-                          variant="contained"
-                          startIcon={<SaveIcon />}
-                          onClick={handleSave}
-                          disabled={saving}
-                        >
-                          {saving ? '저장 중...' : '프로젝트 할당 저장'}
-                        </Button>
-                      )}
-                    </Box>
-                  </>
-                )}
-              </>
-            ) : (
-              <Box>
-                <Alert severity="info" sx={{ mb: 3 }}>
-                  위에서 사용자를 선택하면 해당 사용자에게 프로젝트를 할당할 수 있습니다.
-                </Alert>
+                    ) : (
+                      <>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          사용 가능한 프로젝트 ({filteredProjects.length})
+                        </Typography>
 
-                {projects.length > 0 && (
-                  <>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      전체 프로젝트 목록 ({projects.length})
-                    </Typography>
-                    <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      {projects.map(project => (
-                        <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                            {project.projectName}
+                        <FormGroup>
+                          {filteredProjects.map(project => (
+                            <FormControlLabel
+                              key={project.id}
+                              control={
+                                <Checkbox
+                                  checked={selectedProjects.includes(project.id)}
+                                  onChange={() => handleToggle(project.id)}
+                                  disabled={saving}
+                                />
+                              }
+                              label={
+                                <Box>
+                                  <Typography variant="body1">
+                                    {project.projectName}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    회사: {project.companyName} | 유형: {project.serviceType} |
+                                    계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                                    인일: {project.contractManDays}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          ))}
+                        </FormGroup>
+
+                        <Divider sx={{ my: 3 }} />
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {selectedProjects.length}개 프로젝트 선택됨
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            회사: {project.companyName} | 유형: {project.serviceType} |
-                            계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                            인일: {project.contractManDays}
-                          </Typography>
+                          <Button
+                            variant="contained"
+                            startIcon={<SaveIcon />}
+                            onClick={handleSave}
+                            disabled={saving}
+                          >
+                            {saving ? '저장 중...' : '프로젝트 할당 저장'}
+                          </Button>
                         </Box>
-                      ))}
-                    </Box>
+                      </>
+                    )}
                   </>
+                ) : (
+                  <Box>
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      위에서 사용자를 선택하면 해당 사용자에게 프로젝트를 할당할 수 있습니다.
+                    </Alert>
+
+                    {projects.length > 0 && (
+                      <>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          전체 프로젝트 목록 ({projects.length})
+                        </Typography>
+                        <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                          {projects.map(project => (
+                            <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                                {project.projectName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                회사: {project.companyName} | 유형: {project.serviceType} |
+                                계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                                인일: {project.contractManDays}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </>
+                    )}
+                  </Box>
                 )}
-              </Box>
-            )}
-          </Grid>
-        </Grid>
+              </Grid>
+            </Grid>
+          </>
+        )}
+
+        {!isAdmin && projects.length > 0 && (
+          <>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              전체 프로젝트 목록 ({projects.length})
+            </Typography>
+            <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {projects.map(project => (
+                <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    {project.projectName}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    회사: {project.companyName} | 유형: {project.serviceType} |
+                    계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                    인일: {project.contractManDays}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
       </Paper>
     </Box>
   );
