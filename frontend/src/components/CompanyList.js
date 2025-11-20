@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress } from '@mui/material';
+import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { companyAPI } from '../services/api';
 
 function CompanyList() {
@@ -99,20 +102,67 @@ function CompanyList() {
     );
   }
 
+  const columns = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'companyName', headerName: '회사명', width: 200 },
+    { field: 'companyCode', headerName: '회사 코드', width: 150 },
+    { field: 'businessNumber', headerName: '사업자 번호', width: 200 },
+    {
+      field: 'createdAt',
+      headerName: '생성일',
+      width: 150,
+      valueFormatter: (params) => new Date(params.value).toLocaleDateString()
+    },
+    {
+      field: 'actions',
+      headerName: '작업',
+      width: 120,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            color="primary"
+            size="small"
+            onClick={() => handleEdit(params.row)}
+            title="수정"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            color="error"
+            size="small"
+            onClick={() => handleDelete(params.row.id)}
+            title="삭제"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )
+    }
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <h2>회사 관리</h2>
-        {error && <div className="error">{error}</div>}
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+          회사 관리
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {!showForm && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowForm(true)}
+            sx={{ mb: 3, alignSelf: 'flex-start' }}
+          >
             새 회사 등록
-          </button>
+          </Button>
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
             <div className="form-group">
               <label>회사명 *</label>
               <input
@@ -154,43 +204,17 @@ function CompanyList() {
           </form>
         )}
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>회사명</th>
-              <th>회사 코드</th>
-              <th>사업자 번호</th>
-              <th>생성일</th>
-              <th>작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map(company => (
-              <tr key={company.id}>
-                <td>{company.id}</td>
-                <td>{company.companyName}</td>
-                <td>{company.companyCode}</td>
-                <td>{company.businessNumber}</td>
-                <td>{new Date(company.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleEdit(company)}
-                  >
-                    수정
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(company.id)}
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Box sx={{ flex: 1 }}>
+          <DataGrid
+            rows={companies}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            autoHeight={false}
+            sx={{ height: '100%' }}
+          />
+        </Box>
       </Paper>
     </Box>
   );

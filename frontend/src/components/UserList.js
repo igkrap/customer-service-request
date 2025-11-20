@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress } from '@mui/material';
+import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -214,47 +219,47 @@ function UserList() {
   };
 
   const getApprovalBadge = (status) => {
-    let statusClass, displayStatus;
+    let color, displayStatus;
     switch (status) {
       case 'APPROVED':
-        statusClass = 'badge-success';
+        color = 'success';
         displayStatus = '승인됨';
         break;
       case 'PENDING':
-        statusClass = 'badge-warning';
+        color = 'warning';
         displayStatus = '대기 중';
         break;
       case 'REJECTED':
-        statusClass = 'badge-danger';
+        color = 'error';
         displayStatus = '거부됨';
         break;
       default:
-        statusClass = 'badge-user';
+        color = 'default';
         displayStatus = status;
     }
-    return <span className={`badge ${statusClass}`}>{displayStatus}</span>;
+    return <Chip label={displayStatus} color={color} size="small" />;
   };
 
   const getRoleBadge = (role) => {
-    let roleClass, displayRole;
+    let color, displayRole;
     switch (role) {
       case 'ROLE_ADMIN':
-        roleClass = 'badge-admin';
+        color = 'error';
         displayRole = '관리자';
         break;
       case 'ROLE_MANAGER':
-        roleClass = 'badge-manager';
+        color = 'primary';
         displayRole = '매니저';
         break;
       case 'ROLE_CUSTOMER':
-        roleClass = 'badge-customer';
+        color = 'secondary';
         displayRole = '고객';
         break;
       default:
-        roleClass = 'badge-user';
+        color = 'default';
         displayRole = '사용자';
     }
-    return <span className={`badge ${roleClass}`}>{displayRole}</span>;
+    return <Chip label={displayRole} color={color} size="small" />;
   };
 
   if (loading) {
@@ -265,11 +270,150 @@ function UserList() {
     );
   }
 
+  const columns = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'username', headerName: '사용자명', width: 130 },
+    { field: 'email', headerName: '이메일', width: 200 },
+    {
+      field: 'role',
+      headerName: '역할',
+      width: 150,
+      renderCell: (params) => {
+        const u = params.row;
+        if (u.approvalStatus === 'PENDING') {
+          return (
+            <select
+              value={selectedRoles[u.id] || ''}
+              onChange={(e) => handleRoleChange(u.id, e.target.value)}
+              style={{ fontSize: '12px', padding: '2px 5px', width: '100%' }}
+            >
+              <option value="">역할 선택</option>
+              <option value="ROLE_CUSTOMER">고객</option>
+              <option value="ROLE_MANAGER">매니저</option>
+              <option value="ROLE_ADMIN">관리자</option>
+            </select>
+          );
+        }
+        return getRoleBadge(u.role);
+      }
+    },
+    {
+      field: 'companyName',
+      headerName: '회사',
+      width: 150,
+      renderCell: (params) => {
+        const u = params.row;
+        if (u.approvalStatus === 'PENDING') {
+          return (
+            <select
+              value={selectedCompanies[u.id] || ''}
+              onChange={(e) => handleCompanyChange(u.id, e.target.value)}
+              disabled={!selectedRoles[u.id] || selectedRoles[u.id] !== 'ROLE_CUSTOMER'}
+              style={{ fontSize: '12px', padding: '2px 5px', width: '100%' }}
+            >
+              <option value="">회사 선택</option>
+              {companies.map(company => (
+                <option key={company.id} value={company.id}>
+                  {company.companyName}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        return u.companyName || '없음';
+      }
+    },
+    {
+      field: 'approvalStatus',
+      headerName: '상태',
+      width: 120,
+      renderCell: (params) => getApprovalBadge(params.value)
+    },
+    {
+      field: 'relationship',
+      headerName: '관계',
+      width: 200,
+      renderCell: (params) => {
+        const u = params.row;
+        if (u.role === 'ROLE_CUSTOMER') {
+          return `매니저: ${u.managerNames && u.managerNames.length > 0 ? u.managerNames.join(', ') : '없음'}`;
+        }
+        if (u.role === 'ROLE_MANAGER') {
+          return `고객: ${u.customerNames && u.customerNames.length > 0 ? u.customerNames.join(', ') : '없음'}`;
+        }
+        return '-';
+      }
+    },
+    {
+      field: 'createdAt',
+      headerName: '생성일',
+      width: 120,
+      valueFormatter: (params) => new Date(params.value).toLocaleDateString()
+    },
+    {
+      field: 'actions',
+      headerName: '작업',
+      width: 150,
+      sortable: false,
+      renderCell: (params) => {
+        const u = params.row;
+        if (u.approvalStatus === 'PENDING') {
+          return (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton
+                color="success"
+                size="small"
+                onClick={() => handleApprove(u.id)}
+                disabled={!selectedRoles[u.id] || (selectedRoles[u.id] === 'ROLE_CUSTOMER' && !selectedCompanies[u.id])}
+                title="승인"
+              >
+                <CheckIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                color="error"
+                size="small"
+                onClick={() => handleReject(u.id)}
+                title="거부"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          );
+        }
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleEdit(u)}
+              title="수정"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            {u.id !== user?.id && (
+              <IconButton
+                color="error"
+                size="small"
+                onClick={() => handleDelete(u.id)}
+                title="삭제"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
+        );
+      }
+    }
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <h2>사용자 관리</h2>
-        {error && <div className="error">{error}</div>}
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+          사용자 관리
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {showEditForm && editingUser && (
           <div className="modal-overlay" onClick={handleCancel}>
@@ -364,122 +508,17 @@ function UserList() {
           </div>
         )}
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>사용자명</th>
-              <th>이메일</th>
-              <th>역할</th>
-              <th>회사</th>
-              <th>상태</th>
-              <th>관계</th>
-              <th>생성일</th>
-              <th>작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.username}</td>
-                <td>{u.email}</td>
-                <td>
-                  {u.approvalStatus === 'PENDING' ? (
-                    <select
-                      value={selectedRoles[u.id] || ''}
-                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      style={{ fontSize: '12px', padding: '2px 5px' }}
-                    >
-                      <option value="">역할 선택</option>
-                      <option value="ROLE_CUSTOMER">고객</option>
-                      <option value="ROLE_MANAGER">매니저</option>
-                      <option value="ROLE_ADMIN">관리자</option>
-                    </select>
-                  ) : (
-                    getRoleBadge(u.role)
-                  )}
-                </td>
-                <td>
-                  {u.approvalStatus === 'PENDING' ? (
-                    <select
-                      value={selectedCompanies[u.id] || ''}
-                      onChange={(e) => handleCompanyChange(u.id, e.target.value)}
-                      disabled={!selectedRoles[u.id] || selectedRoles[u.id] !== 'ROLE_CUSTOMER'}
-                      style={{ fontSize: '12px', padding: '2px 5px' }}
-                    >
-                      <option value="">회사 선택</option>
-                      {companies.map(company => (
-                        <option key={company.id} value={company.id}>
-                          {company.companyName}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    u.companyName || '없음'
-                  )}
-                </td>
-                <td>{getApprovalBadge(u.approvalStatus)}</td>
-                <td>
-                  {u.role === 'ROLE_CUSTOMER' && (
-                    <span>
-                      매니저: {u.managerNames && u.managerNames.length > 0
-                        ? u.managerNames.join(', ')
-                        : '없음'}
-                    </span>
-                  )}
-                  {u.role === 'ROLE_MANAGER' && (
-                    <span>
-                      고객: {u.customerNames && u.customerNames.length > 0
-                        ? u.customerNames.join(', ')
-                        : '없음'}
-                    </span>
-                  )}
-                  {u.role === 'ROLE_ADMIN' && '-'}
-                </td>
-                <td>{new Date(u.createdAt).toLocaleDateString()}</td>
-                <td>
-                  {u.approvalStatus === 'PENDING' ? (
-                    <>
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleApprove(u.id)}
-                        disabled={!selectedRoles[u.id] || (selectedRoles[u.id] === 'ROLE_CUSTOMER' && !selectedCompanies[u.id])}
-                        style={{ fontSize: '12px', padding: '4px 8px' }}
-                      >
-                        승인
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleReject(u.id)}
-                        style={{ fontSize: '12px', padding: '4px 8px' }}
-                      >
-                        거부
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => handleEdit(u)}
-                      >
-                        수정
-                      </button>
-                      {u.id !== user?.id && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(u.id)}
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Box sx={{ flex: 1 }}>
+          <DataGrid
+            rows={users}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            autoHeight={false}
+            sx={{ height: '100%' }}
+          />
+        </Box>
       </Paper>
     </Box>
   );

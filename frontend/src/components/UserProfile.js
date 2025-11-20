@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Paper } from '@mui/material';
+import { Box, Paper, Typography, Alert } from '@mui/material';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -68,15 +68,17 @@ function UserProfile() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <h2>내 프로필</h2>
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+          내 프로필
+        </Typography>
 
-        {error && <div className="error">{error}</div>}
-        {success && <div className="success">{success}</div>}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <div className="profile-info">
-          <h3>계정 정보</h3>
+          <Typography variant="h6" sx={{ mb: 2 }}>계정 정보</Typography>
           <p><strong>사용자명:</strong> {user?.username}</p>
           <p><strong>역할:</strong> {
             user?.role === 'ROLE_ADMIN' ? '관리자' :
@@ -86,7 +88,7 @@ function UserProfile() {
         </div>
 
         <div className="profile-section">
-          <h3>이메일 변경</h3>
+          <Typography variant="h6" sx={{ mb: 2 }}>이메일 변경</Typography>
           <form onSubmit={handleEmailSubmit}>
             <div className="form-group">
               <label>이메일 주소</label>
@@ -104,7 +106,7 @@ function UserProfile() {
         </div>
 
         <div className="profile-section">
-          <h3>비밀번호 변경</h3>
+          <Typography variant="h6" sx={{ mb: 2 }}>비밀번호 변경</Typography>
           <form onSubmit={handlePasswordSubmit}>
             <div className="form-group">
               <label>새 비밀번호</label>
