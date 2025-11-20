@@ -146,13 +146,24 @@ function ProjectList() {
       headerName: '계약 기간',
       width: 250,
       valueGetter: (params) => {
-        if (!params || !params.row || !params.row.contractStartDate || !params.row.contractEndDate) return '';
+        // params can be undefined during initialization
+        if (!params || !params.row) {
+          return '';
+        }
+
+        const row = params.row;
+
+        // Check if required fields exist
+        if (!row.contractStartDate || !row.contractEndDate) {
+          return '';
+        }
+
         try {
-          const start = new Date(params.row.contractStartDate).toLocaleDateString();
-          const end = new Date(params.row.contractEndDate).toLocaleDateString();
+          const start = new Date(row.contractStartDate).toLocaleDateString();
+          const end = new Date(row.contractEndDate).toLocaleDateString();
           return `${start} - ${end}`;
         } catch (error) {
-          console.error('Error formatting contract period:', error);
+          console.error('Error formatting contract period:', error, row);
           return '';
         }
       }
@@ -161,7 +172,11 @@ function ProjectList() {
       field: 'contractManDays',
       headerName: '맨데이',
       width: 100,
-      valueFormatter: (params) => params?.value ? `${params.value} m/d` : ''
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return `${value} m/d`;
+      }
     },
     {
       field: 'actions',

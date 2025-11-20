@@ -61,6 +61,11 @@ function ServiceRequestList() {
   // Dynamically fetch projects when customer is selected (for ADMIN creating requests for customers)
   useEffect(() => {
     const fetchProjectsForCustomer = async () => {
+      // Only for Admin when creating request for a customer
+      if (user?.role !== 'ROLE_ADMIN') {
+        return;
+      }
+
       if (!formData.customerId) {
         // No customer selected, load projects based on logged-in user
         if (user?.id) {
@@ -79,14 +84,20 @@ function ServiceRequestList() {
           }
         }
       } else {
-        // Customer selected, load projects for that customer's company
+        // Customer selected, load projects for that customer (mapped projects only)
         try {
           const customerResponse = await userAPI.getById(parseInt(formData.customerId));
           const customerData = customerResponse.data;
 
-          if (customerData.companyId) {
+          // Get customer's assigned projects
+          const userProjectsResponse = await userAPI.getProjects(parseInt(formData.customerId));
+          const assignedProjectIds = userProjectsResponse.data;
+
+          if (customerData.companyId && assignedProjectIds.length > 0) {
             const projectsResponse = await projectAPI.getByCompanyId(customerData.companyId);
-            setProjects(projectsResponse.data);
+            // Filter to only show assigned projects
+            const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+            setProjects(assignedProjects);
           } else {
             setProjects([]);
           }
@@ -97,10 +108,10 @@ function ServiceRequestList() {
       }
     };
 
-    if (showForm) {
+    if (showForm && user?.role === 'ROLE_ADMIN') {
       fetchProjectsForCustomer();
     }
-  }, [formData.customerId, showForm, user?.id]);
+  }, [formData.customerId, showForm, user?.id, user?.role]);
 
   const fetchData = async () => {
     try {
@@ -120,17 +131,36 @@ function ServiceRequestList() {
         }
       }
 
-      // Fetch projects based on user's company
+      // Fetch projects based on user's role
       if (user?.id) {
         try {
-          const userResponse = await userAPI.getById(user.id);
-          const userData = userResponse.data;
+          if (user.role === 'ROLE_CUSTOMER') {
+            // Customer: Only show assigned (mapped) projects
+            const userProjectsResponse = await userAPI.getProjects(user.id);
+            const assignedProjectIds = userProjectsResponse.data;
 
-          if (userData.companyId) {
-            const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-            setProjects(projectsResponse.data);
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId && assignedProjectIds.length > 0) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              // Filter to only show assigned projects
+              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+              setProjects(assignedProjects);
+            } else {
+              setProjects([]);
+            }
           } else {
-            setProjects([]);
+            // Admin/Manager: Show all projects from company
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              setProjects(projectsResponse.data);
+            } else {
+              setProjects([]);
+            }
           }
         } catch (err) {
           if (err.response?.status !== 403) {
@@ -176,9 +206,17 @@ function ServiceRequestList() {
         projectId: formData.projectId ? parseInt(formData.projectId) : null
       };
 
+      console.log('=== Submitting Service Request ===');
+      console.log('Form Data:', formData);
+      console.log('Submit Data:', submitData);
+      console.log('Editing Request:', editingRequest);
+
       if (editingRequest) {
-        await serviceRequestAPI.update(editingRequest.id, submitData);
+        console.log('Updating request ID:', editingRequest.id);
+        const response = await serviceRequestAPI.update(editingRequest.id, submitData);
+        console.log('Update response:', response.data);
       } else {
+        console.log('Creating new request');
         await serviceRequestAPI.create(submitData);
       }
 
@@ -194,6 +232,7 @@ function ServiceRequestList() {
       setEditingRequest(null);
       fetchData();
     } catch (err) {
+      console.error('Submit error:', err);
       setError('Failed to save service request: ' + err.message);
     }
   };
@@ -324,19 +363,10 @@ function ServiceRequestList() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueGetter: (params) => {
-        if (!params) return '';
-        if (!params.value) {
-          console.log('ServiceRequestList createdAt - no value:', params);
-          return '';
-        }
-        try {
-          const result = formatDateTime(params.value);
-          return result || '';
-        } catch (error) {
-          console.error('Error formatting createdAt:', error, params.value);
-          return '';
-        }
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return formatDateTime(value) || '';
       }
     },
     {

@@ -158,18 +158,26 @@ function AdminProjectMapping() {
 
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ minWidth: 300, maxWidth: 600 }}>
               <InputLabel>사용자 선택</InputLabel>
               <Select
                 value={selectedUserId}
                 onChange={handleUserChange}
                 label="사용자 선택"
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 400,
+                      width: 600
+                    }
+                  }
+                }}
               >
                 <MenuItem value="">
                   <em>사용자를 선택하세요...</em>
                 </MenuItem>
                 {users.map(user => (
-                  <MenuItem key={user.id} value={user.id}>
+                  <MenuItem key={user.id} value={user.id} sx={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
                     {user.username} - {user.email} ({user.role})
                     {user.companyName && ` - ${user.companyName}`}
                   </MenuItem>
