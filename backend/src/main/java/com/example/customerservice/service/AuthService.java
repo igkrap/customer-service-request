@@ -58,7 +58,7 @@ public class AuthService {
         userMapper.insert(user);
 
         // Return response without token - user needs approval first
-        return new AuthResponse(null, user.getId(), user.getUsername(), user.getEmail(), null);
+        return new AuthResponse(null, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), null);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -84,6 +84,6 @@ public class AuthService {
         // Generate JWT token
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name());
     }
 }

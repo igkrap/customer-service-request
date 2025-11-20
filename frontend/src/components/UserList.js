@@ -244,7 +244,7 @@ function UserList() {
   }
 
   const columns = [
-    { field: 'id', headerName: '사용자 ID', width: 90 },
+    { field: 'userId', headerName: '사용자 ID', width: 120 },
     { field: 'username', headerName: '사용자명', width: 180 },
     { field: 'email', headerName: '이메일', width: 200 },
     {
