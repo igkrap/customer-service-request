@@ -22,10 +22,6 @@ public class UserDTO {
     private String companyName;
     private String companyCode;
     private User.ApprovalStatus approvalStatus;
-    private List<Long> managerIds;
-    private List<String> managerNames;
-    private List<Long> customerIds;
-    private List<String> customerNames;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

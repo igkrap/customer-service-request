@@ -1,8 +1,6 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ApproveUserRequest;
-import com.example.customerservice.dto.AssignManagerRequest;
-import com.example.customerservice.dto.AssignCustomersRequest;
 import com.example.customerservice.dto.UpdateUserEmailRequest;
 import com.example.customerservice.dto.UpdateUserPasswordRequest;
 import com.example.customerservice.dto.UpdateUserRoleRequest;
@@ -128,61 +126,6 @@ public class UserController {
     public ResponseEntity<List<UserDTO>> getAllManagers() {
         List<UserDTO> managers = userService.getAllManagers();
         return ResponseEntity.ok(managers);
-    }
-
-    @GetMapping("/managers/{managerId}/customers")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    public ResponseEntity<List<UserDTO>> getCustomersByManagerId(@PathVariable Long managerId) {
-        List<UserDTO> customers = userService.getCustomersByManagerId(managerId);
-        return ResponseEntity.ok(customers);
-    }
-
-    @PutMapping("/{customerId}/assign-managers")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> assignManagers(@PathVariable Long customerId,
-                                            @Valid @RequestBody AssignManagerRequest request) {
-        try {
-            UserDTO updatedCustomer = userService.assignManagers(customerId, request.getManagerIds());
-            return ResponseEntity.ok(updatedCustomer);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/{customerId}/managers/{managerId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addManagerToCustomer(@PathVariable Long customerId,
-                                                   @PathVariable Long managerId) {
-        try {
-            UserDTO updatedCustomer = userService.addManagerToCustomer(customerId, managerId);
-            return ResponseEntity.ok(updatedCustomer);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/{customerId}/managers/{managerId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removeManagerFromCustomer(@PathVariable Long customerId,
-                                                        @PathVariable Long managerId) {
-        try {
-            UserDTO updatedCustomer = userService.removeManagerFromCustomer(customerId, managerId);
-            return ResponseEntity.ok(updatedCustomer);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/managers/{managerId}/assign-customers")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> assignCustomersToManager(@PathVariable Long managerId,
-                                                       @Valid @RequestBody AssignCustomersRequest request) {
-        try {
-            UserDTO updatedManager = userService.assignCustomersToManager(managerId, request.getCustomerIds());
-            return ResponseEntity.ok(updatedManager);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
     }
 
     @DeleteMapping("/{id}")
