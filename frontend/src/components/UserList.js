@@ -308,17 +308,10 @@ function UserList() {
       headerName: '생성일',
       width: 180,
       valueFormatter: (params) => {
-        if (!params) {
-          console.log('UserList createdAt - no params');
-          return '';
-        }
-        if (!params.value) {
-          console.log('UserList createdAt - no value, params:', params);
-          return '';
-        }
-        const result = formatDateTime(params.value);
-        console.log('UserList createdAt - value:', params.value, 'formatted:', result);
-        return result || '';
+        // params can be either the value directly or an object with value property
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return formatDateTime(value) || '';
       }
     },
     {

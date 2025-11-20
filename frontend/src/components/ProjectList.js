@@ -161,7 +161,11 @@ function ProjectList() {
       field: 'contractManDays',
       headerName: '맨데이',
       width: 100,
-      valueFormatter: (params) => params?.value ? `${params.value} m/d` : ''
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return `${value} m/d`;
+      }
     },
     {
       field: 'actions',

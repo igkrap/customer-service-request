@@ -324,7 +324,11 @@ function ServiceRequestList() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return formatDateTime(value) || '';
+      }
     },
     {
       field: 'actions',

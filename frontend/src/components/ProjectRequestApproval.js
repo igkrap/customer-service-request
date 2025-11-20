@@ -120,8 +120,9 @@ function ProjectRequestApproval() {
       flex: 1,
       minWidth: 120,
       valueFormatter: (params) => {
-        if (!params?.value) return '';
-        return params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : '';
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : '';
       }
     },
     {
@@ -130,8 +131,9 @@ function ProjectRequestApproval() {
       flex: 1,
       minWidth: 100,
       valueFormatter: (params) => {
-        if (!params?.value) return '';
-        return new Date(params.value).toLocaleDateString();
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return new Date(value).toLocaleDateString();
       }
     },
     {
@@ -152,7 +154,11 @@ function ProjectRequestApproval() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        return formatDateTime(value) || '';
+      }
     },
     {
       field: 'actions',
