@@ -117,6 +117,9 @@ function ServiceRequestList() {
     try {
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
+      console.log('=== Fetched Requests ===');
+      console.log('First request:', requestsResponse.data[0]);
+      console.log('Sample projectName:', requestsResponse.data[0]?.projectName);
       setRequests(requestsResponse.data);
 
       // Fetch all users (customers) if admin
@@ -331,7 +334,7 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params?.value || '없음'
+      valueGetter: (value) => value || '없음'
     },
     {
       field: 'status',
@@ -352,19 +355,14 @@ function ServiceRequestList() {
       headerName: '담당자',
       flex: 1.3,
       minWidth: 130,
-      valueGetter: (params) => {
-        if (!params) return '미배정';
-        const name = params.value;
-        return (name && name.trim() !== '') ? name : '미배정';
-      }
+      valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
     },
     {
       field: 'createdAt',
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueFormatter: (params) => {
-        const value = params?.value !== undefined ? params.value : params;
+      valueFormatter: (value) => {
         if (!value) return '';
         return formatDateTime(value) || '';
       }

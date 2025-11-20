@@ -210,9 +210,13 @@ public class ServiceRequestService {
         ServiceRequest updated = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found after update"));
         System.out.println("ProjectId after DB update: " + updated.getProjectId());
+
+        ServiceRequestDTO resultDTO = convertToDTO(updated);
+        System.out.println("Returned DTO ProjectId: " + resultDTO.getProjectId());
+        System.out.println("Returned DTO ProjectName: " + resultDTO.getProjectName());
         System.out.println("=== End Update ===");
 
-        return convertToDTO(updated);
+        return resultDTO;
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
@@ -306,12 +310,18 @@ public class ServiceRequestService {
 
         // Load project details for DTO
         dto.setProjectId(serviceRequest.getProjectId());
+        System.out.println("=== Converting to DTO - ProjectId: " + serviceRequest.getProjectId());
         if (serviceRequest.getProjectId() != null) {
             Project project = projectMapper.findById(serviceRequest.getProjectId())
                     .orElse(null);
             if (project != null) {
                 dto.setProjectName(project.getProjectName());
+                System.out.println("=== ProjectName set: " + project.getProjectName());
+            } else {
+                System.out.println("=== Project not found for ID: " + serviceRequest.getProjectId());
             }
+        } else {
+            System.out.println("=== ProjectId is null");
         }
 
         dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
