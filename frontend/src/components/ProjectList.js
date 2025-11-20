@@ -146,10 +146,15 @@ function ProjectList() {
       headerName: '계약 기간',
       width: 250,
       valueGetter: (params) => {
-        if (!params?.row) return '';
-        const start = new Date(params.row.contractStartDate).toLocaleDateString();
-        const end = new Date(params.row.contractEndDate).toLocaleDateString();
-        return `${start} - ${end}`;
+        if (!params || !params.row || !params.row.contractStartDate || !params.row.contractEndDate) return '';
+        try {
+          const start = new Date(params.row.contractStartDate).toLocaleDateString();
+          const end = new Date(params.row.contractEndDate).toLocaleDateString();
+          return `${start} - ${end}`;
+        } catch (error) {
+          console.error('Error formatting contract period:', error);
+          return '';
+        }
       }
     },
     {

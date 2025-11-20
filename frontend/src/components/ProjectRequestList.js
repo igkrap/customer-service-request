@@ -195,8 +195,18 @@ function ProjectRequestList() {
       flex: 1.5,
       minWidth: 180,
       valueGetter: (params) => {
-        if (!params || !params.value) return '';
-        return formatDateTime(params.value);
+        if (!params) return '';
+        if (!params.value) {
+          console.log('ProjectRequestList createdAt - no value:', params);
+          return '';
+        }
+        try {
+          const result = formatDateTime(params.value);
+          return result || '';
+        } catch (error) {
+          console.error('Error formatting createdAt:', error, params.value);
+          return '';
+        }
       }
     },
     {
