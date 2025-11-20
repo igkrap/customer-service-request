@@ -22,6 +22,7 @@ import {
   Close as RejectIcon,
   Visibility as ViewIcon
 } from '@mui/icons-material';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function ProjectRequestApproval() {
   const [requests, setRequests] = useState([]);
@@ -143,9 +144,9 @@ function ProjectRequestApproval() {
     {
       field: 'createdAt',
       headerName: '생성일',
-      flex: 1,
-      minWidth: 100,
-      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+      flex: 1.5,
+      minWidth: 180,
+      valueGetter: (params) => params.value ? formatDateTime(params.value) : ''
     },
     {
       field: 'actions',
@@ -321,7 +322,7 @@ function ProjectRequestApproval() {
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">생성일</Typography>
                     <Typography variant="body1">
-                      {new Date(selectedRequest.createdAt).toLocaleString()}
+                      {formatDateTime(selectedRequest.createdAt)}
                     </Typography>
                   </Grid>
                   {selectedRequest.approvedByUsername && (

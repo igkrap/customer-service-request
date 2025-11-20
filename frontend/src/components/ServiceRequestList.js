@@ -32,6 +32,7 @@ import {
   Close as CloseIcon,
   Visibility as ViewIcon
 } from '@mui/icons-material';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function ServiceRequestList() {
   const { user } = useAuth();
@@ -336,11 +337,11 @@ function ServiceRequestList() {
     {
       field: 'createdAt',
       headerName: '생성일',
-      flex: 1,
-      minWidth: 100,
+      flex: 1.5,
+      minWidth: 180,
       valueGetter: (params) => {
         if (!params.row || !params.value) return '';
-        return new Date(params.value).toLocaleDateString();
+        return formatDateTime(params.value);
       }
     },
     {
@@ -599,7 +600,7 @@ function ServiceRequestList() {
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">생성일</Typography>
                     <Typography variant="body1">
-                      {new Date(selectedRequest.createdAt).toLocaleString()}
+                      {formatDateTime(selectedRequest.createdAt)}
                     </Typography>
                   </Grid>
                   <Grid item xs={12}>

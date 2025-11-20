@@ -26,6 +26,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function ProjectRequestList() {
   const { user } = useAuth();
@@ -182,9 +183,9 @@ function ProjectRequestList() {
     {
       field: 'createdAt',
       headerName: '생성일',
-      flex: 1,
-      minWidth: 100,
-      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+      flex: 1.5,
+      minWidth: 180,
+      valueGetter: (params) => params.value ? formatDateTime(params.value) : ''
     },
     {
       field: 'actions',

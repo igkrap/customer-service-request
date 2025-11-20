@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI, companyAPI } from '../services/api';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function PendingUserList() {
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -104,7 +105,7 @@ function PendingUserList() {
                       {user.role === 'ROLE_CUSTOMER' ? 'Customer' : user.role}
                     </span>
                   </td>
-                  <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                  <td>{formatDateTime(user.createdAt)}</td>
                   <td>
                     <select
                       value={selectedCompanies[user.id] || ''}

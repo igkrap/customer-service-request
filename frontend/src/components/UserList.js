@@ -7,6 +7,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function UserList() {
   const { user } = useAuth();
@@ -305,8 +306,8 @@ function UserList() {
     {
       field: 'createdAt',
       headerName: '생성일',
-      width: 120,
-      valueFormatter: (params) => new Date(params.value).toLocaleDateString()
+      width: 180,
+      valueFormatter: (params) => formatDateTime(params.value)
     },
     {
       field: 'actions',
