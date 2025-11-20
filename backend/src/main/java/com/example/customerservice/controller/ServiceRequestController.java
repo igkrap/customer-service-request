@@ -199,8 +199,16 @@ public class ServiceRequestController {
                             .body("Managers can only set status to IN_PROGRESS, RESOLVED, or CLOSED");
                 }
 
-                // Verify that the manager is assigned to this request
                 ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+
+                // For IN_PROGRESS, allow manager to take the request if it's not assigned or assigned to them
+                if (request.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                    // Service layer will handle the logic and throw exception if another manager already handling
+                    ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(id, request.getStatus(), user.getId());
+                    return ResponseEntity.ok(updatedRequest);
+                }
+
+                // For other statuses (RESOLVED, CLOSED), verify that the manager is assigned to this request
                 if (existingRequest.getManagerId() == null ||
                     !existingRequest.getManagerId().equals(user.getId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)

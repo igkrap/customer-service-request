@@ -151,21 +151,30 @@ function ProjectRequestList() {
       headerName: '서비스 유형',
       flex: 1,
       minWidth: 120,
-      valueGetter: (params) => params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : ''
+      valueGetter: (params) => {
+        if (!params.row || !params.value) return '';
+        return params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : '';
+      }
     },
     {
       field: 'contractStartDate',
       headerName: '시작일',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+      valueGetter: (params) => {
+        if (!params.row || !params.value) return '';
+        return new Date(params.value).toLocaleDateString();
+      }
     },
     {
       field: 'contractEndDate',
       headerName: '종료일',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+      valueGetter: (params) => {
+        if (!params.row || !params.value) return '';
+        return new Date(params.value).toLocaleDateString();
+      }
     },
     {
       field: 'contractManDays',
@@ -185,7 +194,10 @@ function ProjectRequestList() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueGetter: (params) => params.value ? formatDateTime(params.value) : ''
+      valueGetter: (params) => {
+        if (!params.row || !params.value) return '';
+        return formatDateTime(params.value);
+      }
     },
     {
       field: 'actions',
