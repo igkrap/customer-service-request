@@ -152,7 +152,7 @@ function ProjectRequestList() {
       flex: 1,
       minWidth: 120,
       valueGetter: (params) => {
-        if (!params.row || !params.value) return '';
+        if (!params.value) return '';
         return params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : '';
       }
     },
@@ -162,7 +162,7 @@ function ProjectRequestList() {
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => {
-        if (!params.row || !params.value) return '';
+        if (!params.value) return '';
         return new Date(params.value).toLocaleDateString();
       }
     },
@@ -172,7 +172,7 @@ function ProjectRequestList() {
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => {
-        if (!params.row || !params.value) return '';
+        if (!params.value) return '';
         return new Date(params.value).toLocaleDateString();
       }
     },
@@ -195,7 +195,7 @@ function ProjectRequestList() {
       flex: 1.5,
       minWidth: 180,
       valueGetter: (params) => {
-        if (!params.row || !params.value) return '';
+        if (!params.value) return '';
         return formatDateTime(params.value);
       }
     },
