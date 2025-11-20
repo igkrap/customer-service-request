@@ -324,7 +324,7 @@ function ServiceRequestList() {
       flex: 1.5,
       minWidth: 180,
       valueGetter: (params) => {
-        if (!params.row || !params.value) return '';
+        if (!params.value) return '';
         return formatDateTime(params.value);
       }
     },
