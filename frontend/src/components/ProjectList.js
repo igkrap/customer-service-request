@@ -4,8 +4,10 @@ import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { projectAPI, companyAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function ProjectList() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,26 +185,33 @@ function ProjectList() {
       headerName: '작업',
       width: 120,
       sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            color="primary"
-            size="small"
-            onClick={() => handleEdit(params.row)}
-            title="수정"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            color="error"
-            size="small"
-            onClick={() => handleDelete(params.row.id)}
-            title="삭제"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      )
+      renderCell: (params) => {
+        // Only ADMIN can edit/delete projects
+        if (user?.role !== 'ROLE_ADMIN') {
+          return null;
+        }
+
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleEdit(params.row)}
+              title="수정"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={() => handleDelete(params.row.id)}
+              title="삭제"
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      }
     }
   ];
 
@@ -215,7 +224,7 @@ function ProjectList() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {!showForm && (
+        {!showForm && user?.role === 'ROLE_ADMIN' && (
           <Button
             variant="contained"
             color="primary"

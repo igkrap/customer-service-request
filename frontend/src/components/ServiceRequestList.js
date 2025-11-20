@@ -300,7 +300,13 @@ function ServiceRequestList() {
 
   const canChangeStatus = (request) => {
     if (user?.role === 'ROLE_ADMIN') return true;
-    if (user?.role === 'ROLE_MANAGER' && request.managerId === user?.id) return true;
+    if (user?.role === 'ROLE_MANAGER') {
+      // Manager can change status if:
+      // 1. Request is assigned to them (managerId equals their ID)
+      // 2. Request is not assigned to anyone yet (managerId is null) - they can take it
+      // 3. Request is NOT assigned to another manager
+      return request.managerId === user?.id || request.managerId === null;
+    }
     return false;
   };
 
@@ -404,6 +410,7 @@ function ServiceRequestList() {
             )}
             {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
               <>
+                {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
                 {params.row.status !== 'IN_PROGRESS' && (
                   <IconButton
                     size="small"
@@ -417,31 +424,36 @@ function ServiceRequestList() {
                     <StartIcon fontSize="small" />
                   </IconButton>
                 )}
-                {params.row.status !== 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row.id, 'RESOLVED');
-                    }}
-                    title="Complete"
-                  >
-                    <CompleteIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {params.row.status !== 'CLOSED' && (
-                  <IconButton
-                    size="small"
-                    color="warning"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row.id, 'CLOSED');
-                    }}
-                    title="Close"
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
+                {/* Only show Complete/Close buttons if request is assigned to this manager */}
+                {params.row.managerId === user?.id && (
+                  <>
+                    {params.row.status !== 'RESOLVED' && (
+                      <IconButton
+                        size="small"
+                        color="info"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(params.row.id, 'RESOLVED');
+                        }}
+                        title="Complete"
+                      >
+                        <CompleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    {params.row.status !== 'CLOSED' && (
+                      <IconButton
+                        size="small"
+                        color="warning"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(params.row.id, 'CLOSED');
+                        }}
+                        title="Close"
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </>
                 )}
               </>
             )}
