@@ -18,9 +18,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     private UserMapper userMapper;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userMapper.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with userId: " + userId));
 
         // If user has no role (pending approval), deny access
         if (user.getRole() == null) {
@@ -28,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
+                user.getUserId(),
                 user.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()))
         );

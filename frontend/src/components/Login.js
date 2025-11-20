@@ -6,7 +6,7 @@ import '../styles/Auth.css';
 
 function Login() {
   const [formData, setFormData] = useState({
-    username: '',
+    userId: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -48,12 +48,12 @@ function Login() {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="username">사용자명</label>
+            <label htmlFor="userId">사용자 ID</label>
             <input
               type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              id="userId"
+              name="userId"
+              value={formData.userId}
               onChange={handleChange}
               required
               disabled={loading}

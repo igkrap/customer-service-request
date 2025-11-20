@@ -34,9 +34,9 @@ public class AuthService {
     private AuthenticationManager authenticationManager;
 
     public AuthResponse signup(SignupRequest request) {
-        // Check if username already exists
-        if (userMapper.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username is already taken");
+        // Check if userId already exists
+        if (userMapper.existsByUserId(request.getUserId())) {
+            throw new RuntimeException("User ID is already taken");
         }
 
         // Check if email already exists
@@ -46,6 +46,7 @@ public class AuthService {
 
         // Create new user with PENDING approval status (role will be assigned during approval)
         User user = new User();
+        user.setUserId(request.getUserId());
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -62,7 +63,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         // Get user details first to check approval status
-        User user = userMapper.findByUsername(request.getUsername())
+        User user = userMapper.findByUserId(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Check approval status
@@ -75,7 +76,7 @@ public class AuthService {
 
         // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword())
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();

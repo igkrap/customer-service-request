@@ -16,11 +16,17 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE id = #{id}")
     Optional<User> findById(Long id);
 
+    @Select("SELECT * FROM users WHERE user_id = #{userId}")
+    Optional<User> findByUserId(String userId);
+
     @Select("SELECT * FROM users WHERE username = #{username}")
     Optional<User> findByUsername(String username);
 
     @Select("SELECT * FROM users WHERE email = #{email}")
     Optional<User> findByEmail(String email);
+
+    @Select("SELECT COUNT(*) > 0 FROM users WHERE user_id = #{userId}")
+    boolean existsByUserId(String userId);
 
     @Select("SELECT COUNT(*) > 0 FROM users WHERE username = #{username}")
     boolean existsByUsername(String username);
@@ -40,12 +46,12 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE approval_status = #{approvalStatus}")
     List<User> findByApprovalStatus(@Param("approvalStatus") String approvalStatus);
 
-    @Insert("INSERT INTO users (username, email, password, role, company_id, approval_status, created_at, updated_at) " +
-            "VALUES (#{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO users (user_id, username, email, password, role, company_id, approval_status, created_at, updated_at) " +
+            "VALUES (#{userId}, #{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{createdAt}, #{updatedAt})")
     @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
     int insert(User user);
 
-    @Update("UPDATE users SET username = #{username}, email = #{email}, " +
+    @Update("UPDATE users SET user_id = #{userId}, username = #{username}, email = #{email}, " +
             "role = #{role}, company_id = #{companyId}, approval_status = #{approvalStatus}, updated_at = #{updatedAt} WHERE id = #{id}")
     int update(User user);
 
