@@ -51,9 +51,23 @@ function AdminProjectMapping() {
       const usersResponse = await userAPI.getAll();
       setUsers(usersResponse.data);
 
-      // Get all projects
-      const projectsResponse = await projectAPI.getAll();
-      setProjects(projectsResponse.data);
+      // Get projects based on role
+      if (currentUser?.role === 'ROLE_MANAGER') {
+        // For managers, only fetch their assigned projects
+        const assignedProjectIdsResponse = await userAPI.getProjects(currentUser.id);
+        const assignedProjectIds = assignedProjectIdsResponse.data;
+        if (assignedProjectIds.length > 0) {
+          const allProjectsResponse = await projectAPI.getAll();
+          const filteredProjects = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+          setProjects(filteredProjects);
+        } else {
+          setProjects([]);
+        }
+      } else {
+        // For admins, get all projects
+        const projectsResponse = await projectAPI.getAll();
+        setProjects(projectsResponse.data);
+      }
 
       setError(null);
     } catch (err) {
@@ -298,25 +312,33 @@ function AdminProjectMapping() {
           </>
         )}
 
-        {!isAdmin && projects.length > 0 && (
+        {!isAdmin && (
           <>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              전체 프로젝트 목록 ({projects.length})
-            </Typography>
-            <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {projects.map(project => (
-                <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                    {project.projectName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    회사: {project.companyName} | 유형: {project.serviceType} |
-                    계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                    인일: {project.contractManDays}
-                  </Typography>
+            {projects.length > 0 ? (
+              <>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  할당된 프로젝트 목록 ({projects.length})
+                </Typography>
+                <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {projects.map(project => (
+                    <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        {project.projectName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        회사: {project.companyName} | 유형: {project.serviceType} |
+                        계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                        인일: {project.contractManDays}
+                      </Typography>
+                    </Box>
+                  ))}
                 </Box>
-              ))}
-            </Box>
+              </>
+            ) : (
+              <Alert severity="info">
+                할당된 프로젝트가 없습니다.
+              </Alert>
+            )}
           </>
         )}
       </Paper>
