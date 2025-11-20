@@ -32,7 +32,7 @@ function ProjectList() {
       setCompanies(companiesResponse.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data: ' + err.message);
+      setError('데이터 불러오기 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ function ProjectList() {
       setEditingProject(null);
       fetchData();
     } catch (err) {
-      setError('Failed to save project: ' + (err.response?.data || err.message));
+      setError('프로젝트 저장 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -90,12 +90,12 @@ function ProjectList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
+    if (window.confirm('이 프로젝트를 삭제하시겠습니까?')) {
       try {
         await projectAPI.delete(id);
         fetchData();
       } catch (err) {
-        setError('Failed to delete project: ' + (err.response?.data || err.message));
+        setError('프로젝트 삭제 실패: ' + (err.response?.data || err.message));
       }
     }
   };
@@ -115,35 +115,35 @@ function ProjectList() {
 
   const getServiceTypeBadge = (type) => {
     const typeClass = type === 'MAINTENANCE' ? 'badge-info' : 'badge-warning';
-    const typeLabel = type === 'MAINTENANCE' ? 'Maintenance' : 'Defect Repair';
+    const typeLabel = type === 'MAINTENANCE' ? '유지보수' : '하자보수';
     return <span className={`badge ${typeClass}`}>{typeLabel}</span>;
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">로딩 중...</div>;
 
   return (
     <div className="container">
       <div className="card">
-        <h2>Project Management</h2>
+        <h2>프로젝트 관리</h2>
         {error && <div className="error">{error}</div>}
 
         {!showForm && (
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            Create New Project
+            새 프로젝트 등록
           </button>
         )}
 
         {showForm && (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Company *</label>
+              <label>회사 *</label>
               <select
                 name="companyId"
                 value={formData.companyId}
                 onChange={handleInputChange}
                 required
               >
-                <option value="">Select a company</option>
+                <option value="">회사 선택</option>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>
                     {company.companyName} ({company.companyCode})
@@ -152,7 +152,7 @@ function ProjectList() {
               </select>
             </div>
             <div className="form-group">
-              <label>Project Name *</label>
+              <label>프로젝트명 *</label>
               <input
                 type="text"
                 name="projectName"
@@ -162,19 +162,19 @@ function ProjectList() {
               />
             </div>
             <div className="form-group">
-              <label>Service Type *</label>
+              <label>서비스 유형 *</label>
               <select
                 name="serviceType"
                 value={formData.serviceType}
                 onChange={handleInputChange}
                 required
               >
-                <option value="MAINTENANCE">Maintenance (유지보수)</option>
-                <option value="DEFECT_REPAIR">Defect Repair (하자보수)</option>
+                <option value="MAINTENANCE">유지보수</option>
+                <option value="DEFECT_REPAIR">하자보수</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Contract Start Date *</label>
+              <label>계약 시작일 *</label>
               <input
                 type="date"
                 name="contractStartDate"
@@ -184,7 +184,7 @@ function ProjectList() {
               />
             </div>
             <div className="form-group">
-              <label>Contract End Date *</label>
+              <label>계약 종료일 *</label>
               <input
                 type="date"
                 name="contractEndDate"
@@ -194,7 +194,7 @@ function ProjectList() {
               />
             </div>
             <div className="form-group">
-              <label>Contract Man-Days (m/d) *</label>
+              <label>계약 맨데이 (m/d) *</label>
               <input
                 type="number"
                 name="contractManDays"
@@ -207,10 +207,10 @@ function ProjectList() {
             </div>
             <div className="btn-group">
               <button type="submit" className="btn btn-success">
-                {editingProject ? 'Update' : 'Create'} Project
+                {editingProject ? '수정' : '등록'}
               </button>
               <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
+                취소
               </button>
             </div>
           </form>
@@ -220,12 +220,12 @@ function ProjectList() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Project Name</th>
-              <th>Company</th>
-              <th>Service Type</th>
-              <th>Contract Period</th>
-              <th>Man-Days</th>
-              <th>Actions</th>
+              <th>프로젝트명</th>
+              <th>회사</th>
+              <th>서비스 유형</th>
+              <th>계약 기간</th>
+              <th>맨데이</th>
+              <th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -244,13 +244,13 @@ function ProjectList() {
                     className="btn btn-primary"
                     onClick={() => handleEdit(project)}
                   >
-                    Edit
+                    수정
                   </button>
                   <button
                     className="btn btn-danger"
                     onClick={() => handleDelete(project.id)}
                   >
-                    Delete
+                    삭제
                   </button>
                 </td>
               </tr>

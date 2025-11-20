@@ -16,8 +16,6 @@ import ProjectRequestApproval from './components/ProjectRequestApproval';
 import {
   Box,
   Drawer,
-  AppBar,
-  Toolbar,
   List,
   Typography,
   Divider,
@@ -71,33 +69,12 @@ function Dashboard() {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          width: `calc(100% - ${drawerWidth}px)`,
-          mr: `${drawerWidth}px`,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}
-      >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            서비스 요청 관리 시스템
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2">
-              {user?.username} ({getRoleText()})
-            </Typography>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: `calc(100% - ${drawerWidth}px)`,
-          mt: 8
+          width: `calc(100% - ${drawerWidth}px)`
         }}
       >
         {activeTab === 'requests' && <ServiceRequestList />}
@@ -123,8 +100,7 @@ function Dashboard() {
         variant="permanent"
         anchor="right"
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
+        <Box sx={{ overflow: 'auto', mt: 4 }}>
           <Box sx={{ px: 2, pb: 2 }}>
             <Chip
               label={getRoleText()}

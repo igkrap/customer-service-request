@@ -34,7 +34,7 @@ function Login() {
       login({ id, username, email, role }, token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data || 'Login failed. Please check your credentials.');
+      setError(err.response?.data || '로그인에 실패했습니다. 자격 증명을 확인하세요.');
     } finally {
       setLoading(false);
     }
@@ -43,12 +43,12 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Login</h2>
+        <h2>로그인</h2>
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">사용자명</label>
             <input
               type="text"
               id="username"
@@ -61,7 +61,7 @@ function Login() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">비밀번호</label>
             <input
               type="password"
               id="password"
@@ -74,11 +74,11 @@ function Login() {
           </div>
 
           <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? '로그인 중...' : '로그인'}
           </button>
 
           <p className="auth-link">
-            Don't have an account? <Link to="/register">Register here</Link>
+            계정이 없으신가요? <Link to="/register">회원가입</Link>
           </p>
         </form>
       </div>

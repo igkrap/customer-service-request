@@ -46,7 +46,7 @@ function MyProjectList() {
           setProjects(projectsResponse.data);
         } else {
           setProjects([]);
-          setError('You are not assigned to any company. Please contact the administrator.');
+          setError('회사에 할당되지 않았습니다. 관리자에게 문의하세요.');
         }
       } else if (user.role === 'ROLE_MANAGER') {
         // Manager: Show all projects
@@ -56,7 +56,7 @@ function MyProjectList() {
 
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data: ' + (err.response?.data || err.message));
+      setError('데이터 가져오기 실패: ' + (err.response?.data || err.message));
     } finally {
       setLoading(false);
     }
@@ -76,11 +76,11 @@ function MyProjectList() {
     try {
       setLoading(true);
       await userAPI.assignProjects(user.id, selectedProjects);
-      setSuccess('Projects saved successfully!');
+      setSuccess('프로젝트가 성공적으로 저장되었습니다!');
       setError(null);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to save projects: ' + (err.response?.data || err.message));
+      setError('프로젝트 저장 실패: ' + (err.response?.data || err.message));
       setSuccess(null);
     } finally {
       setLoading(false);
@@ -99,7 +99,7 @@ function MyProjectList() {
     <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
-          My Projects
+          내 프로젝트
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -107,19 +107,19 @@ function MyProjectList() {
 
         {user.role === 'ROLE_CUSTOMER' && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Select the projects from your company that you want to be associated with.
+            회사의 프로젝트 중 연결하고 싶은 프로젝트를 선택하세요.
           </Alert>
         )}
 
         {user.role === 'ROLE_MANAGER' && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Select the projects you want to manage.
+            관리하고 싶은 프로젝트를 선택하세요.
           </Alert>
         )}
 
         {projects.length === 0 ? (
           <Typography color="text.secondary">
-            No projects available.
+            사용 가능한 프로젝트가 없습니다.
           </Typography>
         ) : (
           <>
@@ -140,8 +140,8 @@ function MyProjectList() {
                         {project.projectName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Company: {project.companyName} | Type: {project.serviceType} |
-                        Contract: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
+                        회사: {project.companyName} | 유형: {project.serviceType} |
+                        계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
                       </Typography>
                     </Box>
                   }
@@ -158,7 +158,7 @@ function MyProjectList() {
                 onClick={handleSave}
                 disabled={loading}
               >
-                Save Selected Projects
+                선택한 프로젝트 저장
               </Button>
             </Box>
           </>

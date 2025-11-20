@@ -55,7 +55,7 @@ function AdminProjectMapping() {
 
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data: ' + (err.response?.data || err.message));
+      setError('데이터 가져오기 실패: ' + (err.response?.data || err.message));
     } finally {
       setLoading(false);
     }
@@ -88,18 +88,18 @@ function AdminProjectMapping() {
 
   const handleSave = async () => {
     if (!selectedUserId) {
-      setError('Please select a user first');
+      setError('먼저 사용자를 선택하세요');
       return;
     }
 
     try {
       setSaving(true);
       await userAPI.assignProjects(selectedUserId, selectedProjects);
-      setSuccess('Projects assigned successfully!');
+      setSuccess('프로젝트가 성공적으로 할당되었습니다!');
       setError(null);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to assign projects: ' + (err.response?.data || err.message));
+      setError('프로젝트 할당 실패: ' + (err.response?.data || err.message));
       setSuccess(null);
     } finally {
       setSaving(false);
@@ -137,7 +137,7 @@ function AdminProjectMapping() {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
-            User-Project Mapping Management
+            사용자-프로젝트 매핑 관리
           </Typography>
           <Button
             variant="outlined"
@@ -145,7 +145,7 @@ function AdminProjectMapping() {
             onClick={fetchData}
             disabled={loading}
           >
-            Refresh
+            새로고침
           </Button>
         </Box>
 
@@ -153,20 +153,20 @@ function AdminProjectMapping() {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Alert severity="info" sx={{ mb: 3 }}>
-          Select a user and assign projects to them. Customers can only be assigned projects from their company, while Managers can be assigned any project.
+          사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
         </Alert>
 
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <FormControl fullWidth>
-              <InputLabel>Select User</InputLabel>
+              <InputLabel>사용자 선택</InputLabel>
               <Select
                 value={selectedUserId}
                 onChange={handleUserChange}
-                label="Select User"
+                label="사용자 선택"
               >
                 <MenuItem value="">
-                  <em>Select a user...</em>
+                  <em>사용자를 선택하세요...</em>
                 </MenuItem>
                 {users.map(user => (
                   <MenuItem key={user.id} value={user.id}>
@@ -184,19 +184,19 @@ function AdminProjectMapping() {
 
               {selectedUser && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Managing projects for: <strong>{selectedUser.username}</strong> ({selectedUser.role})
-                  {selectedUser.companyName && ` from ${selectedUser.companyName}`}
+                  프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
+                  {selectedUser.companyName && ` - ${selectedUser.companyName}`}
                 </Alert>
               )}
 
               {filteredProjects.length === 0 ? (
                 <Typography color="text.secondary">
-                  No projects available for this user.
+                  이 사용자에게 사용 가능한 프로젝트가 없습니다.
                 </Typography>
               ) : (
                 <>
                   <Typography variant="h6" sx={{ mb: 2 }}>
-                    Available Projects ({filteredProjects.length})
+                    사용 가능한 프로젝트 ({filteredProjects.length})
                   </Typography>
 
                   <FormGroup>
@@ -216,9 +216,9 @@ function AdminProjectMapping() {
                               {project.projectName}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              Company: {project.companyName} | Type: {project.serviceType} |
-                              Contract: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                              Man-days: {project.contractManDays}
+                              회사: {project.companyName} | 유형: {project.serviceType} |
+                              계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                              인일: {project.contractManDays}
                             </Typography>
                           </Box>
                         }
@@ -230,7 +230,7 @@ function AdminProjectMapping() {
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
-                      {selectedProjects.length} project(s) selected
+                      {selectedProjects.length}개 프로젝트 선택됨
                     </Typography>
                     <Button
                       variant="contained"
@@ -238,7 +238,7 @@ function AdminProjectMapping() {
                       onClick={handleSave}
                       disabled={saving}
                     >
-                      {saving ? 'Saving...' : 'Save Project Assignment'}
+                      {saving ? '저장 중...' : '프로젝트 할당 저장'}
                     </Button>
                   </Box>
                 </>

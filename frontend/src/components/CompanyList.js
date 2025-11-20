@@ -24,7 +24,7 @@ function CompanyList() {
       setCompanies(response.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch companies: ' + err.message);
+      setError('회사 목록 불러오기 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ function CompanyList() {
       setEditingCompany(null);
       fetchCompanies();
     } catch (err) {
-      setError('Failed to save company: ' + (err.response?.data || err.message));
+      setError('회사 저장 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -70,12 +70,12 @@ function CompanyList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this company?')) {
+    if (window.confirm('이 회사를 삭제하시겠습니까?')) {
       try {
         await companyAPI.delete(id);
         fetchCompanies();
       } catch (err) {
-        setError('Failed to delete company: ' + (err.response?.data || err.message));
+        setError('회사 삭제 실패: ' + (err.response?.data || err.message));
       }
     }
   };
@@ -90,24 +90,24 @@ function CompanyList() {
     });
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">로딩 중...</div>;
 
   return (
     <div className="container">
       <div className="card">
-        <h2>Company Management</h2>
+        <h2>회사 관리</h2>
         {error && <div className="error">{error}</div>}
 
         {!showForm && (
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            Create New Company
+            새 회사 등록
           </button>
         )}
 
         {showForm && (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Company Name *</label>
+              <label>회사명 *</label>
               <input
                 type="text"
                 name="companyName"
@@ -117,7 +117,7 @@ function CompanyList() {
               />
             </div>
             <div className="form-group">
-              <label>Company Code *</label>
+              <label>회사 코드 *</label>
               <input
                 type="text"
                 name="companyCode"
@@ -127,7 +127,7 @@ function CompanyList() {
               />
             </div>
             <div className="form-group">
-              <label>Business Number *</label>
+              <label>사업자 번호 *</label>
               <input
                 type="text"
                 name="businessNumber"
@@ -138,10 +138,10 @@ function CompanyList() {
             </div>
             <div className="btn-group">
               <button type="submit" className="btn btn-success">
-                {editingCompany ? 'Update' : 'Create'} Company
+                {editingCompany ? '수정' : '등록'}
               </button>
               <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
+                취소
               </button>
             </div>
           </form>
@@ -151,11 +151,11 @@ function CompanyList() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Company Name</th>
-              <th>Company Code</th>
-              <th>Business Number</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>회사명</th>
+              <th>회사 코드</th>
+              <th>사업자 번호</th>
+              <th>생성일</th>
+              <th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -171,13 +171,13 @@ function CompanyList() {
                     className="btn btn-primary"
                     onClick={() => handleEdit(company)}
                   >
-                    Edit
+                    수정
                   </button>
                   <button
                     className="btn btn-danger"
                     onClick={() => handleDelete(company.id)}
                   >
-                    Delete
+                    삭제
                   </button>
                 </td>
               </tr>
