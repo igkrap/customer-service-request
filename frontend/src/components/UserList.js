@@ -23,7 +23,7 @@ function UserList() {
     email: '',
     password: '',
     role: '',
-    customerIds: []
+    companyId: ''
   });
 
   useEffect(() => {
@@ -59,30 +59,17 @@ function UserList() {
       email: userToEdit.email,
       password: '',
       role: userToEdit.role,
-      companyId: userToEdit.companyId || '',
-      customerIds: userToEdit.customerIds || []
+      companyId: userToEdit.companyId || ''
     });
     setShowEditForm(true);
   };
 
   const handleInputChange = (e) => {
-    const { name, value, options } = e.target;
-
-    // Handle multiple select for customerIds
-    if (name === 'customerIds') {
-      const selectedValues = Array.from(options)
-        .filter(option => option.selected)
-        .map(option => parseInt(option.value));
-      setFormData({
-        ...formData,
-        [name]: selectedValues
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -106,23 +93,9 @@ function UserList() {
         });
       }
 
-      // Update customer assignments if role is manager
-      if (formData.role === 'ROLE_MANAGER') {
-        const newCustomerIds = formData.customerIds || [];
-        const oldCustomerIds = editingUser.customerIds || [];
-
-        // Check if customer assignments changed
-        const changed = newCustomerIds.length !== oldCustomerIds.length ||
-                        !newCustomerIds.every(id => oldCustomerIds.includes(id));
-
-        if (changed) {
-          await userAPI.assignCustomersToManager(editingUser.id, newCustomerIds);
-        }
-      }
-
       setShowEditForm(false);
       setEditingUser(null);
-      setFormData({ email: '', password: '', role: '', companyId: '', customerIds: [] });
+      setFormData({ email: '', password: '', role: '', companyId: '' });
       fetchUsers();
       setError(null);
     } catch (err) {
@@ -150,7 +123,7 @@ function UserList() {
   const handleCancel = () => {
     setShowEditForm(false);
     setEditingUser(null);
-    setFormData({ email: '', password: '', role: '', companyId: '', customerIds: [] });
+    setFormData({ email: '', password: '', role: '', companyId: '' });
   };
 
   const handleRoleChange = (userId, role) => {
@@ -469,30 +442,6 @@ function UserList() {
                         </option>
                       ))}
                     </select>
-                  </div>
-                )}
-                {formData.role === 'ROLE_MANAGER' && (
-                  <div className="form-group">
-                    <label>담당 고객 (Ctrl/Cmd를 눌러 여러 개 선택)</label>
-                    <select
-                      name="customerIds"
-                      value={formData.customerIds.map(String)}
-                      onChange={handleInputChange}
-                      multiple
-                      size="5"
-                      style={{ height: 'auto' }}
-                    >
-                      {customers.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.username} - {c.email}
-                        </option>
-                      ))}
-                    </select>
-                    <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                      {formData.customerIds.length > 0
-                        ? `${formData.customerIds.length}명의 고객 선택됨`
-                        : '선택된 고객 없음'}
-                    </small>
                   </div>
                 )}
                 <div className="btn-group">

@@ -111,25 +111,8 @@ function ServiceRequestList() {
 
       // Fetch managers for the dropdown
       try {
-        if (user?.role === 'ROLE_CUSTOMER') {
-          if (user.id) {
-            const userResponse = await userAPI.getById(user.id);
-            const userData = userResponse.data;
-
-            if (userData.managerIds && userData.managerIds.length > 0) {
-              const managersResponse = await userAPI.getAllManagers();
-              const assignedManagers = managersResponse.data.filter(m =>
-                userData.managerIds.includes(m.id)
-              );
-              setManagers(assignedManagers);
-            } else {
-              setManagers([]);
-            }
-          }
-        } else {
-          const managersResponse = await userAPI.getAllManagers();
-          setManagers(managersResponse.data);
-        }
+        const managersResponse = await userAPI.getAllManagers();
+        setManagers(managersResponse.data);
       } catch (err) {
         if (err.response?.status !== 403) {
           console.error('Failed to fetch managers:', err);
