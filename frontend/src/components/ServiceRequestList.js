@@ -118,9 +118,6 @@ function ServiceRequestList() {
     try {
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
-      console.log('=== Fetched Requests ===');
-      console.log('First request:', requestsResponse.data[0]);
-      console.log('Sample projectName:', requestsResponse.data[0]?.projectName);
       setRequests(requestsResponse.data);
 
       // Fetch all users (customers) if admin

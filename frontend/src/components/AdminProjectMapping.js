@@ -32,8 +32,10 @@ function AdminProjectMapping() {
   const [success, setSuccess] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (currentUser) {
+      fetchData();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedUserId) {
@@ -252,7 +254,7 @@ function AdminProjectMapping() {
                                   <Typography variant="caption" color="text.secondary">
                                     회사: {project.companyName} | 유형: {project.serviceType} |
                                     계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                    인일: {project.contractManDays}
+                                    m/d: {project.contractManDays}
                                   </Typography>
                                 </Box>
                               }
@@ -298,7 +300,7 @@ function AdminProjectMapping() {
                               <Typography variant="caption" color="text.secondary">
                                 회사: {project.companyName} | 유형: {project.serviceType} |
                                 계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                인일: {project.contractManDays}
+                                m/d: {project.contractManDays}
                               </Typography>
                             </Box>
                           ))}
@@ -328,7 +330,7 @@ function AdminProjectMapping() {
                       <Typography variant="caption" color="text.secondary">
                         회사: {project.companyName} | 유형: {project.serviceType} |
                         계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                        인일: {project.contractManDays}
+                        m/d: {project.contractManDays}
                       </Typography>
                     </Box>
                   ))}
