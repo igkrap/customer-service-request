@@ -324,20 +324,7 @@ function ServiceRequestList() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueGetter: (params) => {
-        if (!params) return '';
-        if (!params.value) {
-          console.log('ServiceRequestList createdAt - no value:', params);
-          return '';
-        }
-        try {
-          const result = formatDateTime(params.value);
-          return result || '';
-        } catch (error) {
-          console.error('Error formatting createdAt:', error, params.value);
-          return '';
-        }
-      }
+      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
     },
     {
       field: 'actions',

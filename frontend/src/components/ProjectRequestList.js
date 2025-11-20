@@ -151,8 +151,8 @@ function ProjectRequestList() {
       headerName: '서비스 유형',
       flex: 1,
       minWidth: 120,
-      valueGetter: (params) => {
-        if (!params || !params.value) return '';
+      valueFormatter: (params) => {
+        if (!params?.value) return '';
         return params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : '';
       }
     },
@@ -161,8 +161,8 @@ function ProjectRequestList() {
       headerName: '시작일',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => {
-        if (!params || !params.value) return '';
+      valueFormatter: (params) => {
+        if (!params?.value) return '';
         return new Date(params.value).toLocaleDateString();
       }
     },
@@ -171,8 +171,8 @@ function ProjectRequestList() {
       headerName: '종료일',
       flex: 1,
       minWidth: 100,
-      valueGetter: (params) => {
-        if (!params || !params.value) return '';
+      valueFormatter: (params) => {
+        if (!params?.value) return '';
         return new Date(params.value).toLocaleDateString();
       }
     },
@@ -194,20 +194,7 @@ function ProjectRequestList() {
       headerName: '생성일',
       flex: 1.5,
       minWidth: 180,
-      valueGetter: (params) => {
-        if (!params) return '';
-        if (!params.value) {
-          console.log('ProjectRequestList createdAt - no value:', params);
-          return '';
-        }
-        try {
-          const result = formatDateTime(params.value);
-          return result || '';
-        } catch (error) {
-          console.error('Error formatting createdAt:', error, params.value);
-          return '';
-        }
-      }
+      valueFormatter: (params) => params?.value ? formatDateTime(params.value) : ''
     },
     {
       field: 'actions',
