@@ -206,8 +206,8 @@ function ProjectRequestApproval() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
             프로젝트 요청 승인
@@ -376,13 +376,14 @@ function ProjectRequestApproval() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ height: 600, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%' }}>
           <DataGrid
             rows={requests}
             columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
+            autoHeight={false}
             onRowClick={handleRowClick}
             sx={{
               '& .MuiDataGrid-row:hover': {

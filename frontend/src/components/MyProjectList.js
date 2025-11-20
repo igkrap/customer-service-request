@@ -96,8 +96,8 @@ function MyProjectList() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
           내 프로젝트
         </Typography>

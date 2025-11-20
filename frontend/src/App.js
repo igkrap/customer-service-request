@@ -68,13 +68,15 @@ function Dashboard() {
   ];
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', height: '100vh' }}>
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: `calc(100% - ${drawerWidth}px)`
+          width: `calc(100% - ${drawerWidth}px)`,
+          height: '100%',
+          overflow: 'auto'
         }}
       >
         {activeTab === 'requests' && <ServiceRequestList />}
