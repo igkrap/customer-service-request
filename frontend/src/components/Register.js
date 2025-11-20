@@ -6,6 +6,7 @@ import '../styles/Auth.css';
 
 function Register() {
   const [formData, setFormData] = useState({
+    userId: '',
     username: '',
     email: '',
     password: '',
@@ -25,8 +26,12 @@ function Register() {
   };
 
   const validateForm = () => {
-    if (formData.username.length < 3) {
-      setError('사용자명은 최소 3자 이상이어야 합니다');
+    if (formData.userId.length < 3) {
+      setError('사용자 ID는 최소 3자 이상이어야 합니다');
+      return false;
+    }
+    if (formData.username.length < 1) {
+      setError('사용자명을 입력하세요');
       return false;
     }
     if (formData.password.length < 6) {
@@ -84,7 +89,23 @@ function Register() {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="username">사용자명</label>
+            <label htmlFor="userId">사용자 ID (로그인용)</label>
+            <input
+              type="text"
+              id="userId"
+              name="userId"
+              value={formData.userId}
+              onChange={handleChange}
+              required
+              minLength="3"
+              maxLength="50"
+              disabled={loading}
+              placeholder="영문, 숫자로 구성된 ID"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">사용자명 (표시용)</label>
             <input
               type="text"
               id="username"
@@ -92,9 +113,10 @@ function Register() {
               value={formData.username}
               onChange={handleChange}
               required
-              minLength="3"
+              minLength="1"
               maxLength="50"
               disabled={loading}
+              placeholder="화면에 표시될 이름"
             />
           </div>
 

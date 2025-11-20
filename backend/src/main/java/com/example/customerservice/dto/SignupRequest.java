@@ -12,8 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SignupRequest {
 
+    @NotBlank(message = "User ID is required")
+    @Size(min = 3, max = 50, message = "User ID must be between 3 and 50 characters")
+    private String userId;
+
     @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    @Size(min = 1, max = 50, message = "Username must be between 1 and 50 characters")
     private String username;
 
     @NotBlank(message = "Email is required")

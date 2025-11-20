@@ -1,7 +1,8 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(50) NOT NULL UNIQUE,
+    user_id VARCHAR(50) NOT NULL UNIQUE,
+    username VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20),
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS project_requests (
 );
 
 -- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
