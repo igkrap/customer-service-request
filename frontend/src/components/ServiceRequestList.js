@@ -243,7 +243,7 @@ function ServiceRequestList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this service request?')) {
+    if (window.confirm('이 서비스 요청을 삭제하시겠습니까?')) {
       try {
         await serviceRequestAPI.delete(id);
         fetchData();
@@ -345,7 +345,10 @@ function ServiceRequestList() {
       headerName: '담당자',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.row?.managerName || '미배정'
+      valueGetter: (params) => {
+        const name = params.row?.managerName;
+        return (name && name.trim() !== '') ? name : '미배정';
+      }
     },
     {
       field: 'createdAt',
@@ -608,48 +611,48 @@ function ServiceRequestList() {
                     <Typography variant="body1">{selectedRequest.id}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Created At</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">생성일</Typography>
                     <Typography variant="body1">
                       {new Date(selectedRequest.createdAt).toLocaleString()}
                     </Typography>
                   </Grid>
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">Title</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">제목</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedRequest.title}</Typography>
                   </Grid>
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">Description</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">설명</Typography>
                     <Typography variant="body1">
-                      {selectedRequest.description || 'No description provided'}
+                      {selectedRequest.description || '설명이 제공되지 않았습니다'}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Customer</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">고객</Typography>
                     <Typography variant="body1">{selectedRequest.customerName}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Manager</Typography>
-                    <Typography variant="body1">{selectedRequest.managerName || 'Unassigned'}</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">담당자</Typography>
+                    <Typography variant="body1">{selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? selectedRequest.managerName : '미배정'}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Project</Typography>
-                    <Typography variant="body1">{selectedRequest.projectName || 'N/A'}</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">프로젝트</Typography>
+                    <Typography variant="body1">{selectedRequest.projectName || '없음'}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">상태</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       {getStatusChip(selectedRequest.status)}
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">우선순위</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       {getPriorityChip(selectedRequest.priority)}
                     </Box>
                   </Grid>
                   {selectedRequest.resolvedAt && (
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">Resolved At</Typography>
+                      <Typography variant="subtitle2" color="text.secondary">해결일</Typography>
                       <Typography variant="body1">
                         {new Date(selectedRequest.resolvedAt).toLocaleString()}
                       </Typography>

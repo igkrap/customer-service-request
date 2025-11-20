@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Box, Paper } from '@mui/material';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -67,8 +68,8 @@ function UserProfile() {
   };
 
   return (
-    <div className="container">
-      <div className="card">
+    <Box sx={{ p: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <h2>내 프로필</h2>
 
         {error && <div className="error">{error}</div>}
@@ -132,8 +133,8 @@ function UserProfile() {
             </button>
           </form>
         </div>
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 }
 
