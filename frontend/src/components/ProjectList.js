@@ -188,7 +188,7 @@ function ProjectList() {
     },
     {
       field: 'contractManDays',
-      headerName: '맨데이',
+      headerName: 'm/d',
       width: 100,
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
@@ -239,6 +239,12 @@ function ProjectList() {
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+        {user?.role === 'ROLE_MANAGER' && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            이 페이지는 조회 전용입니다. 프로젝트 생성 및 수정은 관리자에게 문의하세요.
+          </Alert>
+        )}
 
         {!showForm && user?.role === 'ROLE_ADMIN' && (
           <Button
@@ -312,7 +318,7 @@ function ProjectList() {
               />
             </div>
             <div className="form-group">
-              <label>계약 맨데이 (m/d) *</label>
+              <label>계약 m/d *</label>
               <input
                 type="number"
                 name="contractManDays"

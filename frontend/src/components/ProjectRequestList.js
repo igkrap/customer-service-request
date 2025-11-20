@@ -181,7 +181,7 @@ function ProjectRequestList() {
     },
     {
       field: 'contractManDays',
-      headerName: '맨데이',
+      headerName: 'm/d',
       flex: 0.8,
       minWidth: 80
     },
@@ -328,7 +328,7 @@ function ProjectRequestList() {
                   fullWidth
                   required
                   type="number"
-                  label="계약 맨데이"
+                  label="계약 m/d"
                   name="contractManDays"
                   value={formData.contractManDays}
                   onChange={handleInputChange}
