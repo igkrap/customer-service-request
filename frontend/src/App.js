@@ -111,7 +111,7 @@ function Dashboard() {
               sx={{ mb: 1 }}
             />
             <Typography variant="caption" display="block" color="text.secondary">
-              환영합니다, {user?.userId}님
+              환영합니다, {user?.username}님
             </Typography>
           </Box>
           <Divider />
