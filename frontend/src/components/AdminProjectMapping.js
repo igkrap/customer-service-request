@@ -48,34 +48,44 @@ function AdminProjectMapping() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('[fetchData] 시작 - currentUser.role:', currentUser?.role);
 
       // Get all users
       const usersResponse = await userAPI.getAll();
       setUsers(usersResponse.data);
+      console.log('[fetchData] Users 가져옴:', usersResponse.data.length, '명');
 
       // Get projects based on role
       if (currentUser?.role === 'ROLE_MANAGER') {
+        console.log('[fetchData] MANAGER 모드: 할당된 프로젝트만 가져오기');
         // For managers, only fetch their assigned projects
         const assignedProjectIdsResponse = await userAPI.getProjects(currentUser.id);
         const assignedProjectIds = assignedProjectIdsResponse.data;
+        console.log('[fetchData] 할당된 프로젝트 ID:', assignedProjectIds);
         if (assignedProjectIds.length > 0) {
           const allProjectsResponse = await projectAPI.getAll();
           const filteredProjects = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+          console.log('[fetchData] 필터링된 프로젝트 개수:', filteredProjects.length);
           setProjects(filteredProjects);
         } else {
+          console.log('[fetchData] 할당된 프로젝트 없음');
           setProjects([]);
         }
       } else {
+        console.log('[fetchData] ADMIN 모드: 모든 프로젝트 가져오기');
         // For admins, get all projects
         const projectsResponse = await projectAPI.getAll();
+        console.log('[fetchData] 전체 프로젝트 개수:', projectsResponse.data.length);
         setProjects(projectsResponse.data);
       }
 
       setError(null);
     } catch (err) {
+      console.error('[fetchData] 오류:', err);
       setError('데이터 가져오기 실패: ' + (err.response?.data || err.message));
     } finally {
       setLoading(false);
+      console.log('[fetchData] 완료');
     }
   };
 
@@ -150,6 +160,18 @@ function AdminProjectMapping() {
   const filteredProjects = getFilteredProjects();
   const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
 
+  // 상세 디버깅 로그
+  console.log('=== AdminProjectMapping Debug ===');
+  console.log('CurrentUser 전체 객체:', JSON.stringify(currentUser, null, 2));
+  console.log('CurrentUser Role 값:', currentUser?.role);
+  console.log('Role 타입:', typeof currentUser?.role);
+  console.log('Role === "ROLE_ADMIN":', currentUser?.role === 'ROLE_ADMIN');
+  console.log('Role === "ROLE_MANAGER":', currentUser?.role === 'ROLE_MANAGER');
+  console.log('Role !== "ROLE_ADMIN":', currentUser?.role !== 'ROLE_ADMIN');
+  console.log('Projects 개수:', projects.length);
+  console.log('Users 개수:', users.length);
+  console.log('================================');
+
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -170,14 +192,30 @@ function AdminProjectMapping() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
+        {/* 디버깅용 경고 박스 */}
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <strong>디버깅 정보:</strong><br/>
+          현재 사용자 Role: {currentUser?.role || '없음'}<br/>
+          ROLE_ADMIN인가? {currentUser?.role === 'ROLE_ADMIN' ? '예' : '아니오'}<br/>
+          ROLE_MANAGER인가? {currentUser?.role === 'ROLE_MANAGER' ? '예' : '아니오'}
+        </Alert>
+
         {currentUser?.role !== 'ROLE_ADMIN' && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            이 페이지는 조회 전용입니다. 프로젝트 할당을 변경하려면 관리자에게 문의하세요.
-          </Alert>
+          <>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              이 페이지는 조회 전용입니다. 프로젝트 할당을 변경하려면 관리자에게 문의하세요.
+            </Alert>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              ✓ 비관리자 조회 전용 모드 렌더링됨
+            </Alert>
+          </>
         )}
 
         {currentUser?.role === 'ROLE_ADMIN' && (
           <>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              ✓ 관리자 편집 모드 렌더링됨
+            </Alert>
             <Alert severity="info" sx={{ mb: 3 }}>
               사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
             </Alert>
