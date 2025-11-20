@@ -123,7 +123,7 @@ function AdminProjectMapping() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
         <CircularProgress />
       </Box>
     );
@@ -133,8 +133,8 @@ function AdminProjectMapping() {
   const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
             사용자-프로젝트 매핑 관리
