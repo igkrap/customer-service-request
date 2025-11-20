@@ -74,6 +74,7 @@ export const serviceRequestAPI = {
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
   updateStatus: (id, status) => api.patch(`/service-requests/${id}/status`, { status }),
+  unassign: (id) => api.patch(`/service-requests/${id}/unassign`),
   delete: (id) => api.delete(`/service-requests/${id}`),
 };
 

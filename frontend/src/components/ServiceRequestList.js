@@ -30,7 +30,8 @@ import {
   PlayArrow as StartIcon,
   Check as CompleteIcon,
   Close as CloseIcon,
-  Visibility as ViewIcon
+  Visibility as ViewIcon,
+  PersonRemove as UnassignIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 
@@ -117,9 +118,6 @@ function ServiceRequestList() {
     try {
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
-      console.log('=== Fetched Requests ===');
-      console.log('First request:', requestsResponse.data[0]);
-      console.log('Sample projectName:', requestsResponse.data[0]?.projectName);
       setRequests(requestsResponse.data);
 
       // Fetch all users (customers) if admin
@@ -287,6 +285,20 @@ function ServiceRequestList() {
     }
   };
 
+  const handleUnassign = async (requestId) => {
+    if (!window.confirm('이 요청의 할당을 취소하시겠습니까? 상태가 OPEN으로 변경됩니다.')) {
+      return;
+    }
+
+    try {
+      await serviceRequestAPI.unassign(requestId);
+      fetchData();
+      setError(null);
+    } catch (err) {
+      setError('할당 취소 실패: ' + (err.response?.data || err.message));
+    }
+  };
+
   const handleRowClick = (params) => {
     setSelectedRequest(params.row);
     setShowDetailDialog(true);
@@ -300,7 +312,13 @@ function ServiceRequestList() {
 
   const canChangeStatus = (request) => {
     if (user?.role === 'ROLE_ADMIN') return true;
-    if (user?.role === 'ROLE_MANAGER' && request.managerId === user?.id) return true;
+    if (user?.role === 'ROLE_MANAGER') {
+      // Manager can change status if:
+      // 1. Request is assigned to them (managerId equals their ID)
+      // 2. Request is not assigned to anyone yet (managerId is null) - they can take it
+      // 3. Request is NOT assigned to another manager
+      return request.managerId === user?.id || request.managerId === null;
+    }
     return false;
   };
 
@@ -404,6 +422,7 @@ function ServiceRequestList() {
             )}
             {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
               <>
+                {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
                 {params.row.status !== 'IN_PROGRESS' && (
                   <IconButton
                     size="small"
@@ -412,36 +431,52 @@ function ServiceRequestList() {
                       e.stopPropagation();
                       handleStatusChange(params.row.id, 'IN_PROGRESS');
                     }}
-                    title="Start"
+                    title="시작"
                   >
                     <StartIcon fontSize="small" />
                   </IconButton>
                 )}
-                {params.row.status !== 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row.id, 'RESOLVED');
-                    }}
-                    title="Complete"
-                  >
-                    <CompleteIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {params.row.status !== 'CLOSED' && (
-                  <IconButton
-                    size="small"
-                    color="warning"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row.id, 'CLOSED');
-                    }}
-                    title="Close"
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
+                {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
+                {params.row.managerId === user?.id && (
+                  <>
+                    {params.row.status !== 'RESOLVED' && (
+                      <IconButton
+                        size="small"
+                        color="info"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(params.row.id, 'RESOLVED');
+                        }}
+                        title="완료"
+                      >
+                        <CompleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    {params.row.status !== 'CLOSED' && (
+                      <IconButton
+                        size="small"
+                        color="warning"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(params.row.id, 'CLOSED');
+                        }}
+                        title="종료"
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnassign(params.row.id);
+                      }}
+                      title="할당 취소"
+                    >
+                      <UnassignIcon fontSize="small" />
+                    </IconButton>
+                  </>
                 )}
               </>
             )}

@@ -138,7 +138,7 @@ function ProjectRequestApproval() {
     },
     {
       field: 'contractManDays',
-      headerName: '인일',
+      headerName: 'm/d',
       flex: 0.8,
       minWidth: 80
     },
@@ -316,7 +316,7 @@ function ProjectRequestApproval() {
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">계약 인일</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">계약 m/d</Typography>
                     <Typography variant="body1">{selectedRequest.contractManDays}</Typography>
                   </Grid>
                   <Grid item xs={6}>

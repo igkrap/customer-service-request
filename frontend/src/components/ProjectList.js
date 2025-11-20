@@ -3,9 +3,11 @@ import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Ch
 import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { projectAPI, companyAPI } from '../services/api';
+import { projectAPI, companyAPI, userAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function ProjectList() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,16 +25,32 @@ function ProjectList() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [projectsResponse, companiesResponse] = await Promise.all([
-        projectAPI.getAll(),
-        companyAPI.getAll()
-      ]);
-      setProjects(projectsResponse.data);
+
+      let projectsData = [];
+
+      if (user?.role === 'ROLE_MANAGER') {
+        // Manager: only show assigned projects
+        const assignedProjectIdsResponse = await userAPI.getProjects(user.id);
+        const assignedProjectIds = assignedProjectIdsResponse.data;
+
+        if (assignedProjectIds.length > 0) {
+          const allProjectsResponse = await projectAPI.getAll();
+          projectsData = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+        }
+      } else {
+        // Admin: show all projects
+        const projectsResponse = await projectAPI.getAll();
+        projectsData = projectsResponse.data;
+      }
+
+      const companiesResponse = await companyAPI.getAll();
+
+      setProjects(projectsData);
       setCompanies(companiesResponse.data);
       setError(null);
     } catch (err) {
@@ -170,7 +188,7 @@ function ProjectList() {
     },
     {
       field: 'contractManDays',
-      headerName: '맨데이',
+      headerName: 'm/d',
       width: 100,
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
@@ -183,26 +201,33 @@ function ProjectList() {
       headerName: '작업',
       width: 120,
       sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            color="primary"
-            size="small"
-            onClick={() => handleEdit(params.row)}
-            title="수정"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            color="error"
-            size="small"
-            onClick={() => handleDelete(params.row.id)}
-            title="삭제"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      )
+      renderCell: (params) => {
+        // Only ADMIN can edit/delete projects
+        if (user?.role !== 'ROLE_ADMIN') {
+          return null;
+        }
+
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleEdit(params.row)}
+              title="수정"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={() => handleDelete(params.row.id)}
+              title="삭제"
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      }
     }
   ];
 
@@ -215,7 +240,13 @@ function ProjectList() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {!showForm && (
+        {user?.role === 'ROLE_MANAGER' && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            이 페이지는 조회 전용입니다. 프로젝트 생성 및 수정은 관리자에게 문의하세요.
+          </Alert>
+        )}
+
+        {!showForm && user?.role === 'ROLE_ADMIN' && (
           <Button
             variant="contained"
             color="primary"
@@ -226,7 +257,7 @@ function ProjectList() {
           </Button>
         )}
 
-        {showForm && (
+        {showForm && user?.role === 'ROLE_ADMIN' && (
           <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
             <div className="form-group">
               <label>회사 *</label>
@@ -287,7 +318,7 @@ function ProjectList() {
               />
             </div>
             <div className="form-group">
-              <label>계약 맨데이 (m/d) *</label>
+              <label>계약 m/d *</label>
               <input
                 type="number"
                 name="contractManDays"
