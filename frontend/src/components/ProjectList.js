@@ -146,6 +146,7 @@ function ProjectList() {
       headerName: '계약 기간',
       width: 250,
       valueGetter: (params) => {
+        if (!params.row) return '';
         const start = new Date(params.row.contractStartDate).toLocaleDateString();
         const end = new Date(params.row.contractEndDate).toLocaleDateString();
         return `${start} - ${end}`;
@@ -155,7 +156,7 @@ function ProjectList() {
       field: 'contractManDays',
       headerName: '맨데이',
       width: 100,
-      valueFormatter: (params) => `${params.value} m/d`
+      valueFormatter: (params) => params.value ? `${params.value} m/d` : ''
     },
     {
       field: 'actions',
