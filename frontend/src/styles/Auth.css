@@ -6,7 +6,7 @@
   padding: 20px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+  background: linear-gradient(-45deg, #3eb489, #00CED1, #0abab5, #4facfe);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
@@ -38,7 +38,7 @@
 .auth-container::before {
   width: 500px;
   height: 500px;
-  background: rgba(102, 126, 234, 0.3);
+  background: rgba(0, 206, 209, 0.3);
   top: -250px;
   left: -250px;
   animation: float 20s infinite ease-in-out;
@@ -47,7 +47,7 @@
 .auth-container::after {
   width: 400px;
   height: 400px;
-  background: rgba(244, 147, 251, 0.3);
+  background: rgba(62, 180, 137, 0.3);
   bottom: -200px;
   right: -200px;
   animation: float 15s infinite ease-in-out reverse;
@@ -75,16 +75,6 @@
   position: relative;
   z-index: 10;
   backdrop-filter: blur(10px);
-  animation: cardFloat 3s ease-in-out infinite;
-}
-
-@keyframes cardFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
 }
 
 .auth-card h2 {
@@ -119,8 +109,8 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #00CED1;
+  box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.1);
 }
 
 .form-group input:disabled {
@@ -141,7 +131,7 @@
 .auth-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3eb489 0%, #00CED1 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -154,7 +144,7 @@
 
 .auth-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 206, 209, 0.4);
 }
 
 .auth-button:disabled {
@@ -171,13 +161,13 @@
 }
 
 .auth-link a {
-  color: #667eea;
+  color: #00CED1;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .auth-link a:hover {
-  color: #764ba2;
+  color: #3eb489;
   text-decoration: underline;
 }
