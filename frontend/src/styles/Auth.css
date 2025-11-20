@@ -1,14 +1,57 @@
 .auth-container {
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  flex-direction: row;
   position: relative;
   overflow: hidden;
+}
+
+/* Left side - 70% width */
+.auth-left {
+  width: 70%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
   background: linear-gradient(-45deg, #d4f8ed, #b8f1f5, #a7ecec, #d4f1f9);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
+}
+
+/* Right side - 30% width, 100% height */
+.auth-right {
+  width: 30%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+/* Welcome text animation */
+.welcome-text {
+  font-size: 72px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 2px 2px 20px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 1.5s ease-out;
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Animated gradient background */
@@ -24,9 +67,9 @@
   }
 }
 
-/* Floating shapes */
-.auth-container::before,
-.auth-container::after {
+/* Floating shapes on left side only */
+.auth-left::before,
+.auth-left::after {
   content: '';
   position: absolute;
   border-radius: 50%;
@@ -35,7 +78,7 @@
   animation: float 20s infinite ease-in-out;
 }
 
-.auth-container::before {
+.auth-left::before {
   width: 500px;
   height: 500px;
   background: rgba(184, 241, 245, 0.4);
@@ -44,7 +87,7 @@
   animation: float 20s infinite ease-in-out;
 }
 
-.auth-container::after {
+.auth-left::after {
   width: 400px;
   height: 400px;
   background: rgba(167, 236, 236, 0.4);
@@ -66,15 +109,12 @@
 }
 
 .auth-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: transparent;
   padding: 40px;
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   position: relative;
   z-index: 10;
-  backdrop-filter: blur(10px);
 }
 
 .auth-card h2 {
