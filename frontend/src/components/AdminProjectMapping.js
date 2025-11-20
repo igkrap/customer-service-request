@@ -149,7 +149,6 @@ function AdminProjectMapping() {
 
   const filteredProjects = getFilteredProjects();
   const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
-  const isAdmin = currentUser?.role === 'ROLE_ADMIN';
 
   return (
     <Box sx={{ p: 1, height: '100%' }}>
@@ -171,13 +170,13 @@ function AdminProjectMapping() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-        {!isAdmin && (
+        {currentUser?.role !== 'ROLE_ADMIN' && (
           <Alert severity="info" sx={{ mb: 3 }}>
             이 페이지는 조회 전용입니다. 프로젝트 할당을 변경하려면 관리자에게 문의하세요.
           </Alert>
         )}
 
-        {isAdmin && (
+        {currentUser?.role === 'ROLE_ADMIN' && (
           <>
             <Alert severity="info" sx={{ mb: 3 }}>
               사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
@@ -314,7 +313,7 @@ function AdminProjectMapping() {
           </>
         )}
 
-        {!isAdmin && (
+        {currentUser?.role !== 'ROLE_ADMIN' && (
           <>
             {projects.length > 0 ? (
               <>
