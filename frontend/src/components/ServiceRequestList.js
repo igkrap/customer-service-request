@@ -61,6 +61,11 @@ function ServiceRequestList() {
   // Dynamically fetch projects when customer is selected (for ADMIN creating requests for customers)
   useEffect(() => {
     const fetchProjectsForCustomer = async () => {
+      // Only fetch projects for Admin/Manager
+      if (user?.role !== 'ROLE_ADMIN' && user?.role !== 'ROLE_MANAGER') {
+        return;
+      }
+
       if (!formData.customerId) {
         // No customer selected, load projects based on logged-in user
         if (user?.id) {
@@ -100,7 +105,7 @@ function ServiceRequestList() {
     if (showForm) {
       fetchProjectsForCustomer();
     }
-  }, [formData.customerId, showForm, user?.id]);
+  }, [formData.customerId, showForm, user?.id, user?.role]);
 
   const fetchData = async () => {
     try {
@@ -120,37 +125,17 @@ function ServiceRequestList() {
         }
       }
 
-      // Fetch projects based on user's role
-      if (user?.id) {
+      // Fetch projects for Admin/Manager only (customers don't select projects)
+      if (user?.id && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MANAGER')) {
         try {
-          if (user.role === 'ROLE_CUSTOMER') {
-            // Customer: Only show assigned projects (mapped projects)
-            const userProjectsResponse = await userAPI.getProjects(user.id);
-            const assignedProjectIds = userProjectsResponse.data;
+          const userResponse = await userAPI.getById(user.id);
+          const userData = userResponse.data;
 
-            // Get full project details for assigned projects
-            const userResponse = await userAPI.getById(user.id);
-            const userData = userResponse.data;
-
-            if (userData.companyId && assignedProjectIds.length > 0) {
-              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              // Filter to only show assigned projects
-              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
-              setProjects(assignedProjects);
-            } else {
-              setProjects([]);
-            }
+          if (userData.companyId) {
+            const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+            setProjects(projectsResponse.data);
           } else {
-            // Admin/Manager: Show all projects from user's company
-            const userResponse = await userAPI.getById(user.id);
-            const userData = userResponse.data;
-
-            if (userData.companyId) {
-              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              setProjects(projectsResponse.data);
-            } else {
-              setProjects([]);
-            }
+            setProjects([]);
           }
         } catch (err) {
           if (err.response?.status !== 403) {
@@ -550,22 +535,24 @@ function ServiceRequestList() {
                   </FormControl>
                 )}
 
-                <FormControl fullWidth>
-                  <InputLabel>프로젝트</InputLabel>
-                  <Select
-                    name="projectId"
-                    value={formData.projectId}
-                    onChange={handleInputChange}
-                    label="프로젝트"
-                  >
-                    <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
-                    {projects.map(project => (
-                      <MenuItem key={project.id} value={project.id}>
-                        {project.projectName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
+                  <FormControl fullWidth>
+                    <InputLabel>프로젝트</InputLabel>
+                    <Select
+                      name="projectId"
+                      value={formData.projectId}
+                      onChange={handleInputChange}
+                      label="프로젝트"
+                    >
+                      <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
+                      {projects.map(project => (
+                        <MenuItem key={project.id} value={project.id}>
+                          {project.projectName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
               </Box>
             </DialogContent>
             <DialogActions>
