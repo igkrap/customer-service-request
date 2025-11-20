@@ -4,6 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { companyAPI } from '../services/api';
+import { formatDateTime } from '../utils/dateFormatter';
 
 function CompanyList() {
   const [companies, setCompanies] = useState([]);
@@ -110,8 +111,8 @@ function CompanyList() {
     {
       field: 'createdAt',
       headerName: '생성일',
-      width: 150,
-      valueFormatter: (params) => new Date(params.value).toLocaleDateString()
+      width: 180,
+      valueFormatter: (params) => formatDateTime(params.value)
     },
     {
       field: 'actions',
