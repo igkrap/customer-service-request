@@ -257,7 +257,7 @@ function ProjectList() {
           </Button>
         )}
 
-        {showForm && (
+        {showForm && user?.role === 'ROLE_ADMIN' && (
           <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
             <div className="form-group">
               <label>회사 *</label>
