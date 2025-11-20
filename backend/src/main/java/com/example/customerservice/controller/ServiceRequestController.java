@@ -222,4 +222,59 @@ public class ServiceRequestController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{id}/unassign")
+    public ResponseEntity<?> unassignServiceRequest(@PathVariable Long id, Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            User user = userMapper.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Only managers and admins can unassign
+            if (user.getRole() != User.Role.ROLE_MANAGER && !isAdmin(authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only managers and admins can unassign service requests");
+            }
+
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+
+            // Managers can only unassign requests assigned to them
+            if (user.getRole() == User.Role.ROLE_MANAGER) {
+                if (existingRequest.getManagerId() == null ||
+                    !existingRequest.getManagerId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("You can only unassign requests assigned to you");
+                }
+            }
+
+            // Unassign: set managerId to null and status to OPEN
+            existingRequest.setManagerId(null);
+            existingRequest.setStatus(ServiceRequest.RequestStatus.OPEN);
+            existingRequest.setUpdatedAt(java.time.LocalDateTime.now());
+
+            serviceRequestService.updateServiceRequest(id, convertToDTO(existingRequest));
+
+            ServiceRequestDTO updatedRequest = serviceRequestService.getServiceRequestById(id);
+            return ResponseEntity.ok(updatedRequest);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    private ServiceRequestDTO convertToDTO(ServiceRequest request) {
+        ServiceRequestDTO dto = new ServiceRequestDTO();
+        dto.setId(request.getId());
+        dto.setTitle(request.getTitle());
+        dto.setDescription(request.getDescription());
+        dto.setStatus(request.getStatus());
+        dto.setPriority(request.getPriority());
+        dto.setCustomerId(request.getCustomerId());
+        dto.setManagerId(request.getManagerId());
+        dto.setProjectId(request.getProjectId());
+        dto.setCreatedByUserId(request.getCreatedByUserId());
+        dto.setCreatedAt(request.getCreatedAt());
+        dto.setUpdatedAt(request.getUpdatedAt());
+        dto.setResolvedAt(request.getResolvedAt());
+        return dto;
+    }
 }

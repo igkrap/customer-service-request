@@ -294,21 +294,11 @@ function ServiceRequestList() {
     }
 
     try {
-      // Get the current request to update it
-      const request = requests.find(r => r.id === requestId);
-      if (!request) return;
-
-      const updatedRequest = {
-        ...request,
-        managerId: null,
-        status: 'OPEN'
-      };
-
-      await serviceRequestAPI.update(requestId, updatedRequest);
+      await serviceRequestAPI.unassign(requestId);
       fetchData();
       setError(null);
     } catch (err) {
-      setError('Failed to unassign: ' + (err.response?.data || err.message));
+      setError('할당 취소 실패: ' + (err.response?.data || err.message));
     }
   };
 

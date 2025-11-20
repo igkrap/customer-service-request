@@ -33,7 +33,9 @@ function AdminProjectMapping() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    console.log('=== AdminProjectMapping mounted ===');
+    console.log('currentUser:', currentUser);
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedUserId) {
@@ -81,10 +83,20 @@ function AdminProjectMapping() {
   const handleToggle = (projectId) => {
     const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
 
-    // Check if user is a manager and is selecting themselves
-    if (selectedUser?.role === 'ROLE_MANAGER' &&
-        currentUser?.role === 'ROLE_MANAGER' &&
+    console.log('=== handleToggle Debug ===');
+    console.log('currentUser:', currentUser);
+    console.log('selectedUser:', selectedUser);
+    console.log('selectedUser.role:', selectedUser?.role);
+    console.log('currentUser.role:', currentUser?.role);
+    console.log('selectedUser.id:', selectedUser?.id);
+    console.log('currentUser.id:', currentUser?.id);
+
+    // Check if manager is selecting themselves
+    if (selectedUser && currentUser &&
+        selectedUser.role === 'ROLE_MANAGER' &&
+        currentUser.role === 'ROLE_MANAGER' &&
         selectedUser.id === currentUser.id) {
+      console.log('Manager selecting self - blocking toggle');
       // Don't allow managers to modify their own project assignments
       return;
     }
@@ -225,9 +237,17 @@ function AdminProjectMapping() {
                     <FormGroup>
                       {filteredProjects.map(project => {
                         // Check if manager is selecting themselves
-                        const isManagerSelectingSelf = selectedUser?.role === 'ROLE_MANAGER' &&
-                                                        currentUser?.role === 'ROLE_MANAGER' &&
+                        const isManagerSelectingSelf = selectedUser && currentUser &&
+                                                        selectedUser.role === 'ROLE_MANAGER' &&
+                                                        currentUser.role === 'ROLE_MANAGER' &&
                                                         selectedUser.id === currentUser.id;
+
+                        if (isManagerSelectingSelf) {
+                          console.log('=== Rendering checkbox for project:', project.projectName);
+                          console.log('isManagerSelectingSelf:', isManagerSelectingSelf);
+                          console.log('selectedUser:', selectedUser);
+                          console.log('currentUser:', currentUser);
+                        }
 
                         return (
                           <FormControlLabel
@@ -273,8 +293,9 @@ function AdminProjectMapping() {
                         onClick={handleSave}
                         disabled={
                           saving ||
-                          (selectedUser?.role === 'ROLE_MANAGER' &&
-                           currentUser?.role === 'ROLE_MANAGER' &&
+                          (selectedUser && currentUser &&
+                           selectedUser.role === 'ROLE_MANAGER' &&
+                           currentUser.role === 'ROLE_MANAGER' &&
                            selectedUser.id === currentUser.id)
                         }
                       >
