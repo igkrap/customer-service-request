@@ -120,17 +120,37 @@ function ServiceRequestList() {
         }
       }
 
-      // Fetch projects based on user's company
+      // Fetch projects based on user's role
       if (user?.id) {
         try {
-          const userResponse = await userAPI.getById(user.id);
-          const userData = userResponse.data;
+          if (user.role === 'ROLE_CUSTOMER') {
+            // Customer: Only show assigned projects (mapped projects)
+            const userProjectsResponse = await userAPI.getProjects(user.id);
+            const assignedProjectIds = userProjectsResponse.data;
 
-          if (userData.companyId) {
-            const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-            setProjects(projectsResponse.data);
+            // Get full project details for assigned projects
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId && assignedProjectIds.length > 0) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              // Filter to only show assigned projects
+              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+              setProjects(assignedProjects);
+            } else {
+              setProjects([]);
+            }
           } else {
-            setProjects([]);
+            // Admin/Manager: Show all projects from user's company
+            const userResponse = await userAPI.getById(user.id);
+            const userData = userResponse.data;
+
+            if (userData.companyId) {
+              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
+              setProjects(projectsResponse.data);
+            } else {
+              setProjects([]);
+            }
           }
         } catch (err) {
           if (err.response?.status !== 403) {

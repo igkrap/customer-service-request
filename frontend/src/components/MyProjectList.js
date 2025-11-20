@@ -107,7 +107,7 @@ function MyProjectList() {
 
         {user.role === 'ROLE_CUSTOMER' && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            회사의 프로젝트 중 연결하고 싶은 프로젝트를 선택하세요.
+            관리자가 할당한 프로젝트 목록입니다. (조회 전용)
           </Alert>
         )}
 
@@ -131,7 +131,7 @@ function MyProjectList() {
                     <Checkbox
                       checked={selectedProjects.includes(project.id)}
                       onChange={() => handleToggle(project.id)}
-                      disabled={loading}
+                      disabled={loading || user.role === 'ROLE_CUSTOMER'}
                     />
                   }
                   label={
@@ -149,18 +149,22 @@ function MyProjectList() {
               ))}
             </FormGroup>
 
-            <Divider sx={{ my: 3 }} />
+            {user.role === 'ROLE_MANAGER' && (
+              <>
+                <Divider sx={{ my: 3 }} />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={loading}
-              >
-                선택한 프로젝트 저장
-              </Button>
-            </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSave}
+                    disabled={loading}
+                  >
+                    선택한 프로젝트 저장
+                  </Button>
+                </Box>
+              </>
+            )}
           </>
         )}
       </Paper>
