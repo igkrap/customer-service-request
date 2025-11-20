@@ -30,7 +30,8 @@ import {
   PlayArrow as StartIcon,
   Check as CompleteIcon,
   Close as CloseIcon,
-  Visibility as ViewIcon
+  Visibility as ViewIcon,
+  PersonRemove as UnassignIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 
@@ -287,6 +288,30 @@ function ServiceRequestList() {
     }
   };
 
+  const handleUnassign = async (requestId) => {
+    if (!window.confirm('이 요청의 할당을 취소하시겠습니까? 상태가 OPEN으로 변경됩니다.')) {
+      return;
+    }
+
+    try {
+      // Get the current request to update it
+      const request = requests.find(r => r.id === requestId);
+      if (!request) return;
+
+      const updatedRequest = {
+        ...request,
+        managerId: null,
+        status: 'OPEN'
+      };
+
+      await serviceRequestAPI.update(requestId, updatedRequest);
+      fetchData();
+      setError(null);
+    } catch (err) {
+      setError('Failed to unassign: ' + (err.response?.data || err.message));
+    }
+  };
+
   const handleRowClick = (params) => {
     setSelectedRequest(params.row);
     setShowDetailDialog(true);
@@ -419,12 +444,12 @@ function ServiceRequestList() {
                       e.stopPropagation();
                       handleStatusChange(params.row.id, 'IN_PROGRESS');
                     }}
-                    title="Start"
+                    title="시작"
                   >
                     <StartIcon fontSize="small" />
                   </IconButton>
                 )}
-                {/* Only show Complete/Close buttons if request is assigned to this manager */}
+                {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
                 {params.row.managerId === user?.id && (
                   <>
                     {params.row.status !== 'RESOLVED' && (
@@ -435,7 +460,7 @@ function ServiceRequestList() {
                           e.stopPropagation();
                           handleStatusChange(params.row.id, 'RESOLVED');
                         }}
-                        title="Complete"
+                        title="완료"
                       >
                         <CompleteIcon fontSize="small" />
                       </IconButton>
@@ -448,11 +473,22 @@ function ServiceRequestList() {
                           e.stopPropagation();
                           handleStatusChange(params.row.id, 'CLOSED');
                         }}
-                        title="Close"
+                        title="종료"
                       >
                         <CloseIcon fontSize="small" />
                       </IconButton>
                     )}
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnassign(params.row.id);
+                      }}
+                      title="할당 취소"
+                    >
+                      <UnassignIcon fontSize="small" />
+                    </IconButton>
                   </>
                 )}
               </>

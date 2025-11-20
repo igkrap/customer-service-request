@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI, userAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   Box,
   Paper,
@@ -20,6 +21,7 @@ import {
 import { Save as SaveIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 function AdminProjectMapping() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -77,6 +79,16 @@ function AdminProjectMapping() {
   };
 
   const handleToggle = (projectId) => {
+    const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
+
+    // Check if user is a manager and is selecting themselves
+    if (selectedUser?.role === 'ROLE_MANAGER' &&
+        currentUser?.role === 'ROLE_MANAGER' &&
+        selectedUser.id === currentUser.id) {
+      // Don't allow managers to modify their own project assignments
+      return;
+    }
+
     setSelectedProjects(prev => {
       if (prev.includes(projectId)) {
         return prev.filter(id => id !== projectId);
@@ -154,6 +166,8 @@ function AdminProjectMapping() {
 
         <Alert severity="info" sx={{ mb: 3 }}>
           사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
+          <br />
+          <strong>참고:</strong> 매니저는 자신의 프로젝트 할당을 수정할 수 없습니다.
         </Alert>
 
         <Grid container spacing={3}>
@@ -209,30 +223,42 @@ function AdminProjectMapping() {
                     </Typography>
 
                     <FormGroup>
-                      {filteredProjects.map(project => (
-                        <FormControlLabel
-                          key={project.id}
-                          control={
-                            <Checkbox
-                              checked={selectedProjects.includes(project.id)}
-                              onChange={() => handleToggle(project.id)}
-                              disabled={saving}
-                            />
-                          }
-                          label={
-                            <Box>
-                              <Typography variant="body1">
-                                {project.projectName}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                회사: {project.companyName} | 유형: {project.serviceType} |
-                                계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                인일: {project.contractManDays}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                      ))}
+                      {filteredProjects.map(project => {
+                        // Check if manager is selecting themselves
+                        const isManagerSelectingSelf = selectedUser?.role === 'ROLE_MANAGER' &&
+                                                        currentUser?.role === 'ROLE_MANAGER' &&
+                                                        selectedUser.id === currentUser.id;
+
+                        return (
+                          <FormControlLabel
+                            key={project.id}
+                            control={
+                              <Checkbox
+                                checked={selectedProjects.includes(project.id)}
+                                onChange={() => handleToggle(project.id)}
+                                disabled={saving || isManagerSelectingSelf}
+                              />
+                            }
+                            label={
+                              <Box>
+                                <Typography variant="body1">
+                                  {project.projectName}
+                                  {isManagerSelectingSelf && (
+                                    <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
+                                      (매니저는 자신의 프로젝트를 수정할 수 없습니다)
+                                    </Typography>
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  회사: {project.companyName} | 유형: {project.serviceType} |
+                                  계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
+                                  인일: {project.contractManDays}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        );
+                      })}
                     </FormGroup>
 
                     <Divider sx={{ my: 3 }} />
@@ -245,7 +271,12 @@ function AdminProjectMapping() {
                         variant="contained"
                         startIcon={<SaveIcon />}
                         onClick={handleSave}
-                        disabled={saving}
+                        disabled={
+                          saving ||
+                          (selectedUser?.role === 'ROLE_MANAGER' &&
+                           currentUser?.role === 'ROLE_MANAGER' &&
+                           selectedUser.id === currentUser.id)
+                        }
                       >
                         {saving ? '저장 중...' : '프로젝트 할당 저장'}
                       </Button>
