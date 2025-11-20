@@ -110,7 +110,7 @@ function ProjectRequestApproval() {
 
   const columns = [
     { field: 'id', headerName: '프로젝트 요청 ID', flex: 0.8, minWidth: 100 },
-    { field: 'requestedByUsername', headerName: '요청자 (표시용)', flex: 1.3, minWidth: 130 },
+    { field: 'requestedByUsername', headerName: '요청자', flex: 1.3, minWidth: 130 },
     { field: 'companyName', headerName: '회사', flex: 1.5, minWidth: 120 },
     { field: 'projectName', headerName: '프로젝트명', flex: 2, minWidth: 150 },
     {

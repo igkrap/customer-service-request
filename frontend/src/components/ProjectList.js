@@ -133,7 +133,7 @@ function ProjectList() {
 
   const columns = [
     { field: 'id', headerName: '프로젝트 ID', width: 100 },
-    { field: 'projectName', headerName: '프로젝트명 (표시용)', width: 220 },
+    { field: 'projectName', headerName: '프로젝트명', width: 220 },
     { field: 'companyName', headerName: '회사', width: 150 },
     {
       field: 'serviceType',

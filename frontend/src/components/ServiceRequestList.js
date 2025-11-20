@@ -318,7 +318,7 @@ function ServiceRequestList() {
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '고객 (표시용)', flex: 1.3, minWidth: 130 },
+    { field: 'customerName', headerName: '고객', flex: 1.3, minWidth: 130 },
     {
       field: 'projectName',
       headerName: '프로젝트',
@@ -342,7 +342,7 @@ function ServiceRequestList() {
     },
     {
       field: 'managerName',
-      headerName: '담당자 (표시용)',
+      headerName: '담당자',
       flex: 1.3,
       minWidth: 130,
       valueGetter: (params) => {

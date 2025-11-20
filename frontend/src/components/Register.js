@@ -105,7 +105,7 @@ function Register() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="username">사용자명 (표시용)</label>
+            <label htmlFor="username">사용자명</label>
             <input
               type="text"
               id="username"

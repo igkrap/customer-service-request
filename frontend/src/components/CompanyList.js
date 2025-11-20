@@ -104,7 +104,7 @@ function CompanyList() {
 
   const columns = [
     { field: 'id', headerName: '회사 ID', width: 90 },
-    { field: 'companyName', headerName: '회사명 (표시용)', width: 220 },
+    { field: 'companyName', headerName: '회사명', width: 220 },
     { field: 'companyCode', headerName: '회사 코드', width: 150 },
     { field: 'businessNumber', headerName: '사업자 번호', width: 200 },
     {
