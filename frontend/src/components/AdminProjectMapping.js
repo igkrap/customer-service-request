@@ -33,8 +33,13 @@ function AdminProjectMapping() {
 
   useEffect(() => {
     fetchData();
-    console.log('=== AdminProjectMapping mounted ===');
+  }, []);
+
+  useEffect(() => {
+    console.log('=== AdminProjectMapping currentUser changed ===');
     console.log('currentUser:', currentUser);
+    console.log('currentUser.id (type):', typeof currentUser?.id, currentUser?.id);
+    console.log('currentUser.role:', currentUser?.role);
   }, [currentUser]);
 
   useEffect(() => {
@@ -88,16 +93,26 @@ function AdminProjectMapping() {
     console.log('selectedUser:', selectedUser);
     console.log('selectedUser.role:', selectedUser?.role);
     console.log('currentUser.role:', currentUser?.role);
-    console.log('selectedUser.id:', selectedUser?.id);
-    console.log('currentUser.id:', currentUser?.id);
+    console.log('selectedUser.id (type):', typeof selectedUser?.id, selectedUser?.id);
+    console.log('currentUser.id (type):', typeof currentUser?.id, currentUser?.id);
+    console.log('ID match:', selectedUser?.id === currentUser?.id);
+    console.log('ID match (number):', parseInt(selectedUserId) === Number(currentUser?.id));
 
     // Check if manager is selecting themselves
-    if (selectedUser && currentUser &&
+    // Use parseInt to ensure proper comparison
+    const selectedUserIdNum = parseInt(selectedUserId);
+    const currentUserIdNum = Number(currentUser?.id);
+
+    const isManagerSelectingSelf = selectedUser && currentUser &&
         selectedUser.role === 'ROLE_MANAGER' &&
         currentUser.role === 'ROLE_MANAGER' &&
-        selectedUser.id === currentUser.id) {
-      console.log('Manager selecting self - blocking toggle');
-      // Don't allow managers to modify their own project assignments
+        selectedUserIdNum === currentUserIdNum;
+
+    console.log('isManagerSelectingSelf:', isManagerSelectingSelf);
+
+    if (isManagerSelectingSelf) {
+      console.log('❌ Manager selecting self - BLOCKING toggle');
+      alert('매니저는 자신의 프로젝트 할당을 수정할 수 없습니다.');
       return;
     }
 
@@ -113,6 +128,19 @@ function AdminProjectMapping() {
   const handleSave = async () => {
     if (!selectedUserId) {
       setError('먼저 사용자를 선택하세요');
+      return;
+    }
+
+    // Additional check: prevent manager from modifying their own projects
+    const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
+    const selectedUserIdNum = parseInt(selectedUserId);
+    const currentUserIdNum = Number(currentUser?.id);
+
+    if (selectedUser && currentUser &&
+        selectedUser.role === 'ROLE_MANAGER' &&
+        currentUser.role === 'ROLE_MANAGER' &&
+        selectedUserIdNum === currentUserIdNum) {
+      setError('매니저는 자신의 프로젝트 할당을 수정할 수 없습니다.');
       return;
     }
 
@@ -237,16 +265,20 @@ function AdminProjectMapping() {
                     <FormGroup>
                       {filteredProjects.map(project => {
                         // Check if manager is selecting themselves
+                        const selectedUserIdNum = parseInt(selectedUserId);
+                        const currentUserIdNum = Number(currentUser?.id);
+
                         const isManagerSelectingSelf = selectedUser && currentUser &&
                                                         selectedUser.role === 'ROLE_MANAGER' &&
                                                         currentUser.role === 'ROLE_MANAGER' &&
-                                                        selectedUser.id === currentUser.id;
+                                                        selectedUserIdNum === currentUserIdNum;
 
                         if (isManagerSelectingSelf) {
                           console.log('=== Rendering checkbox for project:', project.projectName);
                           console.log('isManagerSelectingSelf:', isManagerSelectingSelf);
-                          console.log('selectedUser:', selectedUser);
-                          console.log('currentUser:', currentUser);
+                          console.log('selectedUserIdNum:', selectedUserIdNum);
+                          console.log('currentUserIdNum:', currentUserIdNum);
+                          console.log('Match:', selectedUserIdNum === currentUserIdNum);
                         }
 
                         return (
@@ -296,7 +328,7 @@ function AdminProjectMapping() {
                           (selectedUser && currentUser &&
                            selectedUser.role === 'ROLE_MANAGER' &&
                            currentUser.role === 'ROLE_MANAGER' &&
-                           selectedUser.id === currentUser.id)
+                           parseInt(selectedUserId) === Number(currentUser.id))
                         }
                       >
                         {saving ? '저장 중...' : '프로젝트 할당 저장'}
