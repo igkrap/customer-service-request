@@ -303,21 +303,6 @@ function UserList() {
       renderCell: (params) => getApprovalBadge(params.value)
     },
     {
-      field: 'relationship',
-      headerName: '관계',
-      width: 200,
-      renderCell: (params) => {
-        const u = params.row;
-        if (u.role === 'ROLE_CUSTOMER') {
-          return `매니저: ${u.managerNames && u.managerNames.length > 0 ? u.managerNames.join(', ') : '없음'}`;
-        }
-        if (u.role === 'ROLE_MANAGER') {
-          return `고객: ${u.customerNames && u.customerNames.length > 0 ? u.customerNames.join(', ') : '없음'}`;
-        }
-        return '-';
-      }
-    },
-    {
       field: 'createdAt',
       headerName: '생성일',
       width: 120,
