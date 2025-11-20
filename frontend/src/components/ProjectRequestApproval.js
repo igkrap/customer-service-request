@@ -120,7 +120,7 @@ function ProjectRequestApproval() {
       flex: 1,
       minWidth: 120,
       valueGetter: (params) => {
-        if (!params.value) return '';
+        if (!params || !params.value) return '';
         return params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : '';
       }
     },
@@ -130,7 +130,7 @@ function ProjectRequestApproval() {
       flex: 1,
       minWidth: 100,
       valueGetter: (params) => {
-        if (!params.value) return '';
+        if (!params || !params.value) return '';
         return new Date(params.value).toLocaleDateString();
       }
     },
@@ -153,7 +153,7 @@ function ProjectRequestApproval() {
       flex: 1.5,
       minWidth: 180,
       valueGetter: (params) => {
-        if (!params.value) return '';
+        if (!params || !params.value) return '';
         return formatDateTime(params.value);
       }
     },
