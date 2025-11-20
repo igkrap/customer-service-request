@@ -152,6 +152,11 @@ public class ServiceRequestService {
 
         ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
 
+        System.out.println("=== Updating ServiceRequest ===");
+        System.out.println("ID: " + id);
+        System.out.println("Old ProjectId: " + serviceRequest.getProjectId());
+        System.out.println("New ProjectId from DTO: " + dto.getProjectId());
+
         serviceRequest.setTitle(dto.getTitle());
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
@@ -159,6 +164,8 @@ public class ServiceRequestService {
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+
+        System.out.println("ProjectId after set: " + serviceRequest.getProjectId());
 
         // Set resolvedAt when status changes to RESOLVED or CLOSED
         if ((dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED ||
@@ -198,7 +205,14 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
-        return convertToDTO(serviceRequest);
+
+        // Verify the update
+        ServiceRequest updated = serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found after update"));
+        System.out.println("ProjectId after DB update: " + updated.getProjectId());
+        System.out.println("=== End Update ===");
+
+        return convertToDTO(updated);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {

@@ -196,9 +196,17 @@ function ServiceRequestList() {
         projectId: formData.projectId ? parseInt(formData.projectId) : null
       };
 
+      console.log('=== Submitting Service Request ===');
+      console.log('Form Data:', formData);
+      console.log('Submit Data:', submitData);
+      console.log('Editing Request:', editingRequest);
+
       if (editingRequest) {
-        await serviceRequestAPI.update(editingRequest.id, submitData);
+        console.log('Updating request ID:', editingRequest.id);
+        const response = await serviceRequestAPI.update(editingRequest.id, submitData);
+        console.log('Update response:', response.data);
       } else {
+        console.log('Creating new request');
         await serviceRequestAPI.create(submitData);
       }
 
@@ -214,6 +222,7 @@ function ServiceRequestList() {
       setEditingRequest(null);
       fetchData();
     } catch (err) {
+      console.error('Submit error:', err);
       setError('Failed to save service request: ' + err.message);
     }
   };
