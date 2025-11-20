@@ -3,7 +3,7 @@ import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Ch
 import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { projectAPI, companyAPI } from '../services/api';
+import { projectAPI, companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function ProjectList() {
@@ -25,16 +25,32 @@ function ProjectList() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [projectsResponse, companiesResponse] = await Promise.all([
-        projectAPI.getAll(),
-        companyAPI.getAll()
-      ]);
-      setProjects(projectsResponse.data);
+
+      let projectsData = [];
+
+      if (user?.role === 'ROLE_MANAGER') {
+        // Manager: only show assigned projects
+        const assignedProjectIdsResponse = await userAPI.getProjects(user.id);
+        const assignedProjectIds = assignedProjectIdsResponse.data;
+
+        if (assignedProjectIds.length > 0) {
+          const allProjectsResponse = await projectAPI.getAll();
+          projectsData = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+        }
+      } else {
+        // Admin: show all projects
+        const projectsResponse = await projectAPI.getAll();
+        projectsData = projectsResponse.data;
+      }
+
+      const companiesResponse = await companyAPI.getAll();
+
+      setProjects(projectsData);
       setCompanies(companiesResponse.data);
       setError(null);
     } catch (err) {
