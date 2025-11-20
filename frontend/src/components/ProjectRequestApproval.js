@@ -118,7 +118,7 @@ function ProjectRequestApproval() {
       headerName: '서비스 유형',
       flex: 1,
       minWidth: 120,
-      valueGetter: (params) => params.value === 'MAINTENANCE' ? '유지보수' : '하자보수'
+      valueGetter: (params) => params.value === 'MAINTENANCE' ? '유지보수' : params.value === 'DEFECT_REPAIR' ? '하자보수' : ''
     },
     {
       field: 'contractStartDate',
