@@ -6,7 +6,7 @@
   padding: 20px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(-45deg, #3eb489, #00CED1, #0abab5, #4facfe);
+  background: linear-gradient(-45deg, #d4f8ed, #b8f1f5, #a7ecec, #d4f1f9);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
@@ -38,7 +38,7 @@
 .auth-container::before {
   width: 500px;
   height: 500px;
-  background: rgba(0, 206, 209, 0.3);
+  background: rgba(184, 241, 245, 0.4);
   top: -250px;
   left: -250px;
   animation: float 20s infinite ease-in-out;
@@ -47,7 +47,7 @@
 .auth-container::after {
   width: 400px;
   height: 400px;
-  background: rgba(62, 180, 137, 0.3);
+  background: rgba(167, 236, 236, 0.4);
   bottom: -200px;
   right: -200px;
   animation: float 15s infinite ease-in-out reverse;
