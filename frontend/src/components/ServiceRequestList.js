@@ -230,7 +230,7 @@ function ServiceRequestList() {
       });
       setShowForm(false);
       setEditingRequest(null);
-      fetchData();
+      await fetchData(); // Wait for data to load before closing
     } catch (err) {
       console.error('Submit error:', err);
       setError('Failed to save service request: ' + err.message);
@@ -672,6 +672,7 @@ function ServiceRequestList() {
             disableSelectionOnClick
             autoHeight={false}
             onRowClick={handleRowClick}
+            getRowId={(row) => row.id}
             sx={{
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
