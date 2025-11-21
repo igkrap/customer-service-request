@@ -160,28 +160,29 @@ function ProjectList() {
       renderCell: (params) => getServiceTypeBadge(params.value)
     },
     {
-      field: 'contractPeriod',
-      headerName: '계약 기간',
-      width: 250,
-      valueGetter: (params) => {
-        // params can be undefined during initialization
-        if (!params || !params.row) {
-          return '';
-        }
-
-        const row = params.row;
-
-        // Check if required fields exist
-        if (!row.contractStartDate || !row.contractEndDate) {
-          return '';
-        }
-
+      field: 'contractStartDate',
+      headerName: '계약 시작일',
+      width: 130,
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
         try {
-          const start = new Date(row.contractStartDate).toLocaleDateString();
-          const end = new Date(row.contractEndDate).toLocaleDateString();
-          return `${start} - ${end}`;
+          return new Date(value).toLocaleDateString();
         } catch (error) {
-          console.error('Error formatting contract period:', error, row);
+          return '';
+        }
+      }
+    },
+    {
+      field: 'contractEndDate',
+      headerName: '계약 종료일',
+      width: 130,
+      valueFormatter: (params) => {
+        const value = params?.value !== undefined ? params.value : params;
+        if (!value) return '';
+        try {
+          return new Date(value).toLocaleDateString();
+        } catch (error) {
           return '';
         }
       }

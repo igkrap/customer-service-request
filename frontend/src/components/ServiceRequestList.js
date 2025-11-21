@@ -306,13 +306,12 @@ function ServiceRequestList() {
     }
 
     try {
-      const request = requests.find(r => r.id === resolvingRequest);
-      await serviceRequestAPI.update(resolvingRequest, {
-        ...request,
-        status: 'RESOLVED',
-        hoursSpent: parseFloat(resolutionData.hoursSpent),
-        resolutionNotes: resolutionData.resolutionNotes
-      });
+      await serviceRequestAPI.updateStatus(
+        resolvingRequest,
+        'RESOLVED',
+        parseFloat(resolutionData.hoursSpent),
+        resolutionData.resolutionNotes
+      );
       setShowResolutionDialog(false);
       setResolvingRequest(null);
       setResolutionData({ hoursSpent: '', resolutionNotes: '' });
