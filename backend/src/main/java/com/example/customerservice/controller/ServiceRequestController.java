@@ -216,7 +216,8 @@ public class ServiceRequestController {
                 }
             }
 
-            ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(id, request.getStatus());
+            ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(
+                    id, request.getStatus(), request.getHoursSpent(), request.getResolutionNotes());
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

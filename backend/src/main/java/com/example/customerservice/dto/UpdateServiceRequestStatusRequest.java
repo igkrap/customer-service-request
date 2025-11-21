@@ -13,4 +13,8 @@ public class UpdateServiceRequestStatusRequest {
 
     @NotNull(message = "Status is required")
     private ServiceRequest.RequestStatus status;
+
+    private Double hoursSpent;
+
+    private String resolutionNotes;
 }

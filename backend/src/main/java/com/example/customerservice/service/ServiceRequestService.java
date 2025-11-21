@@ -206,6 +206,11 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
+        return updateServiceRequestStatus(id, status, null, null);
+    }
+
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
+                                                        Double hoursSpent, String resolutionNotes) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -219,6 +224,14 @@ public class ServiceRequestService {
             if (serviceRequest.getResolvedAt() == null) {
                 serviceRequest.setResolvedAt(LocalDateTime.now());
             }
+        }
+
+        // Update hoursSpent and resolutionNotes if provided
+        if (hoursSpent != null) {
+            serviceRequest.setHoursSpent(hoursSpent);
+        }
+        if (resolutionNotes != null) {
+            serviceRequest.setResolutionNotes(resolutionNotes);
         }
 
         serviceRequestMapper.update(serviceRequest);
