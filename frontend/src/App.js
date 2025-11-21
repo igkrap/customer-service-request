@@ -23,7 +23,9 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Assignment as RequestIcon,
@@ -35,11 +37,14 @@ import {
   Work as ProjectIcon,
   AccountTree as MappingIcon,
   Person as ProfileIcon,
-  Logout as LogoutIcon
+  Logout as LogoutIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
 const drawerWidth = 280;
+const collapsedDrawerWidth = 72;
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -48,6 +53,7 @@ function Dashboard() {
   const isManager = user?.role === 'ROLE_MANAGER';
   const isCustomerOrManager = isCustomer || isManager;
   const [activeTab, setActiveTab] = useState('requests');
+  const [drawerOpen, setDrawerOpen] = useState(true);
 
   const getRoleText = () => {
     if (isAdmin) return '관리자';
@@ -74,9 +80,10 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           p: 1,
-          width: `calc(100% - ${drawerWidth}px)`,
+          width: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)`,
           height: '100%',
-          overflow: 'auto'
+          overflow: 'auto',
+          transition: 'width 0.3s ease'
         }}
       >
         {activeTab === 'requests' && <ServiceRequestList />}
@@ -92,36 +99,87 @@ function Dashboard() {
 
       <Drawer
         sx={{
-          width: drawerWidth,
+          width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: drawerWidth,
+            width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
+            transition: 'width 0.3s ease',
+            overflowX: 'hidden'
           },
         }}
         variant="permanent"
         anchor="right"
       >
         <Box sx={{ overflow: 'auto', mt: 4 }}>
-          <Box sx={{ px: 2, pb: 2 }}>
-            <Chip
-              label={getRoleText()}
-              color="primary"
-              size="small"
-              sx={{ mb: 1 }}
-            />
-            <Typography variant="caption" display="block" color="text.secondary">
-              환영합니다, {user?.username}님
-            </Typography>
+          <Box sx={{ display: 'flex', justifyContent: drawerOpen ? 'space-between' : 'center', alignItems: 'center', px: drawerOpen ? 2 : 1, pb: 2 }}>
+            {drawerOpen && (
+              <Box>
+                <Chip
+                  label={getRoleText()}
+                  color="primary"
+                  size="small"
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="caption" display="block" color="text.secondary">
+                  환영합니다, {user?.username}님
+                </Typography>
+              </Box>
+            )}
+            <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="left">
+              <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
+                {drawerOpen ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+              </IconButton>
+            </Tooltip>
           </Box>
           <Divider />
           <List>
             {menuItems.filter(item => item.show).map((item) => (
               <ListItem key={item.key} disablePadding>
+                <Tooltip title={!drawerOpen ? item.label : ""} placement="left">
+                  <ListItemButton
+                    selected={activeTab === item.key}
+                    onClick={() => setActiveTab(item.key)}
+                    sx={{
+                      justifyContent: drawerOpen ? 'initial' : 'center',
+                      px: drawerOpen ? 2.5 : 1.5,
+                      '&.Mui-selected': {
+                        backgroundColor: 'primary.light',
+                        color: 'primary.contrastText',
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                        },
+                        '& .MuiListItemIcon-root': {
+                          color: 'primary.contrastText',
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        mr: drawerOpen ? 3 : 'auto',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    {drawerOpen && <ListItemText primary={item.label} />}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            ))}
+          </List>
+          <Divider />
+          <List>
+            <ListItem disablePadding>
+              <Tooltip title={!drawerOpen ? "내 프로필" : ""} placement="left">
                 <ListItemButton
-                  selected={activeTab === item.key}
-                  onClick={() => setActiveTab(item.key)}
+                  selected={activeTab === 'profile'}
+                  onClick={() => setActiveTab('profile')}
                   sx={{
+                    justifyContent: drawerOpen ? 'initial' : 'center',
+                    px: drawerOpen ? 2.5 : 1.5,
                     '&.Mui-selected': {
                       backgroundColor: 'primary.light',
                       color: 'primary.contrastText',
@@ -134,46 +192,40 @@ function Dashboard() {
                     },
                   }}
                 >
-                  <ListItemIcon>
-                    {item.icon}
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: drawerOpen ? 3 : 'auto',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <ProfileIcon />
                   </ListItemIcon>
-                  <ListItemText primary={item.label} />
+                  {drawerOpen && <ListItemText primary="내 프로필" />}
                 </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton
-                selected={activeTab === 'profile'}
-                onClick={() => setActiveTab('profile')}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText',
-                    '&:hover': {
-                      backgroundColor: 'primary.main',
-                    },
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.contrastText',
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <ProfileIcon />
-                </ListItemIcon>
-                <ListItemText primary="내 프로필" />
-              </ListItemButton>
+              </Tooltip>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={logout}>
-                <ListItemIcon>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText primary="로그아웃" />
-              </ListItemButton>
+              <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="left">
+                <ListItemButton
+                  onClick={logout}
+                  sx={{
+                    justifyContent: drawerOpen ? 'initial' : 'center',
+                    px: drawerOpen ? 2.5 : 1.5,
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: drawerOpen ? 3 : 'auto',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <LogoutIcon />
+                  </ListItemIcon>
+                  {drawerOpen && <ListItemText primary="로그아웃" />}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
           </List>
         </Box>
