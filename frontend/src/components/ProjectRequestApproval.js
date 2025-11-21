@@ -231,7 +231,7 @@ function ProjectRequestApproval() {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          고객의 프로젝트 요청을 검토하고 승인 또는 거부하세요. 승인된 요청은 새 프로젝트를 생성합니다.
+          요청자의 프로젝트 요청을 검토하고 승인 또는 거부하세요. 승인된 요청은 새 프로젝트를 생성합니다.
         </Alert>
 
         {/* Approval Dialog */}

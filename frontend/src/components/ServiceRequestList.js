@@ -346,7 +346,7 @@ function ServiceRequestList() {
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '고객', flex: 1.3, minWidth: 130 },
+    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
     {
       field: 'projectName',
       headerName: '프로젝트',
@@ -524,14 +524,14 @@ function ServiceRequestList() {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                 {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
                   <FormControl fullWidth required>
-                    <InputLabel>고객</InputLabel>
+                    <InputLabel>요청자</InputLabel>
                     <Select
                       name="customerId"
                       value={formData.customerId}
                       onChange={handleInputChange}
-                      label="고객"
+                      label="요청자"
                     >
-                      <MenuItem value="">고객 선택</MenuItem>
+                      <MenuItem value="">요청자 선택</MenuItem>
                       {customers.map(c => (
                         <MenuItem key={c.id} value={c.id}>
                           {c.username} - {c.email}
@@ -655,7 +655,7 @@ function ServiceRequestList() {
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">고객</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">요청자</Typography>
                     <Typography variant="body1">{selectedRequest.customerName}</Typography>
                   </Grid>
                   <Grid item xs={6}>
