@@ -37,8 +37,12 @@ public class ServiceRequest {
 
     private LocalDateTime resolvedAt;
 
+    private Double hoursSpent;
+
+    private String resolutionNotes;
+
     public enum RequestStatus {
-        OPEN, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED
+        OPEN, IN_PROGRESS, RESOLVED, HOLD, CANCELLED
     }
 
     public enum Priority {

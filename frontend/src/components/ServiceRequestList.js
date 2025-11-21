@@ -30,6 +30,7 @@ import {
   PlayArrow as StartIcon,
   Check as CompleteIcon,
   Close as CloseIcon,
+  Pause as HoldIcon,
   Visibility as ViewIcon,
   PersonRemove as UnassignIcon
 } from '@mui/icons-material';
@@ -44,6 +45,12 @@ function ServiceRequestList() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showResolutionDialog, setShowResolutionDialog] = useState(false);
+  const [resolvingRequest, setResolvingRequest] = useState(null);
+  const [resolutionData, setResolutionData] = useState({
+    hoursSpent: '',
+    resolutionNotes: ''
+  });
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [formData, setFormData] = useState({
@@ -276,6 +283,13 @@ function ServiceRequestList() {
   };
 
   const handleStatusChange = async (requestId, newStatus) => {
+    // If changing to RESOLVED, show dialog to collect hours and notes
+    if (newStatus === 'RESOLVED') {
+      setResolvingRequest(requestId);
+      setShowResolutionDialog(true);
+      return;
+    }
+
     try {
       await serviceRequestAPI.updateStatus(requestId, newStatus);
       fetchData();
@@ -283,6 +297,36 @@ function ServiceRequestList() {
     } catch (err) {
       setError('Failed to update status: ' + (err.response?.data || err.message));
     }
+  };
+
+  const handleResolve = async () => {
+    if (!resolutionData.hoursSpent || !resolutionData.resolutionNotes) {
+      setError('소요시간과 처리 내용을 모두 입력해주세요.');
+      return;
+    }
+
+    try {
+      const request = requests.find(r => r.id === resolvingRequest);
+      await serviceRequestAPI.update(resolvingRequest, {
+        ...request,
+        status: 'RESOLVED',
+        hoursSpent: parseFloat(resolutionData.hoursSpent),
+        resolutionNotes: resolutionData.resolutionNotes
+      });
+      setShowResolutionDialog(false);
+      setResolvingRequest(null);
+      setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+      fetchData();
+      setError(null);
+    } catch (err) {
+      setError('완료 처리 실패: ' + (err.response?.data || err.message));
+    }
+  };
+
+  const handleCancelResolve = () => {
+    setShowResolutionDialog(false);
+    setResolvingRequest(null);
+    setResolutionData({ hoursSpent: '', resolutionNotes: '' });
   };
 
   const handleUnassign = async (requestId) => {
@@ -327,10 +371,17 @@ function ServiceRequestList() {
       'OPEN': 'primary',
       'IN_PROGRESS': 'info',
       'RESOLVED': 'success',
-      'CLOSED': 'default',
+      'HOLD': 'warning',
       'CANCELLED': 'error'
     };
-    return <Chip label={status} color={colorMap[status] || 'default'} size="small" />;
+    const labelMap = {
+      'OPEN': '대기',
+      'IN_PROGRESS': '진행중',
+      'RESOLVED': '완료',
+      'HOLD': '보류',
+      'CANCELLED': '취소'
+    };
+    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const getPriorityChip = (priority) => {
@@ -346,7 +397,7 @@ function ServiceRequestList() {
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '고객', flex: 1.3, minWidth: 130 },
+    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
     {
       field: 'projectName',
       headerName: '프로젝트',
@@ -384,6 +435,23 @@ function ServiceRequestList() {
         if (!value) return '';
         return formatDateTime(value) || '';
       }
+    },
+    {
+      field: 'hoursSpent',
+      headerName: '소요시간(h)',
+      flex: 0.8,
+      minWidth: 100,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return `${value}h`;
+      }
+    },
+    {
+      field: 'resolutionNotes',
+      headerName: '처리 내용',
+      flex: 1.5,
+      minWidth: 150,
+      valueGetter: (value) => value || ''
     },
     {
       field: 'actions',
@@ -452,17 +520,17 @@ function ServiceRequestList() {
                         <CompleteIcon fontSize="small" />
                       </IconButton>
                     )}
-                    {params.row.status !== 'CLOSED' && (
+                    {params.row.status !== 'HOLD' && (
                       <IconButton
                         size="small"
                         color="warning"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'CLOSED');
+                          handleStatusChange(params.row.id, 'HOLD');
                         }}
-                        title="종료"
+                        title="보류"
                       >
-                        <CloseIcon fontSize="small" />
+                        <HoldIcon fontSize="small" />
                       </IconButton>
                     )}
                     <IconButton
@@ -524,14 +592,14 @@ function ServiceRequestList() {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                 {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
                   <FormControl fullWidth required>
-                    <InputLabel>고객</InputLabel>
+                    <InputLabel>요청자</InputLabel>
                     <Select
                       name="customerId"
                       value={formData.customerId}
                       onChange={handleInputChange}
-                      label="고객"
+                      label="요청자"
                     >
-                      <MenuItem value="">고객 선택</MenuItem>
+                      <MenuItem value="">요청자 선택</MenuItem>
                       {customers.map(c => (
                         <MenuItem key={c.id} value={c.id}>
                           {c.username} - {c.email}
@@ -587,7 +655,7 @@ function ServiceRequestList() {
                       <MenuItem value="OPEN">열림</MenuItem>
                       <MenuItem value="IN_PROGRESS">진행중</MenuItem>
                       <MenuItem value="RESOLVED">해결됨</MenuItem>
-                      <MenuItem value="CLOSED">종료됨</MenuItem>
+                      <MenuItem value="HOLD">보류</MenuItem>
                       <MenuItem value="CANCELLED">취소됨</MenuItem>
                     </Select>
                   </FormControl>
@@ -655,7 +723,7 @@ function ServiceRequestList() {
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">고객</Typography>
+                    <Typography variant="subtitle2" color="text.secondary">요청자</Typography>
                     <Typography variant="body1">{selectedRequest.customerName}</Typography>
                   </Grid>
                   <Grid item xs={6}>
@@ -686,12 +754,71 @@ function ServiceRequestList() {
                       </Typography>
                     </Grid>
                   )}
+                  {selectedRequest.hoursSpent && (
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">소요시간</Typography>
+                      <Typography variant="body1">
+                        {selectedRequest.hoursSpent}시간
+                      </Typography>
+                    </Grid>
+                  )}
+                  {selectedRequest.resolutionNotes && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">처리 내용</Typography>
+                      <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {selectedRequest.resolutionNotes}
+                      </Typography>
+                    </Grid>
+                  )}
                 </Grid>
               </Box>
             )}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Resolution Dialog */}
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth>
+          <DialogTitle>서비스 요청 완료</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+              <Alert severity="info">
+                서비스 요청을 완료하려면 소요시간과 처리 내용을 입력해주세요.
+              </Alert>
+              <TextField
+                fullWidth
+                required
+                type="number"
+                label="소요시간 (시간)"
+                value={resolutionData.hoursSpent}
+                onChange={(e) => setResolutionData({ ...resolutionData, hoursSpent: e.target.value })}
+                inputProps={{ step: "0.5", min: "0" }}
+                helperText="예: 2.5시간"
+              />
+              <TextField
+                fullWidth
+                required
+                multiline
+                rows={4}
+                label="처리 내용"
+                value={resolutionData.resolutionNotes}
+                onChange={(e) => setResolutionData({ ...resolutionData, resolutionNotes: e.target.value })}
+                placeholder="수행한 작업 내용을 상세히 입력해주세요."
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelResolve}>취소</Button>
+            <Button
+              onClick={handleResolve}
+              variant="contained"
+              color="success"
+              disabled={!resolutionData.hoursSpent || !resolutionData.resolutionNotes}
+            >
+              완료 처리
+            </Button>
           </DialogActions>
         </Dialog>
 
