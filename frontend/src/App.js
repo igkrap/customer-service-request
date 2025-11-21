@@ -25,7 +25,8 @@ import {
   ListItemText,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  Fade
 } from '@mui/material';
 import {
   Assignment as RequestIcon,
@@ -73,6 +74,19 @@ function Dashboard() {
     { key: 'userprojects', label: '사용자-프로젝트 매핑', icon: <MappingIcon />, show: isAdmin },
   ];
 
+  const renderContent = () => {
+    if (activeTab === 'requests') return <ServiceRequestList />;
+    if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
+    if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
+    if (activeTab === 'projectrequestapproval' && isAdmin) return <ProjectRequestApproval />;
+    if (activeTab === 'users' && isAdmin) return <UserList />;
+    if (activeTab === 'companies' && isAdmin) return <CompanyList />;
+    if (activeTab === 'projects' && isAdmin) return <ProjectList />;
+    if (activeTab === 'userprojects' && isAdmin) return <AdminProjectMapping />;
+    if (activeTab === 'profile') return <UserProfile />;
+    return null;
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
       <Box
@@ -86,15 +100,11 @@ function Dashboard() {
           transition: 'width 0.3s ease'
         }}
       >
-        {activeTab === 'requests' && <ServiceRequestList />}
-        {activeTab === 'projectrequests' && isCustomer && <ProjectRequestList />}
-        {activeTab === 'myprojects' && isCustomerOrManager && <MyProjectList />}
-        {activeTab === 'projectrequestapproval' && isAdmin && <ProjectRequestApproval />}
-        {activeTab === 'users' && isAdmin && <UserList />}
-        {activeTab === 'companies' && isAdmin && <CompanyList />}
-        {activeTab === 'projects' && isAdmin && <ProjectList />}
-        {activeTab === 'userprojects' && isAdmin && <AdminProjectMapping />}
-        {activeTab === 'profile' && <UserProfile />}
+        <Fade in={true} timeout={300} key={activeTab}>
+          <Box sx={{ height: '100%' }}>
+            {renderContent()}
+          </Box>
+        </Fade>
       </Box>
 
       <Drawer
