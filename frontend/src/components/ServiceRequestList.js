@@ -458,11 +458,13 @@ function ServiceRequestList() {
       flex: 1.5,
       minWidth: 150,
       sortable: false,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => {
         if (!params.row) return null;
 
         return (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '100%' }}>
             {canEditRequest(params.row) && (
               <>
                 <IconButton
