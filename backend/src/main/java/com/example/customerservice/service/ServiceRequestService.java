@@ -166,11 +166,9 @@ public class ServiceRequestService {
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
-        // Set resolvedAt when status changes to RESOLVED or CLOSED
-        if ((dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED ||
-             dto.getStatus() == ServiceRequest.RequestStatus.CLOSED) &&
-            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
-             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+        // Set resolvedAt when status changes to RESOLVED
+        if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED &&
+            oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
             if (serviceRequest.getResolvedAt() == null) {
                 serviceRequest.setResolvedAt(LocalDateTime.now());
             }
@@ -215,11 +213,9 @@ public class ServiceRequestService {
         serviceRequest.setStatus(status);
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
-        // Set resolvedAt when status changes to RESOLVED or CLOSED
-        if ((status == ServiceRequest.RequestStatus.RESOLVED ||
-             status == ServiceRequest.RequestStatus.CLOSED) &&
-            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
-             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+        // Set resolvedAt when status changes to RESOLVED
+        if (status == ServiceRequest.RequestStatus.RESOLVED &&
+            oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
             if (serviceRequest.getResolvedAt() == null) {
                 serviceRequest.setResolvedAt(LocalDateTime.now());
             }
@@ -249,11 +245,9 @@ public class ServiceRequestService {
         serviceRequest.setStatus(status);
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
-        // Set resolvedAt when status changes to RESOLVED or CLOSED
-        if ((status == ServiceRequest.RequestStatus.RESOLVED ||
-             status == ServiceRequest.RequestStatus.CLOSED) &&
-            (oldStatus != ServiceRequest.RequestStatus.RESOLVED &&
-             oldStatus != ServiceRequest.RequestStatus.CLOSED)) {
+        // Set resolvedAt when status changes to RESOLVED
+        if (status == ServiceRequest.RequestStatus.RESOLVED &&
+            oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
             if (serviceRequest.getResolvedAt() == null) {
                 serviceRequest.setResolvedAt(LocalDateTime.now());
             }

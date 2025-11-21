@@ -30,6 +30,7 @@ import {
   PlayArrow as StartIcon,
   Check as CompleteIcon,
   Close as CloseIcon,
+  Pause as HoldIcon,
   Visibility as ViewIcon,
   PersonRemove as UnassignIcon
 } from '@mui/icons-material';
@@ -327,10 +328,17 @@ function ServiceRequestList() {
       'OPEN': 'primary',
       'IN_PROGRESS': 'info',
       'RESOLVED': 'success',
-      'CLOSED': 'default',
+      'HOLD': 'warning',
       'CANCELLED': 'error'
     };
-    return <Chip label={status} color={colorMap[status] || 'default'} size="small" />;
+    const labelMap = {
+      'OPEN': '대기',
+      'IN_PROGRESS': '진행중',
+      'RESOLVED': '완료',
+      'HOLD': '보류',
+      'CANCELLED': '취소'
+    };
+    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const getPriorityChip = (priority) => {
@@ -452,17 +460,17 @@ function ServiceRequestList() {
                         <CompleteIcon fontSize="small" />
                       </IconButton>
                     )}
-                    {params.row.status !== 'CLOSED' && (
+                    {params.row.status !== 'HOLD' && (
                       <IconButton
                         size="small"
                         color="warning"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'CLOSED');
+                          handleStatusChange(params.row.id, 'HOLD');
                         }}
-                        title="종료"
+                        title="보류"
                       >
-                        <CloseIcon fontSize="small" />
+                        <HoldIcon fontSize="small" />
                       </IconButton>
                     )}
                     <IconButton
@@ -587,7 +595,7 @@ function ServiceRequestList() {
                       <MenuItem value="OPEN">열림</MenuItem>
                       <MenuItem value="IN_PROGRESS">진행중</MenuItem>
                       <MenuItem value="RESOLVED">해결됨</MenuItem>
-                      <MenuItem value="CLOSED">종료됨</MenuItem>
+                      <MenuItem value="HOLD">보류</MenuItem>
                       <MenuItem value="CANCELLED">취소됨</MenuItem>
                     </Select>
                   </FormControl>

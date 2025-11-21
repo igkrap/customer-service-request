@@ -190,13 +190,13 @@ public class ServiceRequestController {
                         .body("Only managers and admins can update service request status");
             }
 
-            // Managers can only set status to IN_PROGRESS, RESOLVED, or CLOSED
+            // Managers can only set status to IN_PROGRESS, RESOLVED, or HOLD
             if (user.getRole() == User.Role.ROLE_MANAGER) {
                 if (request.getStatus() != ServiceRequest.RequestStatus.IN_PROGRESS &&
                     request.getStatus() != ServiceRequest.RequestStatus.RESOLVED &&
-                    request.getStatus() != ServiceRequest.RequestStatus.CLOSED) {
+                    request.getStatus() != ServiceRequest.RequestStatus.HOLD) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body("Managers can only set status to IN_PROGRESS, RESOLVED, or CLOSED");
+                            .body("Managers can only set status to IN_PROGRESS, RESOLVED, or HOLD");
                 }
 
                 ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
@@ -208,7 +208,7 @@ public class ServiceRequestController {
                     return ResponseEntity.ok(updatedRequest);
                 }
 
-                // For other statuses (RESOLVED, CLOSED), verify that the manager is assigned to this request
+                // For other statuses (RESOLVED, HOLD), verify that the manager is assigned to this request
                 if (existingRequest.getManagerId() == null ||
                     !existingRequest.getManagerId().equals(user.getId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
