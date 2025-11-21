@@ -462,7 +462,7 @@ function ServiceRequestList() {
         if (!params.row) return null;
 
         return (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
             {canEditRequest(params.row) && (
               <>
                 <IconButton
