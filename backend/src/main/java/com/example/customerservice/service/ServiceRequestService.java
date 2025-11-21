@@ -304,6 +304,8 @@ public class ServiceRequestService {
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());
+        dto.setHoursSpent(serviceRequest.getHoursSpent());
+        dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         return dto;
     }
 
@@ -315,6 +317,8 @@ public class ServiceRequestService {
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
+        serviceRequest.setHoursSpent(dto.getHoursSpent());
+        serviceRequest.setResolutionNotes(dto.getResolutionNotes());
         return serviceRequest;
     }
 }

@@ -42,4 +42,7 @@ public class ServiceRequestDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
+
+    private Double hoursSpent;
+    private String resolutionNotes;
 }
