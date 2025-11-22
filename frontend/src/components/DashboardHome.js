@@ -543,44 +543,45 @@ function DashboardHome() {
   return (
     <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
       {/* 왼쪽 400px - 사용자 정보, 달력, 날씨 */}
-      <Box sx={{ width: '400px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto' }}>
+      <Paper
+        elevation={3}
+        sx={{
+          width: '400px',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          p: 3,
+          overflow: 'auto',
+          bgcolor: 'background.paper',
+        }}
+      >
         {/* 사용자 정보 */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 3,
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Box sx={{ textAlign: 'center' }}>
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                margin: '0 auto',
-                mb: 2,
-                bgcolor: 'primary.main',
-                fontSize: '2rem',
-              }}
-            >
-              {user?.username?.charAt(0).toUpperCase()}
-            </Avatar>
-            <Typography variant="h5" gutterBottom>
-              {user?.username}
-            </Typography>
-            <Chip
-              label={getRoleText()}
-              color="primary"
-            />
-          </Box>
-        </Paper>
+        <Box sx={{ textAlign: 'center' }}>
+          <Avatar
+            sx={{
+              width: 80,
+              height: 80,
+              margin: '0 auto',
+              mb: 2,
+              bgcolor: 'primary.main',
+              fontSize: '2rem',
+            }}
+          >
+            {user?.username?.charAt(0).toUpperCase()}
+          </Avatar>
+          <Typography variant="h5" gutterBottom>
+            {user?.username}
+          </Typography>
+          <Chip
+            label={getRoleText()}
+            color="primary"
+          />
+        </Box>
 
         {/* 달력 */}
-        <Paper
-          elevation={2}
+        <Box
           sx={{
-            p: 2,
-            bgcolor: 'background.paper',
             '& .react-calendar': {
               width: '100%',
               border: 'none',
@@ -701,25 +702,18 @@ function DashboardHome() {
               />
             </Box>
           </Tooltip>
-        </Paper>
+        </Box>
 
         {/* 날씨 */}
-        <Paper
-          elevation={2}
+        <Box
           sx={{
-            p: 2,
-            bgcolor: 'background.paper',
+            p: 2.5,
+            backgroundColor: '#1a1a1a',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            color: 'white',
           }}
         >
-          <Box
-            sx={{
-              p: 2.5,
-              backgroundColor: '#1a1a1a',
-              borderRadius: 2,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-              color: 'white',
-            }}
-          >
             {weatherLoading ? (
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
                 날씨 정보 로딩 중...
@@ -799,9 +793,8 @@ function DashboardHome() {
                 날씨 정보를 불러올 수 없습니다
               </Typography>
             )}
-          </Box>
-        </Paper>
-      </Box>
+        </Box>
+      </Paper>
 
       {/* 오른쪽 - Role별 대시보드 그리드 (나머지 공간) */}
       <Box sx={{ flex: 1, height: '100%', overflow: 'auto', p: 2 }}>
