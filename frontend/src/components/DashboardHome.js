@@ -655,35 +655,84 @@ function DashboardHome() {
             </Tooltip>
 
             {/* 날씨 정보 */}
-            <Box sx={{ textAlign: 'center', mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Box
+              sx={{
+                mt: 2,
+                p: 2.5,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                color: 'white',
+              }}
+            >
               {weatherLoading ? (
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                   날씨 정보 로딩 중...
                 </Typography>
               ) : weather ? (
                 <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+                  {/* 온도와 아이콘 */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                     <img
                       src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
                       alt={weather.weather[0].description}
-                      style={{ width: 50, height: 50 }}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                      }}
                     />
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                      {Math.round(weather.main.temp)}°C
-                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 'bold',
+                      mb: 0.5,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    {Math.round(weather.main.temp)}°C
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      mb: 2,
+                      textTransform: 'capitalize',
+                      opacity: 0.95
+                    }}
+                  >
                     {weather.weather[0].description}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    체감온도: {Math.round(weather.main.feels_like)}°C
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    습도: {weather.main.humidity}%
-                  </Typography>
+
+                  {/* 상세 정보 */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-around',
+                      pt: 2,
+                      borderTop: '1px solid rgba(255,255,255,0.2)'
+                    }}
+                  >
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
+                        체감온도
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        {Math.round(weather.main.feels_like)}°C
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
+                        습도
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        {weather.main.humidity}%
+                      </Typography>
+                    </Box>
+                  </Box>
                 </>
               ) : (
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                   날씨 정보를 불러올 수 없습니다
                 </Typography>
               )}
