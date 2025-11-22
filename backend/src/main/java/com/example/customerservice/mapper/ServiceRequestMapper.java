@@ -58,6 +58,11 @@ public interface ServiceRequestMapper {
             "WHERE id = #{id}")
     int update(ServiceRequest serviceRequest);
 
+    @Update("UPDATE service_requests SET manager_id = NULL, status = 'OPEN', " +
+            "hours_spent = NULL, resolution_notes = NULL, resolved_at = NULL, " +
+            "updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int unassign(Long id);
+
     @Delete("DELETE FROM service_requests WHERE id = #{id}")
     int deleteById(Long id);
 }

@@ -6,6 +6,7 @@ import com.example.customerservice.model.ServiceRequest;
 import com.example.customerservice.model.User;
 import com.example.customerservice.service.ServiceRequestService;
 import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.mapper.ServiceRequestMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,9 @@ public class ServiceRequestController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ServiceRequestMapper serviceRequestMapper;
 
     @GetMapping
     public ResponseEntity<List<ServiceRequestDTO>> getAllServiceRequests(Authentication authentication) {
@@ -248,15 +252,8 @@ public class ServiceRequestController {
                 }
             }
 
-            // Unassign: set managerId to null, status to OPEN, and clear resolution data
-            existingRequest.setManagerId(null);
-            existingRequest.setStatus(ServiceRequest.RequestStatus.OPEN);
-            existingRequest.setHoursSpent(null);
-            existingRequest.setResolutionNotes(null);
-            existingRequest.setResolvedAt(null);
-            existingRequest.setUpdatedAt(java.time.LocalDateTime.now());
-
-            serviceRequestService.updateServiceRequest(id, convertToDTO(existingRequest));
+            // Unassign: use mapper to directly update database with NULL values
+            serviceRequestMapper.unassign(id);
 
             ServiceRequestDTO updatedRequest = serviceRequestService.getServiceRequestById(id);
             return ResponseEntity.ok(updatedRequest);
