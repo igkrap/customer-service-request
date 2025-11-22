@@ -59,7 +59,8 @@ function ServiceRequestList() {
     status: 'OPEN',
     priority: 'MEDIUM',
     customerId: '',
-    projectId: ''
+    projectId: '',
+    dueDate: ''
   });
 
   useEffect(() => {
@@ -234,7 +235,8 @@ function ServiceRequestList() {
         status: 'OPEN',
         priority: 'MEDIUM',
         customerId: '',
-        projectId: ''
+        projectId: '',
+        dueDate: ''
       });
       setShowForm(false);
       setEditingRequest(null);
@@ -253,7 +255,8 @@ function ServiceRequestList() {
       status: request.status,
       priority: request.priority,
       customerId: request.customerId.toString(),
-      projectId: request.projectId ? request.projectId.toString() : ''
+      projectId: request.projectId ? request.projectId.toString() : '',
+      dueDate: request.dueDate || ''
     });
     setShowForm(true);
   };
@@ -278,7 +281,8 @@ function ServiceRequestList() {
       status: 'OPEN',
       priority: 'MEDIUM',
       customerId: '',
-      projectId: ''
+      projectId: '',
+      dueDate: ''
     });
   };
 
@@ -417,6 +421,16 @@ function ServiceRequestList() {
       flex: 0.8,
       minWidth: 100,
       renderCell: (params) => params.value ? getPriorityChip(params.value) : null
+    },
+    {
+      field: 'dueDate',
+      headerName: '마감일',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return new Date(value).toLocaleDateString('ko-KR');
+      }
     },
     {
       field: 'managerName',
@@ -678,6 +692,19 @@ function ServiceRequestList() {
                     ))}
                   </Select>
                 </FormControl>
+
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="마감일"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  helperText="마감일을 선택하세요 (선택사항)"
+                />
               </Box>
             </DialogContent>
             <DialogActions>
@@ -747,6 +774,14 @@ function ServiceRequestList() {
                       {getPriorityChip(selectedRequest.priority)}
                     </Box>
                   </Grid>
+                  {selectedRequest.dueDate && (
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">마감일</Typography>
+                      <Typography variant="body1">
+                        {new Date(selectedRequest.dueDate).toLocaleDateString('ko-KR')}
+                      </Typography>
+                    </Grid>
+                  )}
                   {selectedRequest.resolvedAt && (
                     <Grid item xs={6}>
                       <Typography variant="subtitle2" color="text.secondary">해결일</Typography>

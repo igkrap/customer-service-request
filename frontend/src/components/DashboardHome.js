@@ -46,6 +46,7 @@ function DashboardHome() {
     pendingRequests: [],
     onHoldRequests: [],
     completedRequests: [],
+    allRequests: [], // For calendar due dates
   });
 
   const isAdmin = user?.role === 'ROLE_ADMIN';
@@ -76,6 +77,7 @@ function DashboardHome() {
           companies: companiesRes.data.slice(0, 5),
           projects: projectsRes.data.slice(0, 5),
           requests: requestsRes.data.slice(0, 5),
+          allRequests: requestsRes.data,
         });
       } else if (isManager) {
         const [projectsRes, requestsRes] = await Promise.all([
@@ -89,6 +91,7 @@ function DashboardHome() {
           unassignedRequests: allRequests.filter(r => !r.assignedTo).slice(0, 5),
           pendingRequests: allRequests.filter(r => r.status === 'PENDING').slice(0, 5),
           onHoldRequests: allRequests.filter(r => r.status === 'ON_HOLD').slice(0, 5),
+          allRequests: allRequests,
         });
       } else if (isCustomer) {
         const [projectsRes, requestsRes] = await Promise.all([
@@ -102,6 +105,7 @@ function DashboardHome() {
           pendingRequests: allRequests.filter(r => r.status === 'PENDING').slice(0, 5),
           onHoldRequests: allRequests.filter(r => r.status === 'ON_HOLD').slice(0, 5),
           completedRequests: allRequests.filter(r => r.status === 'COMPLETED').slice(0, 5),
+          allRequests: allRequests,
         });
       }
     } catch (error) {
@@ -161,6 +165,21 @@ function DashboardHome() {
 
   const dateInfo = getCurrentDate();
   const calendarData = getCalendarDays();
+
+  // 마감일별 요청 그룹화
+  const getRequestsByDate = (day) => {
+    if (!day || !data.allRequests) return [];
+
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const targetDate = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+
+    return data.allRequests.filter(req => {
+      if (!req.dueDate) return false;
+      const reqDate = new Date(req.dueDate).toISOString().split('T')[0];
+      return reqDate === targetDate;
+    });
+  };
 
   const renderUserGrid = (users, title, icon) => (
     <Card sx={{ height: '100%' }}>
@@ -439,35 +458,75 @@ function DashboardHome() {
 
             {/* 날짜 그리드 */}
             <Grid container spacing={0.5}>
-              {calendarData.days.map((day, index) => (
-                <Grid item xs key={index}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      py: 1,
-                      borderRadius: 1,
-                      fontSize: '0.875rem',
-                      bgcolor: day === calendarData.currentDay ? 'primary.main' : 'transparent',
-                      color: day === calendarData.currentDay
-                        ? 'white'
-                        : day
-                          ? index % 7 === 0
-                            ? 'error.main'
-                            : index % 7 === 6
-                              ? 'primary.main'
-                              : 'text.primary'
-                          : 'transparent',
-                      fontWeight: day === calendarData.currentDay ? 'bold' : 'normal',
-                      cursor: day ? 'pointer' : 'default',
-                      '&:hover': day ? {
-                        bgcolor: day === calendarData.currentDay ? 'primary.dark' : 'action.hover',
-                      } : {},
-                    }}
-                  >
-                    {day || ''}
-                  </Box>
-                </Grid>
-              ))}
+              {calendarData.days.map((day, index) => {
+                const requestsOnDate = getRequestsByDate(day);
+                const hasDueDate = requestsOnDate.length > 0;
+
+                return (
+                  <Grid item xs key={index}>
+                    <Tooltip
+                      title={
+                        hasDueDate ? (
+                          <Box>
+                            <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                              마감 예정 ({requestsOnDate.length}건)
+                            </Typography>
+                            {requestsOnDate.map((req, idx) => (
+                              <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
+                                • {req.title} ({req.priority})
+                              </Typography>
+                            ))}
+                          </Box>
+                        ) : ''
+                      }
+                      arrow
+                      placement="top"
+                    >
+                      <Box
+                        sx={{
+                          textAlign: 'center',
+                          py: 1,
+                          borderRadius: 1,
+                          fontSize: '0.875rem',
+                          position: 'relative',
+                          bgcolor: day === calendarData.currentDay ? 'primary.main' : 'transparent',
+                          color: day === calendarData.currentDay
+                            ? 'white'
+                            : day
+                              ? index % 7 === 0
+                                ? 'error.main'
+                                : index % 7 === 6
+                                  ? 'primary.main'
+                                  : 'text.primary'
+                              : 'transparent',
+                          fontWeight: day === calendarData.currentDay ? 'bold' : 'normal',
+                          cursor: day ? 'pointer' : 'default',
+                          border: hasDueDate ? '2px solid' : 'none',
+                          borderColor: hasDueDate ? 'warning.main' : 'transparent',
+                          '&:hover': day ? {
+                            bgcolor: day === calendarData.currentDay ? 'primary.dark' : 'action.hover',
+                          } : {},
+                        }}
+                      >
+                        {day || ''}
+                        {hasDueDate && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 2,
+                              right: 2,
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              bgcolor: 'warning.main',
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  </Grid>
+                );
+              })}
             </Grid>
 
             {/* 오늘 날짜 표시 */}
