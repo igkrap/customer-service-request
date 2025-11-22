@@ -692,6 +692,7 @@ function DashboardHome() {
                 locale="en-US"
                 tileContent={tileContent}
                 tileClassName={tileClassName}
+                showFixedNumberOfWeeks={true}
                 formatDay={(locale, date) => date.getDate().toString()}
                 formatShortWeekday={(locale, date) => {
                   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
