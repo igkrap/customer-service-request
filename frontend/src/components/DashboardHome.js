@@ -591,21 +591,21 @@ function DashboardHome() {
                 backgroundColor: '#f0f0f0',
               },
               '& .react-calendar__tile--now': {
-                backgroundColor: '#e8e8e8',
+                backgroundColor: '#e3f2fd',
                 color: '#333',
                 fontWeight: 'bold',
-                border: '1px solid #bbb',
               },
               '& .react-calendar__tile--now:enabled:hover': {
-                backgroundColor: '#ddd',
+                backgroundColor: '#bbdefb',
               },
               '& .react-calendar__tile--active': {
-                backgroundColor: '#006edc',
-                color: 'white',
-                border: '2px solid #0052a3',
+                backgroundColor: 'transparent',
+                color: '#006edc',
+                border: '2px solid #1976d2',
+                fontWeight: 'bold',
               },
               '& .react-calendar__tile.has-due-date': {
-                backgroundColor: '#fff8f0',
+                backgroundColor: 'transparent',
               },
               '& .react-calendar__month-view__days__day--weekend': {
                 color: '#d32f2f',
