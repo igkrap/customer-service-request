@@ -108,13 +108,59 @@
   }
 }
 
+/* Card wrapper for flip animation */
+.auth-card-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  perspective: 1000px;
+  min-height: 500px;
+  transition: min-height 0.6s ease;
+}
+
+.auth-card-wrapper.flipped {
+  min-height: 650px;
+}
+
 .auth-card {
   background: transparent;
   padding: 40px;
   width: 100%;
-  max-width: 400px;
-  position: relative;
-  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Front card (Login) */
+.auth-card-front {
+  opacity: 1;
+  transform: rotateY(0deg) translateX(0);
+  z-index: 2;
+}
+
+.auth-card-wrapper.flipped .auth-card-front {
+  opacity: 0;
+  transform: rotateY(-180deg) translateX(-50px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Back card (Register) */
+.auth-card-back {
+  opacity: 0;
+  transform: rotateY(180deg) translateX(50px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.auth-card-wrapper.flipped .auth-card-back {
+  opacity: 1;
+  transform: rotateY(0deg) translateX(0);
+  pointer-events: all;
+  z-index: 2;
 }
 
 .auth-card h2 {
@@ -200,14 +246,21 @@
   font-size: 14px;
 }
 
-.auth-link a {
+.auth-link a,
+.auth-link .link-button {
   color: #00CED1;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
 }
 
-.auth-link a:hover {
+.auth-link a:hover,
+.auth-link .link-button:hover {
   color: #3eb489;
   text-decoration: underline;
 }
