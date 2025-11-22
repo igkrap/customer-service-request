@@ -318,7 +318,7 @@ function DashboardHome() {
     }
   };
 
-  // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환
+  // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환 (완료되지 않은 것만)
   const getRequestsByDate = (date) => {
     if (!date || !data.allRequests) return [];
 
@@ -331,7 +331,8 @@ function DashboardHome() {
     return data.allRequests.filter(req => {
       if (!req.dueDate) return false;
       // dueDate가 yyyyMMdd 형식이므로 직접 비교
-      return req.dueDate === targetDate;
+      // 완료되지 않은 요청만 표시 (RESOLVED, CANCELLED 제외)
+      return req.dueDate === targetDate && req.status !== 'RESOLVED' && req.status !== 'CANCELLED';
     });
   };
 
