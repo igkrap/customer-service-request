@@ -122,7 +122,7 @@ function ProjectRequestApproval() {
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
         if (!value) return '';
-        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : '';
+        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : value === 'ETC' ? '기타' : '';
       }
     },
     {
@@ -312,7 +312,7 @@ function ProjectRequestApproval() {
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">서비스 유형</Typography>
                     <Typography variant="body1">
-                      {selectedRequest.serviceType === 'MAINTENANCE' ? '유지보수' : '하자보수'}
+                      {selectedRequest.serviceType === 'MAINTENANCE' ? '유지보수' : selectedRequest.serviceType === 'DEFECT_REPAIR' ? '하자보수' : '기타'}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>

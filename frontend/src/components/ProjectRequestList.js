@@ -154,7 +154,7 @@ function ProjectRequestList() {
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
         if (!value) return '';
-        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : '';
+        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : value === 'ETC' ? '기타' : '';
       }
     },
     {
@@ -299,6 +299,7 @@ function ProjectRequestList() {
                   >
                     <MenuItem value="MAINTENANCE">유지보수</MenuItem>
                     <MenuItem value="DEFECT_REPAIR">하자보수</MenuItem>
+                    <MenuItem value="ETC">기타</MenuItem>
                   </Select>
                 </FormControl>
 

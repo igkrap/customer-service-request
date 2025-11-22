@@ -150,22 +150,22 @@ function CompanyList() {
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
-          회사 관리
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" component="h2">
+            회사 관리
+          </Typography>
+          {!showForm && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setShowForm(true)}
+            >
+              새 회사 등록
+            </Button>
+          )}
+        </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        {!showForm && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setShowForm(true)}
-            sx={{ mb: 3, alignSelf: 'flex-start' }}
-          >
-            새 회사 등록
-          </Button>
-        )}
 
         {showForm && (
           <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>

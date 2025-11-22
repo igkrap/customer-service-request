@@ -154,7 +154,7 @@ function AdminProjectMapping() {
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" component="h2">
-            사용자-프로젝트 매핑 관리
+            사용자별 프로젝트 등록
           </Typography>
           <Button
             variant="outlined"

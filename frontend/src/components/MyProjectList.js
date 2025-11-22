@@ -76,7 +76,7 @@ function MyProjectList() {
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
-          내 프로젝트
+          프로젝트 조회
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

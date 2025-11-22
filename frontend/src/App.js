@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
+import AuthPage from './components/AuthPage';
 import PrivateRoute from './components/PrivateRoute';
 import DashboardHome from './components/DashboardHome';
 import ServiceRequestList from './components/ServiceRequestList';
@@ -61,20 +60,20 @@ function Dashboard() {
   const getRoleText = () => {
     if (isAdmin) return '관리자';
     if (isManager) return '매니저';
-    if (isCustomer) return '고객';
+    if (isCustomer) return '유저';
     return '사용자';
   };
 
   const menuItems = [
     { key: 'home', label: '대시보드 홈', icon: <DashboardIcon />, show: true },
-    { key: 'requests', label: '서비스 요청', icon: <RequestIcon />, show: true },
-    { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
-    { key: 'myprojects', label: '내 프로젝트', icon: <MyProjectIcon />, show: isCustomerOrManager },
-    { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'userprojects', label: '사용자-프로젝트 매핑', icon: <MappingIcon />, show: isAdmin },
+    { key: 'requests', label: '서비스 요청 관리', icon: <RequestIcon />, show: true },
+    { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
+    { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
+    { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
+    { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
@@ -253,8 +252,8 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/register" element={<Navigate to="/login" />} />
           <Route
             path="/"
             element={
