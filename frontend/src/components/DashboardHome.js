@@ -130,7 +130,37 @@ function DashboardHome() {
     };
   };
 
+  const getCalendarDays = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay(); // 0 (일요일) ~ 6 (토요일)
+
+    const days = [];
+
+    // 빈 칸 추가 (이전 달의 날짜들)
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // 현재 달의 날짜들
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day);
+    }
+
+    return {
+      days,
+      currentDay: today.getDate(),
+      year,
+      month: month + 1
+    };
+  };
+
   const dateInfo = getCurrentDate();
+  const calendarData = getCalendarDays();
 
   const renderUserGrid = (users, title, icon) => (
     <Card sx={{ height: '100%' }}>
@@ -373,37 +403,86 @@ function DashboardHome() {
             />
           </Box>
 
-          {/* 달력 및 날짜 */}
+          {/* 달력 */}
           <Paper
             elevation={2}
             sx={{
-              p: 3,
-              textAlign: 'center',
-              bgcolor: 'primary.main',
-              color: 'white',
+              p: 2,
+              bgcolor: 'background.paper',
             }}
           >
-            <CalendarIcon sx={{ fontSize: 60, mb: 2, color: 'white' }} />
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              {dateInfo.formatted}
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-              {dateInfo.weekday}
-            </Typography>
-          </Paper>
+            {/* 달력 헤더 */}
+            <Box sx={{ textAlign: 'center', mb: 2, p: 1, bgcolor: 'primary.main', borderRadius: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+                {calendarData.year}년 {calendarData.month}월
+              </Typography>
+            </Box>
 
-          {/* 오늘 날짜 강조 표시 */}
-          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-              오늘
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-              {new Date().getDate()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
-            </Typography>
-          </Box>
+            {/* 요일 헤더 */}
+            <Grid container spacing={0.5} sx={{ mb: 1 }}>
+              {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
+                <Grid item xs key={day}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      py: 0.5,
+                      fontWeight: 'bold',
+                      fontSize: '0.75rem',
+                      color: index === 0 ? 'error.main' : index === 6 ? 'primary.main' : 'text.primary',
+                    }}
+                  >
+                    {day}
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* 날짜 그리드 */}
+            <Grid container spacing={0.5}>
+              {calendarData.days.map((day, index) => (
+                <Grid item xs key={index}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      py: 1,
+                      borderRadius: 1,
+                      fontSize: '0.875rem',
+                      bgcolor: day === calendarData.currentDay ? 'primary.main' : 'transparent',
+                      color: day === calendarData.currentDay
+                        ? 'white'
+                        : day
+                          ? index % 7 === 0
+                            ? 'error.main'
+                            : index % 7 === 6
+                              ? 'primary.main'
+                              : 'text.primary'
+                          : 'transparent',
+                      fontWeight: day === calendarData.currentDay ? 'bold' : 'normal',
+                      cursor: day ? 'pointer' : 'default',
+                      '&:hover': day ? {
+                        bgcolor: day === calendarData.currentDay ? 'primary.dark' : 'action.hover',
+                      } : {},
+                    }}
+                  >
+                    {day || ''}
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* 오늘 날짜 표시 */}
+            <Box sx={{ textAlign: 'center', mt: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary" display="block">
+                오늘
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                {dateInfo.formatted}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {dateInfo.weekday}
+              </Typography>
+            </Box>
+          </Paper>
 
           {/* 추가 정보 영역 (필요시 사용) */}
           <Box sx={{ flex: 1 }} />
