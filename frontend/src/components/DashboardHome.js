@@ -246,9 +246,53 @@ function DashboardHome() {
     try {
       setWeatherLoading(true);
       const API_KEY = process.env.REACT_APP_WEATHER_API_KEY || 'demo';
-      const city = 'Seoul';
+
+      // 사용자 위치 정보를 가져오기 시도
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            // 위치 정보를 성공적으로 가져온 경우
+            const { latitude, longitude } = position.coords;
+            try {
+              const response = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=kr`
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                setWeather(data);
+              }
+            } catch (error) {
+              console.error('위치 기반 날씨 정보를 가져오는데 실패했습니다:', error);
+              // 실패 시 기본 위치(서울)로 폴백
+              await fetchDefaultWeather(API_KEY);
+            } finally {
+              setWeatherLoading(false);
+            }
+          },
+          async (error) => {
+            // 위치 정보를 가져오지 못한 경우 (거부, 에러 등)
+            console.log('위치 정보 접근 실패, 기본 위치(서울) 사용:', error.message);
+            await fetchDefaultWeather(API_KEY);
+            setWeatherLoading(false);
+          }
+        );
+      } else {
+        // Geolocation API를 지원하지 않는 경우
+        console.log('Geolocation을 지원하지 않는 브라우저입니다. 기본 위치(서울) 사용');
+        await fetchDefaultWeather(API_KEY);
+        setWeatherLoading(false);
+      }
+    } catch (error) {
+      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
+      setWeatherLoading(false);
+    }
+  };
+
+  const fetchDefaultWeather = async (API_KEY) => {
+    try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=kr`
+        `https://api.openweathermap.org/data/2.5/weather?q=Seoul&appid=${API_KEY}&units=metric&lang=kr`
       );
 
       if (response.ok) {
@@ -256,9 +300,7 @@ function DashboardHome() {
         setWeather(data);
       }
     } catch (error) {
-      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
-    } finally {
-      setWeatherLoading(false);
+      console.error('기본 날씨 정보를 가져오는데 실패했습니다:', error);
     }
   };
 
@@ -794,7 +836,7 @@ function DashboardHome() {
                       📍
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                      서울특별시, KR
+                      {weather.name}, {weather.sys?.country || 'KR'}
                     </Typography>
                   </Box>
                 </Box>
