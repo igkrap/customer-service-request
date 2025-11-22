@@ -178,7 +178,7 @@ function AdminProjectMapping() {
         {currentUser?.role === 'ROLE_ADMIN' && (
           <>
             <Alert severity="info" sx={{ mb: 3 }}>
-              사용자를 선택하고 프로젝트를 할당하세요. 고객은 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
+              사용자를 선택하고 프로젝트를 할당하세요. 유저는 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
             </Alert>
 
             <Grid container spacing={3}>

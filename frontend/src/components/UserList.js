@@ -159,7 +159,7 @@ function UserList() {
 
     // Company is required only for CUSTOMER role
     if (role === 'ROLE_CUSTOMER' && !companyId) {
-      setError('고객 역할에는 회사를 선택해야 합니다');
+      setError('유저 역할에는 회사를 선택해야 합니다');
       return;
     }
 
@@ -227,7 +227,7 @@ function UserList() {
         break;
       case 'ROLE_CUSTOMER':
         color = 'secondary';
-        displayRole = '고객';
+        displayRole = '유저';
         break;
       default:
         color = 'default';
@@ -262,7 +262,7 @@ function UserList() {
               style={{ fontSize: '12px', padding: '2px 5px', width: '100%' }}
             >
               <option value="">역할 선택</option>
-              <option value="ROLE_CUSTOMER">고객</option>
+              <option value="ROLE_CUSTOMER">유저</option>
               <option value="ROLE_MANAGER">매니저</option>
               <option value="ROLE_ADMIN">관리자</option>
             </select>
@@ -412,7 +412,7 @@ function UserList() {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="ROLE_CUSTOMER">고객</option>
+                    <option value="ROLE_CUSTOMER">유저</option>
                     <option value="ROLE_MANAGER">매니저</option>
                     <option value="ROLE_ADMIN">관리자</option>
                   </select>

@@ -83,7 +83,7 @@ function UserProfile() {
           <p><strong>역할:</strong> {
             user?.role === 'ROLE_ADMIN' ? '관리자' :
             user?.role === 'ROLE_MANAGER' ? '매니저' :
-            user?.role === 'ROLE_CUSTOMER' ? '고객' : '사용자'
+            user?.role === 'ROLE_CUSTOMER' ? '유저' : '사용자'
           }</p>
         </div>
 
