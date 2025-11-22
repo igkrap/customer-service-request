@@ -14,7 +14,7 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  background: linear-gradient(-45deg, #d4f8ed, #b8f1f5, #a7ecec, #d4f1f9);
+  background: linear-gradient(-45deg, #42A5F5, #66BB6A, #FFA726, #AB47BC);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
@@ -81,7 +81,7 @@
 .auth-left::before {
   width: 500px;
   height: 500px;
-  background: rgba(184, 241, 245, 0.4);
+  background: rgba(66, 165, 245, 0.3);
   top: -250px;
   left: -250px;
   animation: float 20s infinite ease-in-out;
@@ -90,7 +90,7 @@
 .auth-left::after {
   width: 400px;
   height: 400px;
-  background: rgba(167, 236, 236, 0.4);
+  background: rgba(171, 71, 188, 0.3);
   bottom: -200px;
   right: -200px;
   animation: float 15s infinite ease-in-out reverse;
