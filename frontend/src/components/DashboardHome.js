@@ -458,9 +458,9 @@ function DashboardHome() {
                   <TableCell>{project.companyName || '-'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={project.serviceType === 'MAINTENANCE' ? '유지보수' : '하자보수'}
+                      label={project.serviceType === 'MAINTENANCE' ? '유지보수' : project.serviceType === 'DEFECT_REPAIR' ? '하자보수' : '기타'}
                       size="small"
-                      color={project.serviceType === 'MAINTENANCE' ? 'primary' : 'secondary'}
+                      color={project.serviceType === 'MAINTENANCE' ? 'primary' : project.serviceType === 'DEFECT_REPAIR' ? 'secondary' : 'default'}
                       variant="outlined"
                     />
                   </TableCell>

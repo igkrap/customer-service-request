@@ -136,8 +136,8 @@ function ProjectList() {
   };
 
   const getServiceTypeBadge = (type) => {
-    const color = type === 'MAINTENANCE' ? 'info' : 'warning';
-    const typeLabel = type === 'MAINTENANCE' ? '유지보수' : '하자보수';
+    const color = type === 'MAINTENANCE' ? 'info' : type === 'DEFECT_REPAIR' ? 'warning' : 'default';
+    const typeLabel = type === 'MAINTENANCE' ? '유지보수' : type === 'DEFECT_REPAIR' ? '하자보수' : '기타';
     return <Chip label={typeLabel} color={color} size="small" />;
   };
 
@@ -296,6 +296,7 @@ function ProjectList() {
               >
                 <option value="MAINTENANCE">유지보수</option>
                 <option value="DEFECT_REPAIR">하자보수</option>
+                <option value="ETC">기타</option>
               </select>
             </div>
             <div className="form-group">
