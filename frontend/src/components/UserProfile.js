@@ -1,12 +1,34 @@
 import React, { useState } from 'react';
-import { Box, Paper, Typography, Alert } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
+  TextField,
+  Button,
+  IconButton,
+  Card,
+  CardContent,
+  CardHeader,
+  Avatar,
+  Grid
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon
+} from '@mui/icons-material';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-function UserProfile() {
+function UserProfile({ onBack }) {
   const { user, updateUser } = useAuth();
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [usernameForm, setUsernameForm] = useState({
+    username: user?.username || ''
+  });
   const [emailForm, setEmailForm] = useState({
     email: user?.email || ''
   });
@@ -14,6 +36,10 @@ function UserProfile() {
     password: '',
     confirmPassword: ''
   });
+
+  const handleUsernameChange = (e) => {
+    setUsernameForm({ username: e.target.value });
+  };
 
   const handleEmailChange = (e) => {
     setEmailForm({ email: e.target.value });
@@ -24,6 +50,19 @@ function UserProfile() {
       ...passwordForm,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleUsernameSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setError(null);
+      setSuccess(null);
+      // Note: 사용자명 변경 API가 구현되어 있다면 여기서 호출
+      // 현재는 이메일/비밀번호만 변경 가능하므로 안내 메시지 표시
+      setError('사용자명 변경은 관리자에게 문의하세요');
+    } catch (err) {
+      setError('사용자명 업데이트 실패: ' + (err.response?.data || err.message));
+    }
   };
 
   const handleEmailSubmit = async (e) => {
@@ -68,74 +107,134 @@ function UserProfile() {
   };
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
-          내 프로필
+    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
+      {/* 헤더 */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        {onBack && (
+          <IconButton onClick={onBack} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+        )}
+        <Typography variant="h5" component="h2">
+          프로필 정보 변경
         </Typography>
+      </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
 
-        <div className="profile-info">
-          <Typography variant="h6" sx={{ mb: 2 }}>계정 정보</Typography>
-          <p><strong>사용자명:</strong> {user?.username}</p>
-          <p><strong>역할:</strong> {
-            user?.role === 'ROLE_ADMIN' ? '관리자' :
-            user?.role === 'ROLE_MANAGER' ? '매니저' :
-            user?.role === 'ROLE_CUSTOMER' ? '유저' : '사용자'
-          }</p>
-        </div>
+      {/* 3개 타일 */}
+      <Grid container spacing={2}>
+        {/* 사용자명 변경 타일 */}
+        <Grid item xs={12}>
+          <Card elevation={3}>
+            <CardHeader
+              avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><PersonIcon /></Avatar>}
+              title="사용자명 변경"
+              titleTypographyProps={{ variant: 'h6' }}
+            />
+            <CardContent>
+              <form onSubmit={handleUsernameSubmit}>
+                <TextField
+                  fullWidth
+                  label="사용자명"
+                  value={usernameForm.username}
+                  onChange={handleUsernameChange}
+                  disabled
+                  helperText="사용자명 변경은 관리자에게 문의하세요"
+                  sx={{ mb: 2 }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  disabled
+                >
+                  사용자명 업데이트
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="profile-section">
-          <Typography variant="h6" sx={{ mb: 2 }}>이메일 변경</Typography>
-          <form onSubmit={handleEmailSubmit}>
-            <div className="form-group">
-              <label>이메일 주소</label>
-              <input
-                type="email"
-                value={emailForm.email}
-                onChange={handleEmailChange}
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              이메일 업데이트
-            </button>
-          </form>
-        </div>
+        {/* 이메일 변경 타일 */}
+        <Grid item xs={12}>
+          <Card elevation={3}>
+            <CardHeader
+              avatar={<Avatar sx={{ bgcolor: 'info.main' }}><EmailIcon /></Avatar>}
+              title="이메일 변경"
+              titleTypographyProps={{ variant: 'h6' }}
+            />
+            <CardContent>
+              <form onSubmit={handleEmailSubmit}>
+                <TextField
+                  fullWidth
+                  type="email"
+                  label="이메일 주소"
+                  value={emailForm.email}
+                  onChange={handleEmailChange}
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                >
+                  이메일 업데이트
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="profile-section">
-          <Typography variant="h6" sx={{ mb: 2 }}>비밀번호 변경</Typography>
-          <form onSubmit={handlePasswordSubmit}>
-            <div className="form-group">
-              <label>새 비밀번호</label>
-              <input
-                type="password"
-                name="password"
-                value={passwordForm.password}
-                onChange={handlePasswordChange}
-                placeholder="새 비밀번호 입력"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>새 비밀번호 확인</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={passwordForm.confirmPassword}
-                onChange={handlePasswordChange}
-                placeholder="새 비밀번호 확인"
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              비밀번호 업데이트
-            </button>
-          </form>
-        </div>
-      </Paper>
+        {/* 비밀번호 변경 타일 */}
+        <Grid item xs={12}>
+          <Card elevation={3}>
+            <CardHeader
+              avatar={<Avatar sx={{ bgcolor: 'success.main' }}><LockIcon /></Avatar>}
+              title="비밀번호 변경"
+              titleTypographyProps={{ variant: 'h6' }}
+            />
+            <CardContent>
+              <form onSubmit={handlePasswordSubmit}>
+                <TextField
+                  fullWidth
+                  type="password"
+                  label="새 비밀번호"
+                  name="password"
+                  value={passwordForm.password}
+                  onChange={handlePasswordChange}
+                  placeholder="최소 6자 이상"
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  type="password"
+                  label="새 비밀번호 확인"
+                  name="confirmPassword"
+                  value={passwordForm.confirmPassword}
+                  onChange={handlePasswordChange}
+                  placeholder="비밀번호 재입력"
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                >
+                  비밀번호 업데이트
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

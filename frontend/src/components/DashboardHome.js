@@ -902,7 +902,7 @@ function DashboardHome() {
         </Fade>
         <Fade in={showProfile} timeout={300} unmountOnExit>
           <Box sx={{ height: '100%', position: 'absolute', top: 0, left: 0, right: 0 }}>
-            <UserProfile />
+            <UserProfile onBack={() => setShowProfile(false)} />
           </Box>
         </Fade>
       </Box>
