@@ -649,9 +649,6 @@ function DashboardHome() {
               '& .react-calendar__tile--active:enabled:hover': {
                 backgroundColor: 'transparent !important',
               },
-              '& .react-calendar__tile.has-due-date': {
-                backgroundColor: 'transparent',
-              },
               '& .react-calendar__month-view__days__day--weekend': {
                 color: '#d32f2f',
               },
