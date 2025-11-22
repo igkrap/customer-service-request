@@ -182,12 +182,13 @@ function DashboardHome() {
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
     const weekday = weekdays[today.getDay()];
 
     return {
       formatted: `${year}년 ${month}월 ${day}일`,
-      weekday: `${weekday}요일`
+      weekday: weekday,
+      monthDay: `${parseInt(month)}월 ${parseInt(day)}일 ${weekday}`
     };
   };
 
@@ -659,80 +660,88 @@ function DashboardHome() {
               sx={{
                 mt: 2,
                 p: 2.5,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundColor: '#1a1a1a',
                 borderRadius: 2,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                 color: 'white',
               }}
             >
               {weatherLoading ? (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
                   날씨 정보 로딩 중...
                 </Typography>
               ) : weather ? (
                 <>
+                  {/* 현재 라벨 */}
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'rgba(255,255,255,0.6)',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    현재
+                  </Typography>
+
                   {/* 온도와 아이콘 */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', mb: 1.5 }}>
+                    <Typography
+                      variant="h2"
+                      sx={{
+                        fontWeight: 'bold',
+                        mr: 1,
+                        lineHeight: 1
+                      }}
+                    >
+                      {Math.round(weather.main.temp)}°C
+                    </Typography>
                     <img
                       src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
                       alt={weather.weather[0].description}
                       style={{
-                        width: 80,
-                        height: 80,
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                        width: 48,
+                        height: 48,
                       }}
                     />
                   </Box>
+
+                  {/* 날씨 설명 */}
                   <Typography
-                    variant="h3"
+                    variant="body2"
                     sx={{
-                      fontWeight: 'bold',
-                      mb: 0.5,
-                      textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    {Math.round(weather.main.temp)}°C
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      mb: 2,
-                      textTransform: 'capitalize',
-                      opacity: 0.95
+                      color: 'rgba(255,255,255,0.8)',
+                      mb: 2
                     }}
                   >
                     {weather.weather[0].description}
                   </Typography>
 
-                  {/* 상세 정보 */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-around',
-                      pt: 2,
-                      borderTop: '1px solid rgba(255,255,255,0.2)'
-                    }}
-                  >
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
-                        체감온도
+                  {/* 구분선 */}
+                  <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', mb: 2 }} />
+
+                  {/* 날짜와 위치 */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                        📅
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                        {Math.round(weather.main.feels_like)}°C
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                        {dateInfo.monthDay}
                       </Typography>
                     </Box>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
-                        습도
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                        📍
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                        {weather.main.humidity}%
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                        서울특별시, KR
                       </Typography>
                     </Box>
                   </Box>
                 </>
               ) : (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
                   날씨 정보를 불러올 수 없습니다
                 </Typography>
               )}
