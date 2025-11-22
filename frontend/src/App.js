@@ -61,7 +61,7 @@ function Dashboard() {
   const getRoleText = () => {
     if (isAdmin) return '관리자';
     if (isManager) return '매니저';
-    if (isCustomer) return '고객';
+    if (isCustomer) return '유저';
     return '사용자';
   };
 
