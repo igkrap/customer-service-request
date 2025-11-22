@@ -67,14 +67,14 @@ function Dashboard() {
 
   const menuItems = [
     { key: 'home', label: '대시보드 홈', icon: <DashboardIcon />, show: true },
-    { key: 'requests', label: '서비스 요청', icon: <RequestIcon />, show: true },
+    { key: 'requests', label: '서비스 요청 관리', icon: <RequestIcon />, show: true },
     { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '내 프로젝트', icon: <MyProjectIcon />, show: isCustomerOrManager },
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'userprojects', label: '사용자-프로젝트 매핑', icon: <MappingIcon />, show: isAdmin },
+    { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
