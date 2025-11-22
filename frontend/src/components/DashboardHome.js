@@ -535,8 +535,7 @@ function DashboardHome() {
                 <Calendar
                   onChange={setSelectedDate}
                   value={selectedDate}
-                  locale="ko-KR"
-                  calendarType="US"
+                  locale="en-US"
                   tileContent={tileContent}
                   tileClassName={tileClassName}
                   formatDay={(locale, date) => date.getDate().toString()}
