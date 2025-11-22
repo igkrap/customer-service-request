@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -42,7 +41,7 @@ public class ServiceRequest {
 
     private String resolutionNotes;
 
-    private LocalDate dueDate;
+    private String dueDate;
 
     public enum RequestStatus {
         OPEN, IN_PROGRESS, RESOLVED, HOLD, CANCELLED

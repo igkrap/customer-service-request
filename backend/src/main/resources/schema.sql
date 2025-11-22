@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     resolved_at TIMESTAMP,
     hours_spent REAL,
     resolution_notes TEXT,
-    due_date DATE,
+    due_date TEXT,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,

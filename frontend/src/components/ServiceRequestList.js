@@ -36,6 +36,28 @@ import {
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 
+// 날짜 형식 변환 함수
+const formatDateToYYYYMMDD = (dateString) => {
+  if (!dateString) return '';
+  // yyyy-MM-dd → yyyyMMdd
+  return dateString.replace(/-/g, '');
+};
+
+const formatDateFromYYYYMMDD = (yyyymmdd) => {
+  if (!yyyymmdd || yyyymmdd.length !== 8) return '';
+  // yyyyMMdd → yyyy-MM-dd
+  return `${yyyymmdd.substring(0, 4)}-${yyyymmdd.substring(4, 6)}-${yyyymmdd.substring(6, 8)}`;
+};
+
+const formatDateForDisplay = (yyyymmdd) => {
+  if (!yyyymmdd || yyyymmdd.length !== 8) return '';
+  // yyyyMMdd → yyyy년 MM월 dd일
+  const year = yyyymmdd.substring(0, 4);
+  const month = yyyymmdd.substring(4, 6);
+  const day = yyyymmdd.substring(6, 8);
+  return `${year}년 ${month}월 ${day}일`;
+};
+
 function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -212,7 +234,8 @@ function ServiceRequestList() {
       const submitData = {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
-        projectId: formData.projectId ? parseInt(formData.projectId) : null
+        projectId: formData.projectId ? parseInt(formData.projectId) : null,
+        dueDate: formatDateToYYYYMMDD(formData.dueDate)
       };
 
       console.log('=== Submitting Service Request ===');
@@ -256,7 +279,7 @@ function ServiceRequestList() {
       priority: request.priority,
       customerId: request.customerId.toString(),
       projectId: request.projectId ? request.projectId.toString() : '',
-      dueDate: request.dueDate || ''
+      dueDate: formatDateFromYYYYMMDD(request.dueDate)
     });
     setShowForm(true);
   };
@@ -429,7 +452,7 @@ function ServiceRequestList() {
       minWidth: 110,
       valueFormatter: (value) => {
         if (!value) return '';
-        return new Date(value).toLocaleDateString('ko-KR');
+        return formatDateForDisplay(value);
       }
     },
     {
@@ -778,7 +801,7 @@ function ServiceRequestList() {
                     <Grid item xs={6}>
                       <Typography variant="subtitle2" color="text.secondary">마감일</Typography>
                       <Typography variant="body1">
-                        {new Date(selectedRequest.dueDate).toLocaleDateString('ko-KR')}
+                        {formatDateForDisplay(selectedRequest.dueDate)}
                       </Typography>
                     </Grid>
                   )}

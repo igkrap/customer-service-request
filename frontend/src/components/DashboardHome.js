@@ -144,12 +144,16 @@ function DashboardHome() {
   const getRequestsByDate = (date) => {
     if (!date || !data.allRequests) return [];
 
-    const targetDate = new Date(date).toISOString().split('T')[0];
+    // date를 yyyyMMdd 형식으로 변환
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const targetDate = `${year}${month}${day}`;
 
     return data.allRequests.filter(req => {
       if (!req.dueDate) return false;
-      const reqDate = new Date(req.dueDate).toISOString().split('T')[0];
-      return reqDate === targetDate;
+      // dueDate가 yyyyMMdd 형식이므로 직접 비교
+      return req.dueDate === targetDate;
     });
   };
 
