@@ -29,7 +29,7 @@ import {
   Fade
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
+  Home as HomeIcon,
   Assignment as RequestIcon,
   PlaylistAddCheck as ProjectRequestIcon,
   Folder as MyProjectIcon,
@@ -41,7 +41,8 @@ import {
   Person as ProfileIcon,
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -65,7 +66,7 @@ function Dashboard() {
   };
 
   const menuItems = [
-    { key: 'home', label: '대시보드 홈', icon: <DashboardIcon />, show: true },
+    { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
@@ -125,19 +126,46 @@ function Dashboard() {
         anchor="right"
       >
         <Box sx={{ overflow: 'auto', mt: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: drawerOpen ? 'space-between' : 'center', alignItems: 'center', px: drawerOpen ? 2 : 1, pb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: drawerOpen ? 2 : 1, pb: 2 }}>
             {drawerOpen && (
-              <Box>
-                <Chip
-                  label={getRoleText()}
-                  color="primary"
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Chip
+                    label={getRoleText()}
+                    color="primary"
+                    size="small"
+                  />
+                  <Tooltip title="설정" placement="left">
+                    <IconButton
+                      onClick={() => setActiveTab('profile')}
+                      size="small"
+                      sx={{
+                        color: activeTab === 'profile' ? 'primary.main' : 'text.secondary',
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                    >
+                      <SettingsIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
                 <Typography variant="caption" display="block" color="text.secondary">
                   환영합니다, {user?.username}님
                 </Typography>
               </Box>
+            )}
+            {!drawerOpen && (
+              <Tooltip title="설정" placement="left">
+                <IconButton
+                  onClick={() => setActiveTab('profile')}
+                  size="small"
+                  sx={{
+                    color: activeTab === 'profile' ? 'primary.main' : 'text.secondary',
+                    mb: 1
+                  }}
+                >
+                  <SettingsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="left">
               <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
