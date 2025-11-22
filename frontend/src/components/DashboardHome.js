@@ -285,16 +285,16 @@ function DashboardHome() {
 
   const renderAdminDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderUserGrid(data.users, '사용자 목록', <UsersIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderCompanyGrid(data.companies, '회사 목록', <CompanyIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.projects, '프로젝트 목록', <ProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.requests, '요청 목록', <RequestIcon />)}
       </Grid>
     </Grid>
@@ -302,16 +302,16 @@ function DashboardHome() {
 
   const renderManagerDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.unassignedRequests, '미배정 요청', <RequestIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
     </Grid>
@@ -319,16 +319,16 @@ function DashboardHome() {
 
   const renderCustomerDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.completedRequests, '처리 완료 목록', <CompletedIcon />)}
       </Grid>
     </Grid>
@@ -379,18 +379,31 @@ function DashboardHome() {
             sx={{
               p: 3,
               textAlign: 'center',
-              bgcolor: 'primary.light',
-              color: 'primary.contrastText',
+              bgcolor: 'primary.main',
+              color: 'white',
             }}
           >
-            <CalendarIcon sx={{ fontSize: 48, mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
+            <CalendarIcon sx={{ fontSize: 60, mb: 2, color: 'white' }} />
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
               {dateInfo.formatted}
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
               {dateInfo.weekday}
             </Typography>
           </Paper>
+
+          {/* 오늘 날짜 강조 표시 */}
+          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
+            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+              오늘
+            </Typography>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              {new Date().getDate()}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
+            </Typography>
+          </Box>
 
           {/* 추가 정보 영역 (필요시 사용) */}
           <Box sx={{ flex: 1 }} />
