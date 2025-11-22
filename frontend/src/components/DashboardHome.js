@@ -191,7 +191,7 @@ function DashboardHome() {
   };
 
   const renderUserGrid = (users, title, icon) => (
-    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -230,7 +230,7 @@ function DashboardHome() {
   );
 
   const renderCompanyGrid = (companies, title, icon) => (
-    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -260,7 +260,7 @@ function DashboardHome() {
   );
 
   const renderProjectGrid = (projects, title, icon) => (
-    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -299,7 +299,7 @@ function DashboardHome() {
   );
 
   const renderRequestGrid = (requests, title, icon) => (
-    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -466,6 +466,12 @@ function DashboardHome() {
               '& .react-calendar__month-view__weekdays__weekday abbr': {
                 textDecoration: 'none',
               },
+              '& .react-calendar__month-view__weekdays__weekday:first-child abbr': {
+                color: '#d32f2f',
+              },
+              '& .react-calendar__month-view__weekdays__weekday:last-child abbr': {
+                color: '#1976d2',
+              },
               '& .react-calendar__tile': {
                 maxWidth: '100%',
                 padding: '10px 6px',
@@ -496,6 +502,9 @@ function DashboardHome() {
               },
               '& .react-calendar__month-view__days__day--weekend': {
                 color: '#d32f2f',
+              },
+              '& .react-calendar__month-view__days__day--weekend:nth-child(7n)': {
+                color: '#1976d2',
               },
             }}
           >
@@ -530,6 +539,10 @@ function DashboardHome() {
                   tileContent={tileContent}
                   tileClassName={tileClassName}
                   formatDay={(locale, date) => date.getDate().toString()}
+                  formatShortWeekday={(locale, date) => {
+                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+                    return weekdays[date.getDay()];
+                  }}
                 />
               </Box>
             </Tooltip>
