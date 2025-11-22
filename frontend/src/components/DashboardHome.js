@@ -83,8 +83,12 @@ function DashboardHome() {
           allRequests: requestsRes.data,
         });
       } else if (isManager) {
+        const projectsEndpoint = user.companyId
+          ? `${API_BASE_URL}/projects/company/${user.companyId}`
+          : `${API_BASE_URL}/projects`;
+
         const [projectsRes, requestsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/projects/my`, config),
+          axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
@@ -97,8 +101,12 @@ function DashboardHome() {
           allRequests: allRequests,
         });
       } else if (isCustomer) {
+        const projectsEndpoint = user.companyId
+          ? `${API_BASE_URL}/projects/company/${user.companyId}`
+          : `${API_BASE_URL}/projects`;
+
         const [projectsRes, requestsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/projects/my`, config),
+          axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
@@ -243,7 +251,7 @@ function DashboardHome() {
               <TableRow>
                 <TableCell>회사코드</TableCell>
                 <TableCell>회사명</TableCell>
-                <TableCell>설명</TableCell>
+                <TableCell>사업자번호</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -251,7 +259,7 @@ function DashboardHome() {
                 <TableRow key={company.id}>
                   <TableCell>{company.companyCode}</TableCell>
                   <TableCell>{company.companyName}</TableCell>
-                  <TableCell>{company.description || '-'}</TableCell>
+                  <TableCell>{company.businessNumber || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -275,7 +283,7 @@ function DashboardHome() {
               <TableRow>
                 <TableCell>프로젝트명</TableCell>
                 <TableCell>회사</TableCell>
-                <TableCell>상태</TableCell>
+                <TableCell>서비스유형</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -285,9 +293,9 @@ function DashboardHome() {
                   <TableCell>{project.companyName || '-'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={project.projectStatus}
+                      label={project.serviceType === 'MAINTENANCE' ? '유지보수' : '하자보수'}
                       size="small"
-                      color={project.projectStatus === 'ACTIVE' ? 'success' : 'default'}
+                      color={project.serviceType === 'MAINTENANCE' ? 'primary' : 'secondary'}
                       variant="outlined"
                     />
                   </TableCell>
