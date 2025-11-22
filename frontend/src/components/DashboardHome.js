@@ -67,60 +67,89 @@ function DashboardHome() {
         headers: { Authorization: `Bearer ${token}` }
       };
 
+      console.log('=== Dashboard Data Fetch Start ===');
+      console.log('User:', user);
+      console.log('isAdmin:', isAdmin, 'isManager:', isManager, 'isCustomer:', isCustomer);
+
       if (isAdmin) {
         const [usersRes, companiesRes, projectsRes, requestsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/admin/users`, config),
+          axios.get(`${API_BASE_URL}/users`, config),
           axios.get(`${API_BASE_URL}/companies`, config),
           axios.get(`${API_BASE_URL}/projects`, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
-        setData({
+        console.log('Users Response:', usersRes.data);
+        console.log('Companies Response:', companiesRes.data);
+        console.log('Projects Response:', projectsRes.data);
+        console.log('Requests Response:', requestsRes.data);
+
+        const dashboardData = {
           users: usersRes.data.slice(0, 5),
           companies: companiesRes.data.slice(0, 5),
           projects: projectsRes.data.slice(0, 5),
           requests: requestsRes.data.slice(0, 5),
           allRequests: requestsRes.data,
-        });
+        };
+
+        console.log('Setting Dashboard Data:', dashboardData);
+        setData(dashboardData);
       } else if (isManager) {
         const projectsEndpoint = user.companyId
           ? `${API_BASE_URL}/projects/company/${user.companyId}`
           : `${API_BASE_URL}/projects`;
 
+        console.log('Manager Projects Endpoint:', projectsEndpoint);
+
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
+        console.log('Projects Response:', projectsRes.data);
+        console.log('Requests Response:', requestsRes.data);
+
         const allRequests = requestsRes.data;
-        setData({
+        const dashboardData = {
           myProjects: projectsRes.data.slice(0, 5),
           unassignedRequests: allRequests.filter(r => !r.managerName || r.managerName === '미배정').slice(0, 5),
           pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
           onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
           allRequests: allRequests,
-        });
+        };
+
+        console.log('Setting Dashboard Data:', dashboardData);
+        setData(dashboardData);
       } else if (isCustomer) {
         const projectsEndpoint = user.companyId
           ? `${API_BASE_URL}/projects/company/${user.companyId}`
           : `${API_BASE_URL}/projects`;
+
+        console.log('Customer Projects Endpoint:', projectsEndpoint);
 
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
+        console.log('Projects Response:', projectsRes.data);
+        console.log('Requests Response:', requestsRes.data);
+
         const allRequests = requestsRes.data;
-        setData({
+        const dashboardData = {
           myProjects: projectsRes.data.slice(0, 5),
           pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
           onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
           completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
           allRequests: allRequests,
-        });
+        };
+
+        console.log('Setting Dashboard Data:', dashboardData);
+        setData(dashboardData);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -198,44 +227,53 @@ function DashboardHome() {
     return null;
   };
 
-  const renderUserGrid = (users, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-      <CardHeader
-        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
-        title={title}
-        titleTypographyProps={{ variant: 'h6' }}
-      />
-      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>사용자ID</TableCell>
-                <TableCell>사용자명</TableCell>
-                <TableCell>역할</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.userId}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.role?.replace('ROLE_', '')}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
-  );
+  const renderUserGrid = (users, title, icon) => {
+    console.log('Rendering User Grid with data:', users);
+    return (
+      <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
+        <CardHeader
+          avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
+          title={title}
+          titleTypographyProps={{ variant: 'h6' }}
+        />
+        <CardContent sx={{ flex: 1, overflow: 'auto' }}>
+          {!users || users.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
+              데이터가 없습니다
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>사용자ID</TableCell>
+                    <TableCell>사용자명</TableCell>
+                    <TableCell>역할</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.userId}</TableCell>
+                      <TableCell>{user.username}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.role?.replace('ROLE_', '')}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderCompanyGrid = (companies, title, icon) => (
     <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
