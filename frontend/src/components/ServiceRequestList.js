@@ -768,7 +768,10 @@ function ServiceRequestList() {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  helperText="마감일을 선택하세요 (선택사항)"
+                  inputProps={{
+                    min: new Date().toISOString().split('T')[0]
+                  }}
+                  helperText="마감일을 선택하세요 (오늘 이후만 가능)"
                 />
               </Box>
             </DialogContent>
