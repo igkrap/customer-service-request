@@ -248,9 +248,12 @@ public class ServiceRequestController {
                 }
             }
 
-            // Unassign: set managerId to null and status to OPEN
+            // Unassign: set managerId to null, status to OPEN, and clear resolution data
             existingRequest.setManagerId(null);
             existingRequest.setStatus(ServiceRequest.RequestStatus.OPEN);
+            existingRequest.setHoursSpent(null);
+            existingRequest.setResolutionNotes(null);
+            existingRequest.setResolvedAt(null);
             existingRequest.setUpdatedAt(java.time.LocalDateTime.now());
 
             serviceRequestService.updateServiceRequest(id, convertToDTO(existingRequest));
