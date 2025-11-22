@@ -193,6 +193,32 @@ function DashboardHome() {
 
   const dateInfo = getCurrentDate();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWeatherData();
+  }, []);
+
+  const fetchWeatherData = async () => {
+    try {
+      setWeatherLoading(true);
+      const API_KEY = process.env.REACT_APP_WEATHER_API_KEY || 'demo';
+      const city = 'Seoul';
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=kr`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setWeather(data);
+      }
+    } catch (error) {
+      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
 
   // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환
   const getRequestsByDate = (date) => {
@@ -565,13 +591,13 @@ function DashboardHome() {
                 backgroundColor: '#f0f0f0',
               },
               '& .react-calendar__tile--now': {
-                backgroundColor: '#e3f2fd',
-                color: '#1976d2',
+                backgroundColor: '#f5f5f5',
+                color: '#333',
                 fontWeight: 'bold',
-                border: '2px solid #1976d2',
+                border: '1px solid #ddd',
               },
               '& .react-calendar__tile--now:enabled:hover': {
-                backgroundColor: '#bbdefb',
+                backgroundColor: '#eeeeee',
               },
               '& .react-calendar__tile--active': {
                 backgroundColor: '#006edc',
@@ -627,6 +653,41 @@ function DashboardHome() {
                 />
               </Box>
             </Tooltip>
+
+            {/* 날씨 정보 */}
+            <Box sx={{ textAlign: 'center', mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              {weatherLoading ? (
+                <Typography variant="caption" color="text.secondary">
+                  날씨 정보 로딩 중...
+                </Typography>
+              ) : weather ? (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+                    <img
+                      src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                      alt={weather.weather[0].description}
+                      style={{ width: 50, height: 50 }}
+                    />
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                      {Math.round(weather.main.temp)}°C
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    {weather.weather[0].description}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    체감온도: {Math.round(weather.main.feels_like)}°C
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    습도: {weather.main.humidity}%
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  날씨 정보를 불러올 수 없습니다
+                </Typography>
+              )}
+            </Box>
           </Paper>
 
           {/* 추가 정보 영역 (필요시 사용) */}
