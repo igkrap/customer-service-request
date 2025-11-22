@@ -542,20 +542,16 @@ function DashboardHome() {
 
   return (
     <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
-      {/* 왼쪽 400px - 사용자 정보 및 달력 */}
-      <Box sx={{ width: '400px', flexShrink: 0 }}>
+      {/* 왼쪽 400px - 사용자 정보, 달력, 날씨 */}
+      <Box sx={{ width: '400px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto' }}>
+        {/* 사용자 정보 */}
         <Paper
           elevation={3}
           sx={{
             p: 3,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
             bgcolor: 'background.paper',
           }}
         >
-          {/* 사용자 정보 */}
           <Box sx={{ textAlign: 'center' }}>
             <Avatar
               sx={{
@@ -575,235 +571,238 @@ function DashboardHome() {
             <Chip
               label={getRoleText()}
               color="primary"
-              sx={{ mb: 2 }}
             />
           </Box>
+        </Paper>
 
-          {/* 달력 */}
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .react-calendar': {
-                width: '100%',
-                border: 'none',
-                fontFamily: 'inherit',
-              },
-              '& .react-calendar__navigation': {
-                marginBottom: '1em',
-              },
-              '& .react-calendar__navigation button': {
-                minWidth: '44px',
-                background: 'none',
-                fontSize: '16px',
-                fontWeight: 'bold',
-              },
-              '& .react-calendar__navigation button:enabled:hover': {
-                backgroundColor: '#f0f0f0',
-              },
-              '& .react-calendar__month-view__weekdays': {
-                textAlign: 'center',
-                textTransform: 'uppercase',
-                fontWeight: 'bold',
-                fontSize: '0.75em',
-              },
-              '& .react-calendar__month-view__weekdays__weekday': {
-                padding: '0.5em',
-              },
-              '& .react-calendar__month-view__weekdays__weekday abbr': {
-                textDecoration: 'none',
-              },
-              '& .react-calendar__month-view__weekdays__weekday:first-child abbr': {
-                color: '#d32f2f',
-              },
-              '& .react-calendar__month-view__weekdays__weekday:last-child abbr': {
-                color: '#1976d2',
-              },
-              '& .react-calendar__tile': {
-                maxWidth: '100%',
-                padding: '10px 6px',
-                background: 'none',
-                textAlign: 'center',
-                lineHeight: '16px',
-                position: 'relative',
-                fontSize: '0.875rem',
-              },
-              '& .react-calendar__tile:enabled:hover': {
-                backgroundColor: '#f0f0f0',
-              },
-              '& .react-calendar__tile--now': {
-                backgroundColor: '#e3f2fd',
-                color: '#333',
-                fontWeight: 'bold',
-              },
-              '& .react-calendar__tile--now:enabled:hover': {
-                backgroundColor: '#bbdefb',
-              },
-              '& .react-calendar__tile--active': {
-                backgroundColor: 'transparent !important',
-                color: '#006edc',
-                border: '2px solid #1976d2',
-                fontWeight: 'bold',
-              },
-              '& .react-calendar__tile--active:enabled:hover': {
-                backgroundColor: 'transparent !important',
-              },
-              '& .react-calendar__month-view__days__day--weekend': {
-                color: '#d32f2f',
-              },
-              '& .react-calendar__month-view__days__day--weekend:nth-child(7n)': {
-                color: '#1976d2',
-              },
+        {/* 달력 */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: 2,
+            bgcolor: 'background.paper',
+            '& .react-calendar': {
+              width: '100%',
+              border: 'none',
+              fontFamily: 'inherit',
+            },
+            '& .react-calendar__navigation': {
+              marginBottom: '1em',
+            },
+            '& .react-calendar__navigation button': {
+              minWidth: '44px',
+              background: 'none',
+              fontSize: '16px',
+              fontWeight: 'bold',
+            },
+            '& .react-calendar__navigation button:enabled:hover': {
+              backgroundColor: '#f0f0f0',
+            },
+            '& .react-calendar__month-view__weekdays': {
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              fontSize: '0.75em',
+            },
+            '& .react-calendar__month-view__weekdays__weekday': {
+              padding: '0.5em',
+            },
+            '& .react-calendar__month-view__weekdays__weekday abbr': {
+              textDecoration: 'none',
+            },
+            '& .react-calendar__month-view__weekdays__weekday:first-child abbr': {
+              color: '#d32f2f',
+            },
+            '& .react-calendar__month-view__weekdays__weekday:last-child abbr': {
+              color: '#1976d2',
+            },
+            '& .react-calendar__tile': {
+              maxWidth: '100%',
+              padding: '10px 6px',
+              background: 'none',
+              textAlign: 'center',
+              lineHeight: '16px',
+              position: 'relative',
+              fontSize: '0.875rem',
+            },
+            '& .react-calendar__tile:enabled:hover': {
+              backgroundColor: '#f0f0f0',
+            },
+            '& .react-calendar__tile--now': {
+              backgroundColor: '#e3f2fd',
+              color: '#333',
+              fontWeight: 'bold',
+            },
+            '& .react-calendar__tile--now:enabled:hover': {
+              backgroundColor: '#bbdefb',
+            },
+            '& .react-calendar__tile--active': {
+              backgroundColor: 'transparent !important',
+              color: '#006edc',
+              border: '2px solid #1976d2',
+              fontWeight: 'bold',
+            },
+            '& .react-calendar__tile--active:enabled:hover': {
+              backgroundColor: 'transparent !important',
+            },
+            '& .react-calendar__month-view__days__day--weekend': {
+              color: '#d32f2f',
+            },
+            '& .react-calendar__month-view__days__day--weekend:nth-child(7n)': {
+              color: '#1976d2',
+            },
+          }}
+        >
+          <Tooltip
+            open={hoveredDate !== null}
+            title={
+              hoveredDate ? (
+                <Box>
+                  {getRequestsByDate(hoveredDate).length > 0 ? (
+                    <>
+                      <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                        마감 예정 ({getRequestsByDate(hoveredDate).length}건)
+                      </Typography>
+                      {getRequestsByDate(hoveredDate).map((req, idx) => (
+                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
+                          • {req.title} ({req.priority})
+                        </Typography>
+                      ))}
+                    </>
+                  ) : (
+                    <Typography variant="caption">마감일이 없습니다</Typography>
+                  )}
+                </Box>
+              ) : ''
+            }
+            arrow
+            placement="top"
+            PopperProps={{
+              anchorEl: {
+                getBoundingClientRect: () => {
+                  const tile = document.querySelector('.react-calendar__tile:hover');
+                  if (tile) {
+                    return tile.getBoundingClientRect();
+                  }
+                  return new DOMRect();
+                }
+              }
             }}
           >
-            <Tooltip
-              open={hoveredDate !== null}
-              title={
-                hoveredDate ? (
-                  <Box>
-                    {getRequestsByDate(hoveredDate).length > 0 ? (
-                      <>
-                        <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                          마감 예정 ({getRequestsByDate(hoveredDate).length}건)
-                        </Typography>
-                        {getRequestsByDate(hoveredDate).map((req, idx) => (
-                          <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
-                            • {req.title} ({req.priority})
-                          </Typography>
-                        ))}
-                      </>
-                    ) : (
-                      <Typography variant="caption">마감일이 없습니다</Typography>
-                    )}
-                  </Box>
-                ) : ''
-              }
-              arrow
-              placement="top"
-              PopperProps={{
-                anchorEl: {
-                  getBoundingClientRect: () => {
-                    const tile = document.querySelector('.react-calendar__tile:hover');
-                    if (tile) {
-                      return tile.getBoundingClientRect();
-                    }
-                    return new DOMRect();
-                  }
-                }
-              }}
-            >
-              <Box>
-                <Calendar
-                  onChange={setSelectedDate}
-                  value={selectedDate}
-                  locale="en-US"
-                  tileContent={tileContent}
-                  tileClassName={tileClassName}
-                  formatDay={(locale, date) => date.getDate().toString()}
-                  formatShortWeekday={(locale, date) => {
-                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-                    return weekdays[date.getDay()];
-                  }}
-                />
-              </Box>
-            </Tooltip>
-
-            {/* 날씨 정보 */}
-            <Box
-              sx={{
-                mt: 2,
-                p: 2.5,
-                backgroundColor: '#1a1a1a',
-                borderRadius: 2,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                color: 'white',
-              }}
-            >
-              {weatherLoading ? (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                  날씨 정보 로딩 중...
-                </Typography>
-              ) : weather ? (
-                <>
-                  {/* 현재 라벨 */}
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'rgba(255,255,255,0.6)',
-                      mb: 1,
-                      display: 'block'
-                    }}
-                  >
-                    현재
-                  </Typography>
-
-                  {/* 온도와 아이콘 */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', mb: 1.5 }}>
-                    <Typography
-                      variant="h2"
-                      sx={{
-                        fontWeight: 'bold',
-                        mr: 1,
-                        lineHeight: 1
-                      }}
-                    >
-                      {Math.round(weather.main.temp)}°C
-                    </Typography>
-                    <img
-                      src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-                      alt={weather.weather[0].description}
-                      style={{
-                        width: 48,
-                        height: 48,
-                      }}
-                    />
-                  </Box>
-
-                  {/* 날씨 설명 */}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255,255,255,0.8)',
-                      mb: 2
-                    }}
-                  >
-                    {weather.weather[0].description}
-                  </Typography>
-
-                  {/* 구분선 */}
-                  <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', mb: 2 }} />
-
-                  {/* 날짜와 위치 */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                        📅
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                        {dateInfo.monthDay}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                        📍
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                        서울특별시, KR
-                      </Typography>
-                    </Box>
-                  </Box>
-                </>
-              ) : (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                  날씨 정보를 불러올 수 없습니다
-                </Typography>
-              )}
+            <Box>
+              <Calendar
+                onChange={setSelectedDate}
+                value={selectedDate}
+                locale="en-US"
+                tileContent={tileContent}
+                tileClassName={tileClassName}
+                formatDay={(locale, date) => date.getDate().toString()}
+                formatShortWeekday={(locale, date) => {
+                  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+                  return weekdays[date.getDay()];
+                }}
+              />
             </Box>
-          </Paper>
+          </Tooltip>
+        </Paper>
 
-          {/* 추가 정보 영역 (필요시 사용) */}
-          <Box sx={{ flex: 1 }} />
+        {/* 날씨 */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: 2,
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Box
+            sx={{
+              p: 2.5,
+              backgroundColor: '#1a1a1a',
+              borderRadius: 2,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              color: 'white',
+            }}
+          >
+            {weatherLoading ? (
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                날씨 정보 로딩 중...
+              </Typography>
+            ) : weather ? (
+              <>
+                {/* 현재 라벨 */}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'rgba(255,255,255,0.6)',
+                    mb: 1,
+                    display: 'block'
+                  }}
+                >
+                  현재
+                </Typography>
+
+                {/* 온도와 아이콘 */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', mb: 1.5 }}>
+                  <Typography
+                    variant="h2"
+                    sx={{
+                      fontWeight: 'bold',
+                      mr: 1,
+                      lineHeight: 1
+                    }}
+                  >
+                    {Math.round(weather.main.temp)}°C
+                  </Typography>
+                  <img
+                    src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                    alt={weather.weather[0].description}
+                    style={{
+                      width: 48,
+                      height: 48,
+                    }}
+                  />
+                </Box>
+
+                {/* 날씨 설명 */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'rgba(255,255,255,0.8)',
+                    mb: 2
+                  }}
+                >
+                  {weather.weather[0].description}
+                </Typography>
+
+                {/* 구분선 */}
+                <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', mb: 2 }} />
+
+                {/* 날짜와 위치 */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                      📅
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                      {dateInfo.monthDay}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                      📍
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                      서울특별시, KR
+                    </Typography>
+                  </Box>
+                </Box>
+              </>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                날씨 정보를 불러올 수 없습니다
+              </Typography>
+            )}
+          </Box>
         </Paper>
       </Box>
 
