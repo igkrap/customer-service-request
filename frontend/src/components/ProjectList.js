@@ -235,9 +235,20 @@ function ProjectList() {
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
-          프로젝트 관리
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" component="h2">
+            프로젝트 관리
+          </Typography>
+          {!showForm && user?.role === 'ROLE_ADMIN' && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setShowForm(true)}
+            >
+              새 프로젝트 등록
+            </Button>
+          )}
+        </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -245,17 +256,6 @@ function ProjectList() {
           <Alert severity="info" sx={{ mb: 3 }}>
             이 페이지는 조회 전용입니다. 프로젝트 생성 및 수정은 관리자에게 문의하세요.
           </Alert>
-        )}
-
-        {!showForm && user?.role === 'ROLE_ADMIN' && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setShowForm(true)}
-            sx={{ mb: 3, alignSelf: 'flex-start' }}
-          >
-            새 프로젝트 등록
-          </Button>
         )}
 
         {showForm && user?.role === 'ROLE_ADMIN' && (
