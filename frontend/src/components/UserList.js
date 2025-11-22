@@ -323,7 +323,7 @@ function UserList() {
         const u = params.row;
         if (u.approvalStatus === 'PENDING') {
           return (
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
               <IconButton
                 color="success"
                 size="small"
@@ -345,7 +345,7 @@ function UserList() {
           );
         }
         return (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
             <IconButton
               color="primary"
               size="small"

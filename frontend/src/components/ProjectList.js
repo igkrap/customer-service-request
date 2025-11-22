@@ -209,7 +209,7 @@ function ProjectList() {
         }
 
         return (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
             <IconButton
               color="primary"
               size="small"
