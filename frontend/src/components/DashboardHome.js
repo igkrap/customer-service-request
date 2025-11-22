@@ -474,8 +474,8 @@ function DashboardHome() {
 
   return (
     <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
-      {/* 왼쪽 30% - 사용자 정보 및 달력 */}
-      <Box sx={{ width: '30%', minWidth: '300px' }}>
+      {/* 왼쪽 400px - 사용자 정보 및 달력 */}
+      <Box sx={{ width: '400px', flexShrink: 0 }}>
         <Paper
           elevation={3}
           sx={{
@@ -634,8 +634,8 @@ function DashboardHome() {
         </Paper>
       </Box>
 
-      {/* 오른쪽 70% - Role별 대시보드 그리드 */}
-      <Box sx={{ width: '70%', height: '100%', overflow: 'auto', p: 2 }}>
+      {/* 오른쪽 - Role별 대시보드 그리드 (나머지 공간) */}
+      <Box sx={{ flex: 1, height: '100%', overflow: 'auto', p: 2 }}>
         {isAdmin && renderAdminDashboard()}
         {isManager && renderManagerDashboard()}
         {isCustomer && renderCustomerDashboard()}
