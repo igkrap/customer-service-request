@@ -32,7 +32,16 @@ import {
   Close as CloseIcon,
   Pause as HoldIcon,
   Visibility as ViewIcon,
-  PersonRemove as UnassignIcon
+  PersonRemove as UnassignIcon,
+  Assignment as AssignmentIcon,
+  Description as DescriptionIcon,
+  Person as PersonIcon,
+  Work as WorkIcon,
+  CalendarToday as CalendarIcon,
+  Timer as TimerIcon,
+  Notes as NotesIcon,
+  Flag as FlagIcon,
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 
@@ -734,100 +743,197 @@ function ServiceRequestList() {
 
         {/* Detail View Dialog */}
         <Dialog open={showDetailDialog} onClose={() => setShowDetailDialog(false)} maxWidth="md" fullWidth>
-          <DialogTitle>
+          <DialogTitle sx={{ pb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">서비스 요청 상세</Typography>
-              <IconButton onClick={() => setShowDetailDialog(false)}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AssignmentIcon color="primary" />
+                <Typography variant="h6">서비스 요청 상세</Typography>
+              </Box>
+              <IconButton onClick={() => setShowDetailDialog(false)} size="small">
                 <CloseIcon />
               </IconButton>
             </Box>
           </DialogTitle>
-          <DialogContent>
+          <DialogContent dividers>
             {selectedRequest && (
-              <Box sx={{ pt: 1 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">ID</Typography>
-                    <Typography variant="body1">{selectedRequest.id}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">생성일</Typography>
-                    <Typography variant="body1">
-                      {formatDateTime(selectedRequest.createdAt)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">제목</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedRequest.title}</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">설명</Typography>
-                    <Typography variant="body1">
-                      {selectedRequest.description || '설명이 제공되지 않았습니다'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">요청자</Typography>
-                    <Typography variant="body1">{selectedRequest.customerName}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">담당자</Typography>
-                    <Typography variant="body1">{selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? selectedRequest.managerName : '미배정'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">프로젝트</Typography>
-                    <Typography variant="body1">{selectedRequest.projectName || '없음'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">상태</Typography>
-                    <Box sx={{ mt: 0.5 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Header Section: Status & Priority */}
+                <Box>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                        <FlagIcon fontSize="small" />
+                        상태
+                      </Typography>
                       {getStatusChip(selectedRequest.status)}
                     </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="text.secondary">우선순위</Typography>
-                    <Box sx={{ mt: 0.5 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                        <FlagIcon fontSize="small" />
+                        우선순위
+                      </Typography>
                       {getPriorityChip(selectedRequest.priority)}
                     </Box>
-                  </Grid>
-                  {selectedRequest.dueDate && (
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">마감일</Typography>
-                      <Typography variant="body1">
-                        {formatDateForDisplay(selectedRequest.dueDate)}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                        요청 ID
                       </Typography>
-                    </Grid>
-                  )}
-                  {selectedRequest.resolvedAt && (
+                      <Chip label={`#${selectedRequest.id}`} size="small" variant="outlined" />
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Divider />
+
+                {/* Main Content Section */}
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <AssignmentIcon fontSize="small" />
+                    제목
+                  </Typography>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {selectedRequest.title}
+                  </Typography>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <DescriptionIcon fontSize="small" />
+                    설명
+                  </Typography>
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {selectedRequest.description || '설명이 제공되지 않았습니다'}
+                    </Typography>
+                  </Paper>
+                </Box>
+
+                <Divider />
+
+                {/* Assignment & Project Info */}
+                <Box>
+                  <Grid container spacing={2}>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">해결일</Typography>
-                      <Typography variant="body1">
-                        {new Date(selectedRequest.resolvedAt).toLocaleString()}
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <PersonIcon fontSize="small" />
+                        요청자
                       </Typography>
+                      <Chip
+                        label={selectedRequest.customerName}
+                        color="primary"
+                        variant="outlined"
+                        icon={<PersonIcon />}
+                      />
                     </Grid>
-                  )}
-                  {selectedRequest.hoursSpent && (
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">소요시간</Typography>
-                      <Typography variant="body1">
-                        {selectedRequest.hoursSpent}시간
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <PersonIcon fontSize="small" />
+                        담당자
                       </Typography>
+                      <Chip
+                        label={selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? selectedRequest.managerName : '미배정'}
+                        color={selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? 'success' : 'default'}
+                        variant="outlined"
+                        icon={<PersonIcon />}
+                      />
                     </Grid>
-                  )}
-                  {selectedRequest.resolutionNotes && (
                     <Grid item xs={12}>
-                      <Typography variant="subtitle2" color="text.secondary">처리 내용</Typography>
-                      <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                        {selectedRequest.resolutionNotes}
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <WorkIcon fontSize="small" />
+                        프로젝트
+                      </Typography>
+                      <Chip
+                        label={selectedRequest.projectName || '없음'}
+                        color={selectedRequest.projectName ? 'info' : 'default'}
+                        variant="outlined"
+                        icon={<WorkIcon />}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider />
+
+                {/* Date Information */}
+                <Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <ScheduleIcon fontSize="small" />
+                        생성일
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatDateTime(selectedRequest.createdAt)}
                       </Typography>
                     </Grid>
-                  )}
-                </Grid>
+                    {selectedRequest.dueDate && (
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                          <CalendarIcon fontSize="small" />
+                          마감일
+                        </Typography>
+                        <Typography variant="body2" color="error.main" fontWeight="medium">
+                          {formatDateForDisplay(selectedRequest.dueDate)}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {selectedRequest.resolvedAt && (
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                          <CompleteIcon fontSize="small" />
+                          해결일
+                        </Typography>
+                        <Typography variant="body2" color="success.main" fontWeight="medium">
+                          {new Date(selectedRequest.resolvedAt).toLocaleString()}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Box>
+
+                {/* Resolution Information (if completed) */}
+                {(selectedRequest.hoursSpent || selectedRequest.resolutionNotes) && (
+                  <>
+                    <Divider />
+                    <Box>
+                      <Typography variant="subtitle1" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2, fontWeight: 'bold' }}>
+                        <CompleteIcon />
+                        처리 완료 정보
+                      </Typography>
+                      {selectedRequest.hoursSpent && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <TimerIcon fontSize="small" />
+                            소요시간
+                          </Typography>
+                          <Chip
+                            label={`${selectedRequest.hoursSpent}시간`}
+                            color="success"
+                            icon={<TimerIcon />}
+                          />
+                        </Box>
+                      )}
+                      {selectedRequest.resolutionNotes && (
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <NotesIcon fontSize="small" />
+                            처리 내용
+                          </Typography>
+                          <Paper variant="outlined" sx={{ p: 2, bgcolor: 'success.50' }}>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {selectedRequest.resolutionNotes}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      )}
+                    </Box>
+                  </>
+                )}
               </Box>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={() => setShowDetailDialog(false)} variant="outlined">
+              닫기
+            </Button>
           </DialogActions>
         </Dialog>
 
