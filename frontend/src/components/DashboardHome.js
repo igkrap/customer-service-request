@@ -121,31 +121,48 @@ function DashboardHome() {
         console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isCustomer) {
-        const projectsEndpoint = user.companyId
-          ? `${API_BASE_URL}/projects/company/${user.companyId}`
-          : `${API_BASE_URL}/projects`;
+        console.log('Customer companyId:', user.companyId);
 
-        console.log('Customer Projects Endpoint:', projectsEndpoint);
+        // Customer는 companyId가 있어야 프로젝트 조회 가능
+        if (user.companyId) {
+          const [projectsRes, requestsRes] = await Promise.all([
+            axios.get(`${API_BASE_URL}/projects/company/${user.companyId}`, config),
+            axios.get(`${API_BASE_URL}/service-requests`, config),
+          ]);
 
-        const [projectsRes, requestsRes] = await Promise.all([
-          axios.get(projectsEndpoint, config),
-          axios.get(`${API_BASE_URL}/service-requests`, config),
-        ]);
+          console.log('Projects Response:', projectsRes.data);
+          console.log('Requests Response:', requestsRes.data);
 
-        console.log('Projects Response:', projectsRes.data);
-        console.log('Requests Response:', requestsRes.data);
+          const allRequests = requestsRes.data;
+          const dashboardData = {
+            myProjects: projectsRes.data.slice(0, 5),
+            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
+            allRequests: allRequests,
+          };
 
-        const allRequests = requestsRes.data;
-        const dashboardData = {
-          myProjects: projectsRes.data.slice(0, 5),
-          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-          completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
-          allRequests: allRequests,
-        };
+          console.log('Setting Dashboard Data:', dashboardData);
+          setData(dashboardData);
+        } else {
+          // companyId가 없으면 service requests만 조회
+          console.log('Customer has no companyId, fetching only service requests');
+          const requestsRes = await axios.get(`${API_BASE_URL}/service-requests`, config);
 
-        console.log('Setting Dashboard Data:', dashboardData);
-        setData(dashboardData);
+          console.log('Requests Response:', requestsRes.data);
+
+          const allRequests = requestsRes.data;
+          const dashboardData = {
+            myProjects: [],
+            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
+            allRequests: allRequests,
+          };
+
+          console.log('Setting Dashboard Data:', dashboardData);
+          setData(dashboardData);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -548,12 +565,13 @@ function DashboardHome() {
                 backgroundColor: '#f0f0f0',
               },
               '& .react-calendar__tile--now': {
-                backgroundColor: '#1976d2',
-                color: 'white',
+                backgroundColor: '#e3f2fd',
+                color: '#1976d2',
                 fontWeight: 'bold',
+                border: '2px solid #1976d2',
               },
               '& .react-calendar__tile--now:enabled:hover': {
-                backgroundColor: '#1565c0',
+                backgroundColor: '#bbdefb',
               },
               '& .react-calendar__tile--active': {
                 backgroundColor: '#006edc',
