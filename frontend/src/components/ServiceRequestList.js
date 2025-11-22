@@ -78,9 +78,15 @@ const getTodayYYYYMMDD = () => {
 
 // 프로젝트가 현재 기간 내에 있는지 확인
 const isProjectActive = (project) => {
-  if (!project.startDate || !project.endDate) return true; // 날짜가 없으면 선택 가능
+  // contractStartDate와 contractEndDate는 백엔드에서 "YYYY-MM-DD" 형식으로 옴
+  if (!project.contractStartDate || !project.contractEndDate) return true; // 날짜가 없으면 선택 가능
+
+  // "YYYY-MM-DD" 형식을 "YYYYMMDD" 형식으로 변환
+  const startDate = formatDateToYYYYMMDD(project.contractStartDate);
+  const endDate = formatDateToYYYYMMDD(project.contractEndDate);
   const today = getTodayYYYYMMDD();
-  return project.startDate <= today && today <= project.endDate;
+
+  return startDate <= today && today <= endDate;
 };
 
 function ServiceRequestList() {
