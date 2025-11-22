@@ -37,6 +37,16 @@ import 'react-calendar/dist/Calendar.css';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// 역할을 한글로 변환하는 함수
+const getRoleLabel = (role) => {
+  const roleMap = {
+    'ROLE_ADMIN': '관리자',
+    'ROLE_MANAGER': '매니저',
+    'ROLE_CUSTOMER': '유저'
+  };
+  return roleMap[role] || role?.replace('ROLE_', '');
+};
+
 function DashboardHome() {
   const { user } = useAuth();
   const [data, setData] = useState({
@@ -385,7 +395,7 @@ function DashboardHome() {
                       <TableCell>{user.username}</TableCell>
                       <TableCell>
                         <Chip
-                          label={user.role?.replace('ROLE_', '')}
+                          label={getRoleLabel(user.role)}
                           size="small"
                           color="primary"
                           variant="outlined"
