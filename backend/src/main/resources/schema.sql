@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     resolved_at TIMESTAMP,
     hours_spent REAL,
     resolution_notes TEXT,
+    due_date TEXT,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
@@ -116,6 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_project_id ON service_requests(p
 CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(priority);
 CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_requests(created_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_service_requests_due_date ON service_requests(due_date);
 CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON user_projects(user_id);

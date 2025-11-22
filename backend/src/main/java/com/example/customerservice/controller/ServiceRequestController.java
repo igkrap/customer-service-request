@@ -276,6 +276,7 @@ public class ServiceRequestController {
         dto.setCreatedAt(request.getCreatedAt());
         dto.setUpdatedAt(request.getUpdatedAt());
         dto.setResolvedAt(request.getResolvedAt());
+        dto.setDueDate(request.getDueDate());
         return dto;
     }
 }

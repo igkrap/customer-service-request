@@ -45,4 +45,6 @@ public class ServiceRequestDTO {
 
     private Double hoursSpent;
     private String resolutionNotes;
+
+    private String dueDate;
 }

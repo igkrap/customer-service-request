@@ -164,6 +164,7 @@ public class ServiceRequestService {
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
+        serviceRequest.setDueDate(dto.getDueDate());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
         // Set resolvedAt when status changes to RESOLVED
@@ -319,6 +320,7 @@ public class ServiceRequestService {
         dto.setResolvedAt(serviceRequest.getResolvedAt());
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
+        dto.setDueDate(serviceRequest.getDueDate());
         return dto;
     }
 
@@ -332,6 +334,7 @@ public class ServiceRequestService {
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setHoursSpent(dto.getHoursSpent());
         serviceRequest.setResolutionNotes(dto.getResolutionNotes());
+        serviceRequest.setDueDate(dto.getDueDate());
         return serviceRequest;
     }
 }

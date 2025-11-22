@@ -41,6 +41,8 @@ public class ServiceRequest {
 
     private String resolutionNotes;
 
+    private String dueDate;
+
     public enum RequestStatus {
         OPEN, IN_PROGRESS, RESOLVED, HOLD, CANCELLED
     }

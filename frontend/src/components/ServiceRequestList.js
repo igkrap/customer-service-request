@@ -36,6 +36,28 @@ import {
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 
+// 날짜 형식 변환 함수
+const formatDateToYYYYMMDD = (dateString) => {
+  if (!dateString) return '';
+  // yyyy-MM-dd → yyyyMMdd
+  return dateString.replace(/-/g, '');
+};
+
+const formatDateFromYYYYMMDD = (yyyymmdd) => {
+  if (!yyyymmdd || yyyymmdd.length !== 8) return '';
+  // yyyyMMdd → yyyy-MM-dd
+  return `${yyyymmdd.substring(0, 4)}-${yyyymmdd.substring(4, 6)}-${yyyymmdd.substring(6, 8)}`;
+};
+
+const formatDateForDisplay = (yyyymmdd) => {
+  if (!yyyymmdd || yyyymmdd.length !== 8) return '';
+  // yyyyMMdd → yyyy년 MM월 dd일
+  const year = yyyymmdd.substring(0, 4);
+  const month = yyyymmdd.substring(4, 6);
+  const day = yyyymmdd.substring(6, 8);
+  return `${year}년 ${month}월 ${day}일`;
+};
+
 function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -59,7 +81,8 @@ function ServiceRequestList() {
     status: 'OPEN',
     priority: 'MEDIUM',
     customerId: '',
-    projectId: ''
+    projectId: '',
+    dueDate: ''
   });
 
   useEffect(() => {
@@ -211,7 +234,8 @@ function ServiceRequestList() {
       const submitData = {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
-        projectId: formData.projectId ? parseInt(formData.projectId) : null
+        projectId: formData.projectId ? parseInt(formData.projectId) : null,
+        dueDate: formatDateToYYYYMMDD(formData.dueDate)
       };
 
       console.log('=== Submitting Service Request ===');
@@ -234,7 +258,8 @@ function ServiceRequestList() {
         status: 'OPEN',
         priority: 'MEDIUM',
         customerId: '',
-        projectId: ''
+        projectId: '',
+        dueDate: ''
       });
       setShowForm(false);
       setEditingRequest(null);
@@ -253,7 +278,8 @@ function ServiceRequestList() {
       status: request.status,
       priority: request.priority,
       customerId: request.customerId.toString(),
-      projectId: request.projectId ? request.projectId.toString() : ''
+      projectId: request.projectId ? request.projectId.toString() : '',
+      dueDate: formatDateFromYYYYMMDD(request.dueDate)
     });
     setShowForm(true);
   };
@@ -278,7 +304,8 @@ function ServiceRequestList() {
       status: 'OPEN',
       priority: 'MEDIUM',
       customerId: '',
-      projectId: ''
+      projectId: '',
+      dueDate: ''
     });
   };
 
@@ -419,6 +446,16 @@ function ServiceRequestList() {
       renderCell: (params) => params.value ? getPriorityChip(params.value) : null
     },
     {
+      field: 'dueDate',
+      headerName: '마감일',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value);
+      }
+    },
+    {
       field: 'managerName',
       headerName: '담당자',
       flex: 1.3,
@@ -444,13 +481,6 @@ function ServiceRequestList() {
         if (!value) return '';
         return `${value}h`;
       }
-    },
-    {
-      field: 'resolutionNotes',
-      headerName: '처리 내용',
-      flex: 1.5,
-      minWidth: 150,
-      valueGetter: (value) => value || ''
     },
     {
       field: 'actions',
@@ -678,6 +708,19 @@ function ServiceRequestList() {
                     ))}
                   </Select>
                 </FormControl>
+
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="마감일"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  helperText="마감일을 선택하세요 (선택사항)"
+                />
               </Box>
             </DialogContent>
             <DialogActions>
@@ -747,6 +790,14 @@ function ServiceRequestList() {
                       {getPriorityChip(selectedRequest.priority)}
                     </Box>
                   </Grid>
+                  {selectedRequest.dueDate && (
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">마감일</Typography>
+                      <Typography variant="body1">
+                        {formatDateForDisplay(selectedRequest.dueDate)}
+                      </Typography>
+                    </Grid>
+                  )}
                   {selectedRequest.resolvedAt && (
                     <Grid item xs={6}>
                       <Typography variant="subtitle2" color="text.secondary">해결일</Typography>

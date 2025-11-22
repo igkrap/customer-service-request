@@ -213,7 +213,7 @@ function ProjectRequestList() {
         if (!params.row || params.row.requestStatus !== 'PENDING') return null;
 
         return (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '100%' }}>
             <IconButton
               size="small"
               color="primary"
