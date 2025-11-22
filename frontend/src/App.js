@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Register from './components/Register';
 import PrivateRoute from './components/PrivateRoute';
+import DashboardHome from './components/DashboardHome';
 import ServiceRequestList from './components/ServiceRequestList';
 import UserList from './components/UserList';
 import UserProfile from './components/UserProfile';
@@ -29,6 +30,7 @@ import {
   Fade
 } from '@mui/material';
 import {
+  Dashboard as DashboardIcon,
   Assignment as RequestIcon,
   PlaylistAddCheck as ProjectRequestIcon,
   Folder as MyProjectIcon,
@@ -53,7 +55,7 @@ function Dashboard() {
   const isCustomer = user?.role === 'ROLE_CUSTOMER';
   const isManager = user?.role === 'ROLE_MANAGER';
   const isCustomerOrManager = isCustomer || isManager;
-  const [activeTab, setActiveTab] = useState('requests');
+  const [activeTab, setActiveTab] = useState('home');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   const getRoleText = () => {
@@ -64,6 +66,7 @@ function Dashboard() {
   };
 
   const menuItems = [
+    { key: 'home', label: '대시보드 홈', icon: <DashboardIcon />, show: true },
     { key: 'requests', label: '서비스 요청', icon: <RequestIcon />, show: true },
     { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '내 프로젝트', icon: <MyProjectIcon />, show: isCustomerOrManager },
@@ -75,6 +78,7 @@ function Dashboard() {
   ];
 
   const renderContent = () => {
+    if (activeTab === 'home') return <DashboardHome />;
     if (activeTab === 'requests') return <ServiceRequestList />;
     if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
     if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
