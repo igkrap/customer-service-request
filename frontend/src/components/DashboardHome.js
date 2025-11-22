@@ -625,6 +625,7 @@ function DashboardHome() {
               lineHeight: '16px',
               position: 'relative',
               fontSize: '0.875rem',
+              border: '2px solid transparent',
             },
             '& .react-calendar__tile:enabled:hover': {
               backgroundColor: '#f0f0f0',
@@ -638,7 +639,7 @@ function DashboardHome() {
               backgroundColor: '#bbdefb',
             },
             '& .react-calendar__tile--active': {
-              backgroundColor: 'transparent',
+              backgroundColor: '#ffffff',
               color: '#006edc',
               border: '2px solid #1976d2',
               fontWeight: 'bold',
