@@ -442,7 +442,13 @@ function ServiceRequestList() {
       'HIGH': 'warning',
       'URGENT': 'error'
     };
-    return <Chip label={priority} color={colorMap[priority] || 'default'} size="small" />;
+    const labelMap = {
+      'LOW': '낮음',
+      'MEDIUM': '보통',
+      'HIGH': '높음',
+      'URGENT': '긴급'
+    };
+    return <Chip label={labelMap[priority] || priority} color={colorMap[priority] || 'default'} size="small" />;
   };
 
   const columns = [

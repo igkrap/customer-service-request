@@ -498,7 +498,13 @@ function DashboardHome() {
                   <TableCell>{request.customerName || '-'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={request.priority}
+                      label={
+                        request.priority === 'URGENT' ? '긴급' :
+                        request.priority === 'HIGH' ? '높음' :
+                        request.priority === 'MEDIUM' ? '보통' :
+                        request.priority === 'LOW' ? '낮음' :
+                        request.priority
+                      }
                       size="small"
                       color={
                         request.priority === 'URGENT' ? 'error' :
@@ -511,7 +517,14 @@ function DashboardHome() {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={request.status}
+                      label={
+                        request.status === 'OPEN' ? '대기' :
+                        request.status === 'IN_PROGRESS' ? '진행중' :
+                        request.status === 'RESOLVED' ? '완료' :
+                        request.status === 'HOLD' ? '보류' :
+                        request.status === 'CANCELLED' ? '취소' :
+                        request.status
+                      }
                       size="small"
                       color={
                         request.status === 'RESOLVED' ? 'success' :
