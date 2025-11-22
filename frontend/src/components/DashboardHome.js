@@ -60,31 +60,6 @@ function DashboardHome() {
     fetchDashboardData();
   }, [user]);
 
-  useEffect(() => {
-    fetchWeatherData();
-  }, []);
-
-  const fetchWeatherData = async () => {
-    try {
-      setWeatherLoading(true);
-      // OpenWeatherMap API 사용 (서울 기준)
-      const API_KEY = process.env.REACT_APP_WEATHER_API_KEY || 'demo';
-      const city = 'Seoul';
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=kr`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setWeather(data);
-      }
-    } catch (error) {
-      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
-    } finally {
-      setWeatherLoading(false);
-    }
-  };
-
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -97,7 +72,7 @@ function DashboardHome() {
           axios.get(`${API_BASE_URL}/admin/users`, config),
           axios.get(`${API_BASE_URL}/companies`, config),
           axios.get(`${API_BASE_URL}/projects`, config),
-          axios.get(`${API_BASE_URL}/requests`, config),
+          axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
         setData({
@@ -110,29 +85,29 @@ function DashboardHome() {
       } else if (isManager) {
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/projects/my`, config),
-          axios.get(`${API_BASE_URL}/requests`, config),
+          axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
         const allRequests = requestsRes.data;
         setData({
           myProjects: projectsRes.data.slice(0, 5),
-          unassignedRequests: allRequests.filter(r => !r.assignedTo).slice(0, 5),
-          pendingRequests: allRequests.filter(r => r.status === 'PENDING').slice(0, 5),
-          onHoldRequests: allRequests.filter(r => r.status === 'ON_HOLD').slice(0, 5),
+          unassignedRequests: allRequests.filter(r => !r.managerName || r.managerName === '미배정').slice(0, 5),
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
           allRequests: allRequests,
         });
       } else if (isCustomer) {
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/projects/my`, config),
-          axios.get(`${API_BASE_URL}/requests`, config),
+          axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
 
         const allRequests = requestsRes.data;
         setData({
           myProjects: projectsRes.data.slice(0, 5),
-          pendingRequests: allRequests.filter(r => r.status === 'PENDING').slice(0, 5),
-          onHoldRequests: allRequests.filter(r => r.status === 'ON_HOLD').slice(0, 5),
-          completedRequests: allRequests.filter(r => r.status === 'COMPLETED').slice(0, 5),
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+          completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
           allRequests: allRequests,
         });
       }
@@ -164,8 +139,6 @@ function DashboardHome() {
 
   const dateInfo = getCurrentDate();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [weather, setWeather] = useState(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
 
   // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환
   const getRequestsByDate = (date) => {
@@ -218,7 +191,7 @@ function DashboardHome() {
   };
 
   const renderUserGrid = (users, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -229,16 +202,16 @@ function DashboardHome() {
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell>사용자ID</TableCell>
                 <TableCell>사용자명</TableCell>
-                <TableCell>이메일</TableCell>
                 <TableCell>역할</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell>{user.userId}</TableCell>
                   <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip
                       label={user.role?.replace('ROLE_', '')}
@@ -257,7 +230,7 @@ function DashboardHome() {
   );
 
   const renderCompanyGrid = (companies, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -268,6 +241,7 @@ function DashboardHome() {
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell>회사코드</TableCell>
                 <TableCell>회사명</TableCell>
                 <TableCell>설명</TableCell>
               </TableRow>
@@ -275,7 +249,8 @@ function DashboardHome() {
             <TableBody>
               {companies.map((company) => (
                 <TableRow key={company.id}>
-                  <TableCell>{company.name}</TableCell>
+                  <TableCell>{company.companyCode}</TableCell>
+                  <TableCell>{company.companyName}</TableCell>
                   <TableCell>{company.description || '-'}</TableCell>
                 </TableRow>
               ))}
@@ -287,7 +262,7 @@ function DashboardHome() {
   );
 
   const renderProjectGrid = (projects, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -306,13 +281,13 @@ function DashboardHome() {
             <TableBody>
               {projects.map((project) => (
                 <TableRow key={project.id}>
-                  <TableCell>{project.name}</TableCell>
-                  <TableCell>{project.company?.name || '-'}</TableCell>
+                  <TableCell>{project.projectName}</TableCell>
+                  <TableCell>{project.companyName || '-'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={project.status}
+                      label={project.projectStatus}
                       size="small"
-                      color={project.status === 'ACTIVE' ? 'success' : 'default'}
+                      color={project.projectStatus === 'ACTIVE' ? 'success' : 'default'}
                       variant="outlined"
                     />
                   </TableCell>
@@ -326,7 +301,7 @@ function DashboardHome() {
   );
 
   const renderRequestGrid = (requests, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
@@ -338,7 +313,8 @@ function DashboardHome() {
             <TableHead>
               <TableRow>
                 <TableCell>제목</TableCell>
-                <TableCell>프로젝트</TableCell>
+                <TableCell>고객</TableCell>
+                <TableCell>우선순위</TableCell>
                 <TableCell>상태</TableCell>
               </TableRow>
             </TableHead>
@@ -346,15 +322,29 @@ function DashboardHome() {
               {requests.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell>{request.title}</TableCell>
-                  <TableCell>{request.project?.name || '-'}</TableCell>
+                  <TableCell>{request.customerName || '-'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={request.priority}
+                      size="small"
+                      color={
+                        request.priority === 'URGENT' ? 'error' :
+                        request.priority === 'HIGH' ? 'warning' :
+                        request.priority === 'MEDIUM' ? 'info' :
+                        'default'
+                      }
+                      variant="outlined"
+                    />
+                  </TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
                       size="small"
                       color={
-                        request.status === 'COMPLETED' ? 'success' :
-                        request.status === 'ON_HOLD' ? 'warning' :
-                        'info'
+                        request.status === 'RESOLVED' ? 'success' :
+                        request.status === 'HOLD' ? 'warning' :
+                        request.status === 'IN_PROGRESS' ? 'info' :
+                        'default'
                       }
                       variant="outlined"
                     />
@@ -573,41 +563,6 @@ function DashboardHome() {
                 />
               </Box>
             </Tooltip>
-
-            {/* 날씨 정보 표시 */}
-            <Box sx={{ textAlign: 'center', mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-              {weatherLoading ? (
-                <Typography variant="caption" color="text.secondary">
-                  날씨 정보 로딩 중...
-                </Typography>
-              ) : weather ? (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                    <img
-                      src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-                      alt={weather.weather[0].description}
-                      style={{ width: 50, height: 50 }}
-                    />
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                      {Math.round(weather.main.temp)}°C
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    {weather.weather[0].description}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    체감온도: {Math.round(weather.main.feels_like)}°C
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    습도: {weather.main.humidity}%
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  날씨 정보를 불러올 수 없습니다
-                </Typography>
-              )}
-            </Box>
           </Paper>
 
           {/* 추가 정보 영역 (필요시 사용) */}
