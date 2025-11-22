@@ -191,13 +191,13 @@ function DashboardHome() {
   };
 
   const renderUserGrid = (users, title, icon) => (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
         titleTypographyProps={{ variant: 'h6' }}
       />
-      <CardContent>
+      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -230,13 +230,13 @@ function DashboardHome() {
   );
 
   const renderCompanyGrid = (companies, title, icon) => (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
         titleTypographyProps={{ variant: 'h6' }}
       />
-      <CardContent>
+      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -260,13 +260,13 @@ function DashboardHome() {
   );
 
   const renderProjectGrid = (projects, title, icon) => (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
         titleTypographyProps={{ variant: 'h6' }}
       />
-      <CardContent>
+      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -299,13 +299,13 @@ function DashboardHome() {
   );
 
   const renderRequestGrid = (requests, title, icon) => (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ minHeight: '450px', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
       <CardHeader
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
         title={title}
         titleTypographyProps={{ variant: 'h6' }}
       />
-      <CardContent>
+      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -343,16 +343,16 @@ function DashboardHome() {
 
   const renderAdminDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderUserGrid(data.users, '사용자 목록', <UsersIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderCompanyGrid(data.companies, '회사 목록', <CompanyIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.projects, '프로젝트 목록', <ProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.requests, '요청 목록', <RequestIcon />)}
       </Grid>
     </Grid>
@@ -360,16 +360,16 @@ function DashboardHome() {
 
   const renderManagerDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.unassignedRequests, '미배정 요청', <RequestIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
     </Grid>
@@ -377,16 +377,16 @@ function DashboardHome() {
 
   const renderCustomerDashboard = () => (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12}>
         {renderRequestGrid(data.completedRequests, '처리 완료 목록', <CompletedIcon />)}
       </Grid>
     </Grid>
@@ -554,7 +554,7 @@ function DashboardHome() {
       </Box>
 
       {/* 오른쪽 70% - Role별 대시보드 그리드 */}
-      <Box sx={{ width: '70%', height: '100%', overflow: 'auto' }}>
+      <Box sx={{ width: '70%', height: '100%', overflow: 'auto', p: 2 }}>
         {isAdmin && renderAdminDashboard()}
         {isManager && renderManagerDashboard()}
         {isCustomer && renderCustomerDashboard()}
