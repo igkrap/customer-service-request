@@ -124,10 +124,10 @@ function UserProfile({ onBack }) {
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
 
       {/* 3개 타일 */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} direction="column">
         {/* 사용자명 변경 타일 */}
-        <Grid item xs={12}>
-          <Card elevation={3}>
+        <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+          <Card elevation={3} sx={{ width: '100%' }}>
             <CardHeader
               avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><PersonIcon /></Avatar>}
               title="사용자명 변경"
@@ -159,8 +159,8 @@ function UserProfile({ onBack }) {
         </Grid>
 
         {/* 이메일 변경 타일 */}
-        <Grid item xs={12}>
-          <Card elevation={3}>
+        <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+          <Card elevation={3} sx={{ width: '100%' }}>
             <CardHeader
               avatar={<Avatar sx={{ bgcolor: 'info.main' }}><EmailIcon /></Avatar>}
               title="이메일 변경"
@@ -191,8 +191,8 @@ function UserProfile({ onBack }) {
         </Grid>
 
         {/* 비밀번호 변경 타일 */}
-        <Grid item xs={12}>
-          <Card elevation={3}>
+        <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+          <Card elevation={3} sx={{ width: '100%' }}>
             <CardHeader
               avatar={<Avatar sx={{ bgcolor: 'success.main' }}><LockIcon /></Avatar>}
               title="비밀번호 변경"
