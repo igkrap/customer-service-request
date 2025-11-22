@@ -67,6 +67,22 @@ const formatDateForDisplay = (yyyymmdd) => {
   return `${year}년 ${month}월 ${day}일`;
 };
 
+// 현재 날짜를 yyyyMMdd 형식으로 반환
+const getTodayYYYYMMDD = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
+
+// 프로젝트가 현재 기간 내에 있는지 확인
+const isProjectActive = (project) => {
+  if (!project.startDate || !project.endDate) return true; // 날짜가 없으면 선택 가능
+  const today = getTodayYYYYMMDD();
+  return project.startDate <= today && today <= project.endDate;
+};
+
 function ServiceRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -710,11 +726,19 @@ function ServiceRequestList() {
                     label="프로젝트"
                   >
                     <MenuItem value="">프로젝트 선택 (선택사항)</MenuItem>
-                    {projects.map(project => (
-                      <MenuItem key={project.id} value={project.id}>
-                        {project.projectName}
-                      </MenuItem>
-                    ))}
+                    {projects.map(project => {
+                      const isActive = isProjectActive(project);
+                      return (
+                        <MenuItem
+                          key={project.id}
+                          value={project.id}
+                          disabled={!isActive}
+                        >
+                          {project.projectName}
+                          {!isActive && ' (기간 만료)'}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
 
