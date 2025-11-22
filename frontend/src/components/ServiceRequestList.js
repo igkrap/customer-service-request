@@ -483,13 +483,6 @@ function ServiceRequestList() {
       }
     },
     {
-      field: 'resolutionNotes',
-      headerName: '처리 내용',
-      flex: 1.5,
-      minWidth: 150,
-      valueGetter: (value) => value || ''
-    },
-    {
       field: 'actions',
       headerName: '작업',
       flex: 1.5,

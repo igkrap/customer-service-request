@@ -342,51 +342,51 @@ function DashboardHome() {
   );
 
   const renderAdminDashboard = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
+    <Grid container spacing={2} direction="column">
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderUserGrid(data.users, '사용자 목록', <UsersIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderCompanyGrid(data.companies, '회사 목록', <CompanyIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderProjectGrid(data.projects, '프로젝트 목록', <ProjectIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.requests, '요청 목록', <RequestIcon />)}
       </Grid>
     </Grid>
   );
 
   const renderManagerDashboard = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
+    <Grid container spacing={2} direction="column">
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.unassignedRequests, '미배정 요청', <RequestIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
     </Grid>
   );
 
   const renderCustomerDashboard = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
+    <Grid container spacing={2} direction="column">
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
         {renderRequestGrid(data.completedRequests, '처리 완료 목록', <CompletedIcon />)}
       </Grid>
     </Grid>
@@ -536,6 +536,7 @@ function DashboardHome() {
                   onChange={setSelectedDate}
                   value={selectedDate}
                   locale="ko-KR"
+                  calendarType="US"
                   tileContent={tileContent}
                   tileClassName={tileClassName}
                   formatDay={(locale, date) => date.getDate().toString()}
