@@ -173,7 +173,7 @@ function DashboardHome() {
   const getRoleText = () => {
     if (isAdmin) return '관리자';
     if (isManager) return '매니저';
-    if (isCustomer) return '고객';
+    if (isCustomer) return '유저';
     return '사용자';
   };
 
@@ -444,7 +444,7 @@ function DashboardHome() {
             <TableHead>
               <TableRow>
                 <TableCell>제목</TableCell>
-                <TableCell>고객</TableCell>
+                <TableCell>유저</TableCell>
                 <TableCell>우선순위</TableCell>
                 <TableCell>상태</TableCell>
               </TableRow>
