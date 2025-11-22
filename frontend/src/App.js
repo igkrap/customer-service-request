@@ -69,7 +69,7 @@ function Dashboard() {
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'requests', label: '서비스 요청 관리', icon: <RequestIcon />, show: true },
+    { key: 'requests', label: isCustomer ? '서비스 요청 등록' : '서비스 요청 관리', icon: <RequestIcon />, show: true },
     { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },

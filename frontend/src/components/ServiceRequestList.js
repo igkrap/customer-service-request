@@ -151,8 +151,10 @@ function ServiceRequestList() {
 
           if (customerData.companyId && assignedProjectIds.length > 0) {
             const projectsResponse = await projectAPI.getByCompanyId(customerData.companyId);
-            // Filter to only show assigned projects
-            const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+            // Filter to only show assigned projects that are active (within date range)
+            const assignedProjects = projectsResponse.data.filter(p =>
+              assignedProjectIds.includes(p.id) && isProjectActive(p)
+            );
             setProjects(assignedProjects);
           } else {
             setProjects([]);
@@ -191,7 +193,7 @@ function ServiceRequestList() {
       if (user?.id) {
         try {
           if (user.role === 'ROLE_CUSTOMER') {
-            // Customer: Only show assigned (mapped) projects
+            // Customer: Only show assigned (mapped) projects that are within active date range
             const userProjectsResponse = await userAPI.getProjects(user.id);
             const assignedProjectIds = userProjectsResponse.data;
 
@@ -200,8 +202,10 @@ function ServiceRequestList() {
 
             if (userData.companyId && assignedProjectIds.length > 0) {
               const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              // Filter to only show assigned projects
-              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+              // Filter to only show assigned projects that are active (within date range)
+              const assignedProjects = projectsResponse.data.filter(p =>
+                assignedProjectIds.includes(p.id) && isProjectActive(p)
+              );
               setProjects(assignedProjects);
             } else {
               setProjects([]);
