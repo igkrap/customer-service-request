@@ -17,6 +17,7 @@ import {
   TableRow,
   IconButton,
   Tooltip,
+  Badge,
 } from '@mui/material';
 import {
   CalendarMonth as CalendarIcon,
@@ -31,6 +32,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -134,51 +137,53 @@ function DashboardHome() {
     };
   };
 
-  const getCalendarDays = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startDayOfWeek = firstDay.getDay(); // 0 (일요일) ~ 6 (토요일)
-
-    const days = [];
-
-    // 빈 칸 추가 (이전 달의 날짜들)
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(null);
-    }
-
-    // 현재 달의 날짜들
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(day);
-    }
-
-    return {
-      days,
-      currentDay: today.getDate(),
-      year,
-      month: month + 1
-    };
-  };
-
   const dateInfo = getCurrentDate();
-  const calendarData = getCalendarDays();
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // 마감일별 요청 그룹화
-  const getRequestsByDate = (day) => {
-    if (!day || !data.allRequests) return [];
+  // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환
+  const getRequestsByDate = (date) => {
+    if (!date || !data.allRequests) return [];
 
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth();
-    const targetDate = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+    const targetDate = new Date(date).toISOString().split('T')[0];
 
     return data.allRequests.filter(req => {
       if (!req.dueDate) return false;
       const reqDate = new Date(req.dueDate).toISOString().split('T')[0];
       return reqDate === targetDate;
     });
+  };
+
+  // 타일 컨텐츠 - 마감일이 있는 날짜에 배지 표시
+  const tileContent = ({ date, view }) => {
+    if (view !== 'month') return null;
+
+    const requests = getRequestsByDate(date);
+    if (requests.length === 0) return null;
+
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 2,
+          right: 2,
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          bgcolor: 'warning.main',
+        }}
+      />
+    );
+  };
+
+  // 타일 클래스명 - 마감일이 있는 날짜 스타일링
+  const tileClassName = ({ date, view }) => {
+    if (view !== 'month') return null;
+
+    const requests = getRequestsByDate(date);
+    if (requests.length > 0) {
+      return 'has-due-date';
+    }
+    return null;
   };
 
   const renderUserGrid = (users, title, icon) => (
@@ -428,106 +433,102 @@ function DashboardHome() {
             sx={{
               p: 2,
               bgcolor: 'background.paper',
+              '& .react-calendar': {
+                width: '100%',
+                border: 'none',
+                fontFamily: 'inherit',
+              },
+              '& .react-calendar__navigation': {
+                marginBottom: '1em',
+              },
+              '& .react-calendar__navigation button': {
+                minWidth: '44px',
+                background: 'none',
+                fontSize: '16px',
+                fontWeight: 'bold',
+              },
+              '& .react-calendar__navigation button:enabled:hover': {
+                backgroundColor: '#f0f0f0',
+              },
+              '& .react-calendar__month-view__weekdays': {
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                fontWeight: 'bold',
+                fontSize: '0.75em',
+              },
+              '& .react-calendar__month-view__weekdays__weekday': {
+                padding: '0.5em',
+              },
+              '& .react-calendar__month-view__weekdays__weekday abbr': {
+                textDecoration: 'none',
+              },
+              '& .react-calendar__tile': {
+                maxWidth: '100%',
+                padding: '10px 6px',
+                background: 'none',
+                textAlign: 'center',
+                lineHeight: '16px',
+                position: 'relative',
+                fontSize: '0.875rem',
+              },
+              '& .react-calendar__tile:enabled:hover': {
+                backgroundColor: '#f0f0f0',
+              },
+              '& .react-calendar__tile--now': {
+                backgroundColor: '#1976d2',
+                color: 'white',
+                fontWeight: 'bold',
+              },
+              '& .react-calendar__tile--now:enabled:hover': {
+                backgroundColor: '#1565c0',
+              },
+              '& .react-calendar__tile--active': {
+                backgroundColor: '#006edc',
+                color: 'white',
+              },
+              '& .react-calendar__tile.has-due-date': {
+                border: '2px solid #ed6c02',
+                borderRadius: '4px',
+              },
+              '& .react-calendar__month-view__days__day--weekend': {
+                color: '#d32f2f',
+              },
             }}
           >
-            {/* 달력 헤더 */}
-            <Box sx={{ textAlign: 'center', mb: 2, p: 1, bgcolor: 'primary.main', borderRadius: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
-                {calendarData.year}년 {calendarData.month}월
-              </Typography>
-            </Box>
-
-            {/* 요일 헤더 */}
-            <Grid container spacing={0.5} sx={{ mb: 1 }}>
-              {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
-                <Grid item xs key={day}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      py: 0.5,
-                      fontWeight: 'bold',
-                      fontSize: '0.75rem',
-                      color: index === 0 ? 'error.main' : index === 6 ? 'primary.main' : 'text.primary',
-                    }}
-                  >
-                    {day}
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* 날짜 그리드 */}
-            <Grid container spacing={0.5}>
-              {calendarData.days.map((day, index) => {
-                const requestsOnDate = getRequestsByDate(day);
-                const hasDueDate = requestsOnDate.length > 0;
-
-                return (
-                  <Grid item xs key={index}>
-                    <Tooltip
-                      title={
-                        hasDueDate ? (
-                          <Box>
-                            <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                              마감 예정 ({requestsOnDate.length}건)
-                            </Typography>
-                            {requestsOnDate.map((req, idx) => (
-                              <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
-                                • {req.title} ({req.priority})
-                              </Typography>
-                            ))}
-                          </Box>
-                        ) : ''
-                      }
-                      arrow
-                      placement="top"
-                    >
-                      <Box
-                        sx={{
-                          textAlign: 'center',
-                          py: 1,
-                          borderRadius: 1,
-                          fontSize: '0.875rem',
-                          position: 'relative',
-                          bgcolor: day === calendarData.currentDay ? 'primary.main' : 'transparent',
-                          color: day === calendarData.currentDay
-                            ? 'white'
-                            : day
-                              ? index % 7 === 0
-                                ? 'error.main'
-                                : index % 7 === 6
-                                  ? 'primary.main'
-                                  : 'text.primary'
-                              : 'transparent',
-                          fontWeight: day === calendarData.currentDay ? 'bold' : 'normal',
-                          cursor: day ? 'pointer' : 'default',
-                          border: hasDueDate ? '2px solid' : 'none',
-                          borderColor: hasDueDate ? 'warning.main' : 'transparent',
-                          '&:hover': day ? {
-                            bgcolor: day === calendarData.currentDay ? 'primary.dark' : 'action.hover',
-                          } : {},
-                        }}
-                      >
-                        {day || ''}
-                        {hasDueDate && (
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              top: 2,
-                              right: 2,
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              bgcolor: 'warning.main',
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Tooltip>
-                  </Grid>
-                );
-              })}
-            </Grid>
+            <Tooltip
+              title={
+                <Box>
+                  {getRequestsByDate(selectedDate).length > 0 ? (
+                    <>
+                      <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                        마감 예정 ({getRequestsByDate(selectedDate).length}건)
+                      </Typography>
+                      {getRequestsByDate(selectedDate).map((req, idx) => (
+                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
+                          • {req.title} ({req.priority})
+                        </Typography>
+                      ))}
+                    </>
+                  ) : (
+                    <Typography variant="caption">마감일이 없습니다</Typography>
+                  )}
+                </Box>
+              }
+              arrow
+              placement="top"
+              followCursor
+            >
+              <Box>
+                <Calendar
+                  onChange={setSelectedDate}
+                  value={selectedDate}
+                  locale="ko-KR"
+                  tileContent={tileContent}
+                  tileClassName={tileClassName}
+                  formatDay={(locale, date) => date.getDate().toString()}
+                />
+              </Box>
+            </Tooltip>
 
             {/* 오늘 날짜 표시 */}
             <Box sx={{ textAlign: 'center', mt: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 1 }}>
