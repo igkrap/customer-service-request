@@ -644,7 +644,13 @@ function DashboardHome() {
               border: '2px solid #1976d2',
               fontWeight: 'bold',
             },
+            '& .react-calendar__tile--active:enabled:hover': {
+              backgroundColor: '#ffffff',
+            },
             '& .react-calendar__tile--active.react-calendar__tile--now': {
+              backgroundColor: '#e3f2fd',
+            },
+            '& .react-calendar__tile--active.react-calendar__tile--now:enabled:hover': {
               backgroundColor: '#e3f2fd',
             },
             '& .react-calendar__month-view__days__day--weekend': {
