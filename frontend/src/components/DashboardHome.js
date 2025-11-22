@@ -194,12 +194,53 @@ function DashboardHome() {
 
   const dateInfo = getCurrentDate();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [hoveredDate, setHoveredDate] = useState(null);
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
 
   useEffect(() => {
     fetchWeatherData();
   }, []);
+
+  // 달력 타일에 마우스 이벤트 추가
+  useEffect(() => {
+    const handleTileMouseEnter = (e) => {
+      const tile = e.target.closest('.react-calendar__tile');
+      if (tile && tile.querySelector('abbr')) {
+        const dateStr = tile.querySelector('abbr').getAttribute('aria-label');
+        if (dateStr) {
+          try {
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+              setHoveredDate(date);
+            }
+          } catch (err) {
+            console.error('Date parse error:', err);
+          }
+        }
+      }
+    };
+
+    const handleTileMouseLeave = () => {
+      setHoveredDate(null);
+    };
+
+    const calendar = document.querySelector('.react-calendar');
+    if (calendar) {
+      const tiles = calendar.querySelectorAll('.react-calendar__tile');
+      tiles.forEach(tile => {
+        tile.addEventListener('mouseenter', handleTileMouseEnter);
+        tile.addEventListener('mouseleave', handleTileMouseLeave);
+      });
+
+      return () => {
+        tiles.forEach(tile => {
+          tile.removeEventListener('mouseenter', handleTileMouseEnter);
+          tile.removeEventListener('mouseleave', handleTileMouseLeave);
+        });
+      };
+    }
+  }, [selectedDate, data.allRequests]);
 
   const fetchWeatherData = async () => {
     try {
@@ -600,10 +641,13 @@ function DashboardHome() {
                 backgroundColor: '#bbdefb',
               },
               '& .react-calendar__tile--active': {
-                backgroundColor: 'transparent',
+                backgroundColor: 'transparent !important',
                 color: '#006edc',
                 border: '2px solid #1976d2',
                 fontWeight: 'bold',
+              },
+              '& .react-calendar__tile--active:enabled:hover': {
+                backgroundColor: 'transparent !important',
               },
               '& .react-calendar__tile.has-due-date': {
                 backgroundColor: 'transparent',
@@ -617,27 +661,40 @@ function DashboardHome() {
             }}
           >
             <Tooltip
+              open={hoveredDate !== null}
               title={
-                <Box>
-                  {getRequestsByDate(selectedDate).length > 0 ? (
-                    <>
-                      <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                        마감 예정 ({getRequestsByDate(selectedDate).length}건)
-                      </Typography>
-                      {getRequestsByDate(selectedDate).map((req, idx) => (
-                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
-                          • {req.title} ({req.priority})
+                hoveredDate ? (
+                  <Box>
+                    {getRequestsByDate(hoveredDate).length > 0 ? (
+                      <>
+                        <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                          마감 예정 ({getRequestsByDate(hoveredDate).length}건)
                         </Typography>
-                      ))}
-                    </>
-                  ) : (
-                    <Typography variant="caption">마감일이 없습니다</Typography>
-                  )}
-                </Box>
+                        {getRequestsByDate(hoveredDate).map((req, idx) => (
+                          <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3 }}>
+                            • {req.title} ({req.priority})
+                          </Typography>
+                        ))}
+                      </>
+                    ) : (
+                      <Typography variant="caption">마감일이 없습니다</Typography>
+                    )}
+                  </Box>
+                ) : ''
               }
               arrow
               placement="top"
-              followCursor
+              PopperProps={{
+                anchorEl: {
+                  getBoundingClientRect: () => {
+                    const tile = document.querySelector('.react-calendar__tile:hover');
+                    if (tile) {
+                      return tile.getBoundingClientRect();
+                    }
+                    return new DOMRect();
+                  }
+                }
+              }}
             >
               <Box>
                 <Calendar
