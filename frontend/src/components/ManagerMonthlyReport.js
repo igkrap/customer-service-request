@@ -185,8 +185,18 @@ function ManagerMonthlyReport() {
 
   return (
     <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+        <Typography
+          variant="h5"
+          component="h2"
+          sx={{
+            mb: 3,
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           매니저별 월간 처리 현황
         </Typography>
 
@@ -222,32 +232,61 @@ function ManagerMonthlyReport() {
         </Box>
 
         {selectedManagerId && selectedMonth && (
-          <TableContainer sx={{ mt: 3, maxHeight: 600 }}>
+          <TableContainer
+            sx={{
+              mt: 3,
+              maxHeight: 600,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'grey.100',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'grey.400',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: 'grey.500',
+                },
+              },
+            }}
+          >
             <Table stickyHeader size="small" sx={{ minWidth: 1200 }}>
               <TableHead>
                 <TableRow>
                   <TableCell
                     sx={{
-                      fontWeight: 'bold',
-                      bgcolor: 'primary.main',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
                       color: 'white',
                       position: 'sticky',
                       left: 0,
                       zIndex: 3,
-                      minWidth: 200
+                      minWidth: 200,
+                      borderRight: '2px solid rgba(255,255,255,0.3)',
+                      boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
                     }}
                   >
                     프로젝트
                   </TableCell>
                   <TableCell
                     sx={{
-                      fontWeight: 'bold',
-                      bgcolor: 'primary.main',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
                       color: 'white',
                       position: 'sticky',
                       left: 200,
                       zIndex: 3,
-                      minWidth: 80
+                      minWidth: 80,
+                      borderRight: '2px solid rgba(255,255,255,0.3)',
+                      boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
                     }}
                   >
                     m/d
@@ -257,23 +296,29 @@ function ManagerMonthlyReport() {
                       key={dayInfo.day}
                       align="center"
                       sx={{
-                        fontWeight: 'bold',
-                        bgcolor: dayInfo.isWeekend ? 'error.light' : 'primary.main',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        background: dayInfo.isWeekend
+                          ? 'linear-gradient(135deg, #ef5350 0%, #e53935 100%)'
+                          : 'linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%)',
                         color: 'white',
-                        minWidth: 60
+                        minWidth: 60,
+                        borderRight: '1px solid rgba(255,255,255,0.2)',
                       }}
                     >
-                      <div>{dayInfo.day}</div>
-                      <div style={{ fontSize: '0.75rem' }}>({dayInfo.dayName})</div>
+                      <div style={{ fontWeight: 700 }}>{dayInfo.day}</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>({dayInfo.dayName})</div>
                     </TableCell>
                   ))}
                   <TableCell
                     align="center"
                     sx={{
-                      fontWeight: 'bold',
-                      bgcolor: 'success.main',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)',
                       color: 'white',
-                      minWidth: 80
+                      minWidth: 80,
+                      borderLeft: '2px solid rgba(255,255,255,0.3)',
                     }}
                   >
                     합계
@@ -283,20 +328,46 @@ function ManagerMonthlyReport() {
               <TableBody>
                 {reportData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={daysInMonth.length + 3} align="center" sx={{ py: 4 }}>
+                    <TableCell
+                      colSpan={daysInMonth.length + 3}
+                      align="center"
+                      sx={{
+                        py: 6,
+                        fontSize: '1rem',
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                      }}
+                    >
                       해당 조건의 데이터가 없습니다
                     </TableCell>
                   </TableRow>
                 ) : (
                   reportData.map((row, index) => (
-                    <TableRow key={index} hover>
+                    <TableRow
+                      key={index}
+                      sx={{
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          '& td': {
+                            bgcolor: 'inherit',
+                          },
+                        },
+                        '&:nth-of-type(even)': {
+                          bgcolor: 'rgba(0, 0, 0, 0.02)',
+                        },
+                      }}
+                    >
                       <TableCell
                         sx={{
                           position: 'sticky',
                           left: 0,
-                          bgcolor: 'background.paper',
+                          bgcolor: index % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'background.paper',
                           zIndex: 2,
-                          fontWeight: 'medium'
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                          borderRight: '1px solid',
+                          borderColor: 'divider',
+                          boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
                         }}
                       >
                         {row.project.projectName}
@@ -306,8 +377,13 @@ function ManagerMonthlyReport() {
                         sx={{
                           position: 'sticky',
                           left: 200,
-                          bgcolor: 'background.paper',
-                          zIndex: 2
+                          bgcolor: index % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'background.paper',
+                          zIndex: 2,
+                          fontWeight: 600,
+                          fontSize: '0.85rem',
+                          borderRight: '1px solid',
+                          borderColor: 'divider',
+                          boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
                         }}
                       >
                         {row.project.contractManDays}
@@ -317,7 +393,19 @@ function ManagerMonthlyReport() {
                           key={dayInfo.day}
                           align="center"
                           sx={{
-                            bgcolor: dayInfo.isWeekend ? 'grey.100' : 'inherit'
+                            bgcolor: dayInfo.isWeekend ? 'rgba(239, 83, 80, 0.08)' : 'inherit',
+                            fontSize: '0.85rem',
+                            fontWeight: row.dailyHours[dayInfo.day] > 0 ? 600 : 400,
+                            color: row.dailyHours[dayInfo.day] > 0 ? 'text.primary' : 'text.disabled',
+                            borderRight: '1px solid',
+                            borderColor: 'divider',
+                            transition: 'all 0.2s',
+                            '&:hover': row.dailyHours[dayInfo.day] > 0 ? {
+                              bgcolor: 'primary.light',
+                              color: 'white',
+                              transform: 'scale(1.05)',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            } : {},
                           }}
                         >
                           {row.dailyHours[dayInfo.day] > 0 ? row.dailyHours[dayInfo.day].toFixed(1) : '-'}
@@ -326,8 +414,12 @@ function ManagerMonthlyReport() {
                       <TableCell
                         align="center"
                         sx={{
-                          fontWeight: 'bold',
-                          bgcolor: 'success.light'
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          bgcolor: 'rgba(102, 187, 106, 0.15)',
+                          color: 'success.dark',
+                          borderLeft: '2px solid',
+                          borderColor: 'success.main',
                         }}
                       >
                         {row.totalHours.toFixed(1)}
