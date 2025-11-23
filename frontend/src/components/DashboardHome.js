@@ -135,48 +135,39 @@ function DashboardHome() {
         console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isCustomer) {
-        console.log('Customer companyId:', user.companyId);
+        console.log('Customer userId:', user.id);
 
-        // Customer는 companyId가 있어야 프로젝트 조회 가능
-        if (user.companyId) {
-          const [projectsRes, requestsRes] = await Promise.all([
-            axios.get(`${API_BASE_URL}/projects/company/${user.companyId}`, config),
-            axios.get(`${API_BASE_URL}/service-requests`, config),
-          ]);
+        // Customer는 할당된 프로젝트만 조회
+        const [requestsRes, userProjectsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/service-requests`, config),
+          axios.get(`${API_BASE_URL}/users/${user.id}/projects`, config),
+        ]);
 
-          console.log('Projects Response:', projectsRes.data);
-          console.log('Requests Response:', requestsRes.data);
+        console.log('Requests Response:', requestsRes.data);
+        console.log('User Projects Response:', userProjectsRes.data);
 
-          const allRequests = requestsRes.data;
-          const dashboardData = {
-            myProjects: projectsRes.data.slice(0, 5),
-            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
-            allRequests: allRequests,
-          };
+        const allRequests = requestsRes.data;
+        const assignedProjectIds = userProjectsRes.data;
 
-          console.log('Setting Dashboard Data:', dashboardData);
-          setData(dashboardData);
-        } else {
-          // companyId가 없으면 service requests만 조회
-          console.log('Customer has no companyId, fetching only service requests');
-          const requestsRes = await axios.get(`${API_BASE_URL}/service-requests`, config);
-
-          console.log('Requests Response:', requestsRes.data);
-
-          const allRequests = requestsRes.data;
-          const dashboardData = {
-            myProjects: [],
-            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
-            allRequests: allRequests,
-          };
-
-          console.log('Setting Dashboard Data:', dashboardData);
-          setData(dashboardData);
+        // 할당된 프로젝트 ID가 있으면 전체 프로젝트 목록에서 필터링
+        let myProjects = [];
+        if (assignedProjectIds.length > 0) {
+          const allProjectsRes = await axios.get(`${API_BASE_URL}/projects`, config);
+          console.log('All Projects Response:', allProjectsRes.data);
+          myProjects = allProjectsRes.data.filter(p => assignedProjectIds.includes(p.id));
+          console.log('Filtered My Projects:', myProjects);
         }
+
+        const dashboardData = {
+          myProjects: myProjects.slice(0, 5),
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+          completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
+          allRequests: allRequests,
+        };
+
+        console.log('Setting Dashboard Data:', dashboardData);
+        setData(dashboardData);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
