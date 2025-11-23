@@ -406,8 +406,8 @@ function ManagerMonthlyReport() {
   }
 
   return (
-    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+    <Box sx={{ p: 1, height: '100%' }}>
+      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Typography
           variant="h5"
           component="h2"
@@ -456,9 +456,7 @@ function ManagerMonthlyReport() {
         {selectedManagerId && selectedMonth && (
           <Box
             sx={{
-              mt: 3,
-              height: 'calc(100vh - 350px)',
-              minHeight: 400,
+              flex: 1,
               width: '100%',
               '& .header-cell-primary': {
                 fontWeight: 700,
@@ -524,6 +522,7 @@ function ManagerMonthlyReport() {
               disableRowSelectionOnClick
               disableColumnMenu
               hideFooter
+              autoHeight={false}
               slots={{
                 toolbar: CustomToolbar,
               }}
