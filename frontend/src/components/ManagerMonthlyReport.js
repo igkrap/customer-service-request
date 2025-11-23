@@ -193,6 +193,26 @@ function ManagerMonthlyReport() {
   const generateColumns = () => {
     const cols = [
       {
+        field: 'companyName',
+        headerName: '회사명',
+        width: 180,
+        pinned: 'left',
+        headerAlign: 'center',
+        cellClassName: 'company-name-cell',
+        headerClassName: 'header-cell-primary',
+        renderCell: (params) => {
+          // 이전 행과 회사명이 같으면 빈 값 표시 (병합 효과)
+          const currentIndex = params.api.getRowIndexRelativeToVisibleRows(params.id);
+          if (currentIndex > 0) {
+            const prevRow = rows[currentIndex - 1];
+            if (prevRow && prevRow.companyName === params.value) {
+              return null; // 같은 회사명이면 빈 셀
+            }
+          }
+          return params.value;
+        },
+      },
+      {
         field: 'projectName',
         headerName: '프로젝트',
         width: 200,
@@ -283,9 +303,21 @@ function ManagerMonthlyReport() {
   };
 
   const generateRows = () => {
-    const gridRows = reportData.map((row, index) => {
+    // 회사명으로 정렬
+    const sortedReportData = [...reportData].sort((a, b) => {
+      const companyA = a.project.companyName || '';
+      const companyB = b.project.companyName || '';
+      // 회사명으로 먼저 정렬, 같으면 프로젝트명으로 정렬
+      if (companyA !== companyB) {
+        return companyA.localeCompare(companyB);
+      }
+      return (a.project.projectName || '').localeCompare(b.project.projectName || '');
+    });
+
+    const gridRows = sortedReportData.map((row, index) => {
       const rowData = {
         id: index,
+        companyName: row.project.companyName || '-',
         projectName: row.project.projectName,
         contractManDays: row.project.contractManDays,
         totalHours: row.totalHours,
@@ -304,15 +336,29 @@ function ManagerMonthlyReport() {
 
   const handleExportToExcel = () => {
     // 헤더 생성
-    const headers = ['프로젝트', 'm/d'];
+    const headers = ['회사명', '프로젝트', 'm/d'];
     daysInMonth.forEach(dayInfo => {
       headers.push(`${dayInfo.day}(${dayInfo.dayName})`);
     });
     headers.push('합계');
 
+    // 데이터를 회사명으로 정렬
+    const sortedReportData = [...reportData].sort((a, b) => {
+      const companyA = a.project.companyName || '';
+      const companyB = b.project.companyName || '';
+      if (companyA !== companyB) {
+        return companyA.localeCompare(companyB);
+      }
+      return (a.project.projectName || '').localeCompare(b.project.projectName || '');
+    });
+
     // 데이터 행 생성
-    const excelData = reportData.map(row => {
-      const rowData = [row.project.projectName, row.project.contractManDays];
+    const excelData = sortedReportData.map(row => {
+      const rowData = [
+        row.project.companyName || '-',
+        row.project.projectName,
+        row.project.contractManDays
+      ];
 
       daysInMonth.forEach(dayInfo => {
         const value = row.dailyHours[dayInfo.day];
@@ -331,6 +377,7 @@ function ManagerMonthlyReport() {
 
     // 컬럼 너비 설정
     const columnWidths = [
+      { wch: 20 }, // 회사명
       { wch: 25 }, // 프로젝트
       { wch: 8 },  // m/d
     ];
@@ -480,6 +527,18 @@ function ManagerMonthlyReport() {
                 borderLeft: '1px solid',
                 borderColor: 'divider',
               },
+              '& .company-name-cell': {
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                borderRight: '2px solid',
+                borderColor: 'divider',
+              },
+              '& .merged-cell': {
+                borderTop: 'none !important',
+              },
+              '& .company-name-first': {
+                verticalAlign: 'top',
+              },
               '& .project-name-cell': {
                 fontWeight: 600,
                 fontSize: '0.9rem',
@@ -526,8 +585,22 @@ function ManagerMonthlyReport() {
               slots={{
                 toolbar: CustomToolbar,
               }}
+              getCellClassName={(params) => {
+                // 회사명 셀 병합 스타일
+                if (params.field === 'companyName') {
+                  const currentIndex = params.api.getRowIndexRelativeToVisibleRows(params.id);
+                  if (currentIndex > 0) {
+                    const prevRow = rows[currentIndex - 1];
+                    if (prevRow && prevRow.companyName === params.value) {
+                      return 'merged-cell'; // 병합된 셀 (빈 셀)
+                    }
+                  }
+                  return 'company-name-first'; // 회사명의 첫 번째 셀
+                }
+                return '';
+              }}
               initialState={{
-                pinnedColumns: { left: ['projectName', 'contractManDays'] },
+                pinnedColumns: { left: ['companyName', 'projectName', 'contractManDays'] },
               }}
               sx={{
                 '& .MuiDataGrid-virtualScroller::-webkit-scrollbar': {
