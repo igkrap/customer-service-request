@@ -457,67 +457,64 @@ function ManagerMonthlyReport() {
           <Box
             sx={{
               mt: 3,
-              height: 600,
+              height: 'calc(100vh - 350px)',
+              minHeight: 400,
               width: '100%',
               '& .header-cell-primary': {
-                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                color: 'white',
                 fontWeight: 700,
                 fontSize: '0.95rem',
-                borderRight: '2px solid rgba(255,255,255,0.3)',
+                borderRight: '1px solid',
+                borderColor: 'divider',
               },
               '& .header-cell-day': {
-                background: 'linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%)',
-                color: 'white',
                 fontWeight: 700,
                 fontSize: '0.9rem',
               },
               '& .header-cell-weekend': {
-                background: 'linear-gradient(135deg, #ef5350 0%, #e53935 100%)',
-                color: 'white',
                 fontWeight: 700,
                 fontSize: '0.9rem',
+                color: 'error.main',
               },
               '& .header-cell-total': {
-                background: 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)',
-                color: 'white',
                 fontWeight: 700,
                 fontSize: '0.95rem',
-                borderLeft: '2px solid rgba(255,255,255,0.3)',
+                color: 'success.main',
+                borderLeft: '1px solid',
+                borderColor: 'divider',
               },
               '& .project-name-cell': {
                 fontWeight: 600,
                 fontSize: '0.9rem',
               },
               '& .cell-weekend': {
-                bgcolor: 'rgba(239, 83, 80, 0.08)',
+                bgcolor: 'rgba(239, 83, 80, 0.05)',
               },
               '& .cell-total': {
-                bgcolor: 'rgba(102, 187, 106, 0.1)',
+                bgcolor: 'rgba(102, 187, 106, 0.05)',
               },
               '& .MuiDataGrid-root': {
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 2,
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               },
               '& .MuiDataGrid-row:nth-of-type(even)': {
                 bgcolor: 'rgba(0, 0, 0, 0.02)',
               },
               '& .MuiDataGrid-row:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                bgcolor: 'rgba(25, 118, 210, 0.04)',
               },
               '& .MuiDataGrid-columnHeader': {
                 outline: 'none !important',
+                bgcolor: 'background.paper',
               },
               '& .MuiDataGrid-cell': {
                 outline: 'none !important',
               },
               '& .MuiDataGrid-pinnedColumnHeaders': {
-                boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
               },
               '& .MuiDataGrid-pinnedColumns': {
-                boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
+                boxShadow: '2px 0 4px rgba(0,0,0,0.03)',
               },
             }}
           >
