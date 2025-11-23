@@ -60,11 +60,11 @@ const formatDateFromYYYYMMDD = (yyyymmdd) => {
 
 const formatDateForDisplay = (yyyymmdd) => {
   if (!yyyymmdd || yyyymmdd.length !== 8) return '';
-  // yyyyMMdd → yyyy년 MM월 dd일
+  // yyyyMMdd → yyyy/MM/dd
   const year = yyyymmdd.substring(0, 4);
   const month = yyyymmdd.substring(4, 6);
   const day = yyyymmdd.substring(6, 8);
-  return `${year}년 ${month}월 ${day}일`;
+  return `${year}/${month}/${day}`;
 };
 
 // 현재 날짜를 yyyyMMdd 형식으로 반환
@@ -78,9 +78,15 @@ const getTodayYYYYMMDD = () => {
 
 // 프로젝트가 현재 기간 내에 있는지 확인
 const isProjectActive = (project) => {
-  if (!project.startDate || !project.endDate) return true; // 날짜가 없으면 선택 가능
+  // contractStartDate와 contractEndDate는 백엔드에서 "YYYY-MM-DD" 형식으로 옴
+  if (!project.contractStartDate || !project.contractEndDate) return true; // 날짜가 없으면 선택 가능
+
+  // "YYYY-MM-DD" 형식을 "YYYYMMDD" 형식으로 변환
+  const startDate = formatDateToYYYYMMDD(project.contractStartDate);
+  const endDate = formatDateToYYYYMMDD(project.contractEndDate);
   const today = getTodayYYYYMMDD();
-  return project.startDate <= today && today <= project.endDate;
+
+  return startDate <= today && today <= endDate;
 };
 
 function ServiceRequestList() {
@@ -151,8 +157,10 @@ function ServiceRequestList() {
 
           if (customerData.companyId && assignedProjectIds.length > 0) {
             const projectsResponse = await projectAPI.getByCompanyId(customerData.companyId);
-            // Filter to only show assigned projects
-            const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+            // Filter to only show assigned projects that are active (within date range)
+            const assignedProjects = projectsResponse.data.filter(p =>
+              assignedProjectIds.includes(p.id) && isProjectActive(p)
+            );
             setProjects(assignedProjects);
           } else {
             setProjects([]);
@@ -191,7 +199,7 @@ function ServiceRequestList() {
       if (user?.id) {
         try {
           if (user.role === 'ROLE_CUSTOMER') {
-            // Customer: Only show assigned (mapped) projects
+            // Customer: Only show assigned (mapped) projects that are within active date range
             const userProjectsResponse = await userAPI.getProjects(user.id);
             const assignedProjectIds = userProjectsResponse.data;
 
@@ -200,8 +208,10 @@ function ServiceRequestList() {
 
             if (userData.companyId && assignedProjectIds.length > 0) {
               const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              // Filter to only show assigned projects
-              const assignedProjects = projectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+              // Filter to only show assigned projects that are active (within date range)
+              const assignedProjects = projectsResponse.data.filter(p =>
+                assignedProjectIds.includes(p.id) && isProjectActive(p)
+              );
               setProjects(assignedProjects);
             } else {
               setProjects([]);
@@ -758,7 +768,10 @@ function ServiceRequestList() {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  helperText="마감일을 선택하세요 (선택사항)"
+                  inputProps={{
+                    min: new Date().toISOString().split('T')[0]
+                  }}
+                  helperText="마감일을 선택하세요 (오늘 이후만 가능)"
                 />
               </Box>
             </DialogContent>

@@ -18,6 +18,7 @@ import {
   IconButton,
   Tooltip,
   Badge,
+  Fade,
 } from '@mui/material';
 import {
   CalendarMonth as CalendarIcon,
@@ -29,8 +30,10 @@ import {
   HourglassEmpty as PendingIcon,
   Pause as OnHoldIcon,
   CheckCircle as CompletedIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import UserProfile from './UserProfile';
 import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -49,6 +52,7 @@ const getRoleLabel = (role) => {
 
 function DashboardHome() {
   const { user } = useAuth();
+  const [showProfile, setShowProfile] = useState(false);
   const [data, setData] = useState({
     users: [],
     companies: [],
@@ -314,7 +318,7 @@ function DashboardHome() {
     }
   };
 
-  // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환
+  // 마감일별 요청 그룹화 - 특정 날짜의 마감일 요청 반환 (완료되지 않은 것만)
   const getRequestsByDate = (date) => {
     if (!date || !data.allRequests) return [];
 
@@ -327,7 +331,8 @@ function DashboardHome() {
     return data.allRequests.filter(req => {
       if (!req.dueDate) return false;
       // dueDate가 yyyyMMdd 형식이므로 직접 비교
-      return req.dueDate === targetDate;
+      // 완료되지 않은 요청만 표시 (RESOLVED, CANCELLED 제외)
+      return req.dueDate === targetDate && req.status !== 'RESOLVED' && req.status !== 'CANCELLED';
     });
   };
 
@@ -622,7 +627,22 @@ function DashboardHome() {
         }}
       >
         {/* 사용자 정보 */}
-        <Box sx={{ textAlign: 'center' }}>
+        <Box sx={{ position: 'relative', textAlign: 'center' }}>
+          <Tooltip title="설정" placement="right">
+            <IconButton
+              onClick={() => setShowProfile(!showProfile)}
+              size="small"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                color: showProfile ? 'primary.main' : 'text.secondary',
+                '&:hover': { color: 'primary.main' }
+              }}
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
           <Avatar
             sx={{
               width: 80,
@@ -872,11 +892,20 @@ function DashboardHome() {
         </Box>
       </Paper>
 
-      {/* 오른쪽 - Role별 대시보드 그리드 (나머지 공간) */}
-      <Box sx={{ flex: 1, height: '100%', overflow: 'auto', p: 2 }}>
-        {isAdmin && renderAdminDashboard()}
-        {isManager && renderManagerDashboard()}
-        {isCustomer && renderCustomerDashboard()}
+      {/* 오른쪽 - Role별 대시보드 그리드 또는 프로필 화면 (나머지 공간) */}
+      <Box sx={{ flex: 1, height: '100%', overflow: 'auto', position: 'relative' }}>
+        <Fade in={!showProfile} timeout={300} unmountOnExit>
+          <Box sx={{ height: '100%', p: 2 }}>
+            {isAdmin && renderAdminDashboard()}
+            {isManager && renderManagerDashboard()}
+            {isCustomer && renderCustomerDashboard()}
+          </Box>
+        </Fade>
+        <Fade in={showProfile} timeout={300} unmountOnExit>
+          <Box sx={{ height: '100%', position: 'absolute', top: 0, left: 0, right: 0 }}>
+            <UserProfile onBack={() => setShowProfile(false)} />
+          </Box>
+        </Fade>
       </Box>
     </Box>
   );

@@ -29,7 +29,7 @@ import {
   Fade
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
+  Home as HomeIcon,
   Assignment as RequestIcon,
   PlaylistAddCheck as ProjectRequestIcon,
   Folder as MyProjectIcon,
@@ -41,7 +41,8 @@ import {
   Person as ProfileIcon,
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -65,11 +66,11 @@ function Dashboard() {
   };
 
   const menuItems = [
-    { key: 'home', label: '대시보드 홈', icon: <DashboardIcon />, show: true },
+    { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'requests', label: '서비스 요청 관리', icon: <RequestIcon />, show: true },
+    { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: true },
     { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
@@ -185,39 +186,6 @@ function Dashboard() {
           </List>
           <Divider />
           <List>
-            <ListItem disablePadding>
-              <Tooltip title={!drawerOpen ? "내 프로필" : ""} placement="left">
-                <ListItemButton
-                  selected={activeTab === 'profile'}
-                  onClick={() => setActiveTab('profile')}
-                  sx={{
-                    justifyContent: drawerOpen ? 'initial' : 'center',
-                    px: drawerOpen ? 2.5 : 1.5,
-                    '&.Mui-selected': {
-                      backgroundColor: 'primary.light',
-                      color: 'primary.contrastText',
-                      '&:hover': {
-                        backgroundColor: 'primary.main',
-                      },
-                      '& .MuiListItemIcon-root': {
-                        color: 'primary.contrastText',
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: drawerOpen ? 3 : 'auto',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <ProfileIcon />
-                  </ListItemIcon>
-                  {drawerOpen && <ListItemText primary="내 프로필" />}
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
             <ListItem disablePadding>
               <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="left">
                 <ListItemButton
