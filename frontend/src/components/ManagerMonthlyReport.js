@@ -58,21 +58,6 @@ function ManagerMonthlyReport() {
     }
   };
 
-  // 한국 공휴일 체크 (양력 공휴일만)
-  const getKoreanHoliday = (month, day) => {
-    const holidays = {
-      '1-1': '신정',
-      '3-1': '삼일절',
-      '5-5': '어린이날',
-      '6-6': '현충일',
-      '8-15': '광복절',
-      '10-3': '개천절',
-      '10-9': '한글날',
-      '12-25': '크리스마스'
-    };
-    return holidays[`${month}-${day}`] || null;
-  };
-
   const calculateDaysInMonth = (yearMonth) => {
     const [year, month] = yearMonth.split('-').map(Number);
     const daysCount = new Date(year, month, 0).getDate();
@@ -81,14 +66,11 @@ function ManagerMonthlyReport() {
     for (let day = 1; day <= daysCount; day++) {
       const date = new Date(year, month - 1, day);
       const dayOfWeek = date.getDay();
-      const holiday = getKoreanHoliday(month, day);
       days.push({
         day,
         date,
         dayOfWeek,
         isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        isHoliday: holiday !== null,
-        holidayName: holiday,
         dayName: ['일', '월', '화', '수', '목', '금', '토'][dayOfWeek]
       });
     }
@@ -276,16 +258,13 @@ function ManagerMonthlyReport() {
                       align="center"
                       sx={{
                         fontWeight: 'bold',
-                        bgcolor: dayInfo.isHoliday ? 'warning.main' : dayInfo.isWeekend ? 'error.light' : 'primary.main',
+                        bgcolor: dayInfo.isWeekend ? 'error.light' : 'primary.main',
                         color: 'white',
                         minWidth: 60
                       }}
                     >
                       <div>{dayInfo.day}</div>
-                      <div style={{ fontSize: '0.75rem' }}>
-                        ({dayInfo.dayName})
-                        {dayInfo.isHoliday && <div style={{ fontSize: '0.65rem' }}>{dayInfo.holidayName}</div>}
-                      </div>
+                      <div style={{ fontSize: '0.75rem' }}>({dayInfo.dayName})</div>
                     </TableCell>
                   ))}
                   <TableCell
