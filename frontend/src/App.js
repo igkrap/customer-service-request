@@ -13,6 +13,7 @@ import MyProjectList from './components/MyProjectList';
 import AdminProjectMapping from './components/AdminProjectMapping';
 import ProjectRequestList from './components/ProjectRequestList';
 import ProjectRequestApproval from './components/ProjectRequestApproval';
+import ManagerMonthlyReport from './components/ManagerMonthlyReport';
 import {
   Box,
   Drawer,
@@ -42,7 +43,8 @@ import {
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -75,6 +77,7 @@ function Dashboard() {
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
+    { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
@@ -87,6 +90,7 @@ function Dashboard() {
     if (activeTab === 'companies' && isAdmin) return <CompanyList />;
     if (activeTab === 'projects' && isAdmin) return <ProjectList />;
     if (activeTab === 'userprojects' && isAdmin) return <AdminProjectMapping />;
+    if (activeTab === 'managerreport' && isAdmin) return <ManagerMonthlyReport />;
     if (activeTab === 'profile') return <UserProfile />;
     return null;
   };
