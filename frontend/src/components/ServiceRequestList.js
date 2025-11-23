@@ -22,7 +22,7 @@ import {
   CircularProgress,
   IconButton
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -41,9 +41,11 @@ import {
   Timer as TimerIcon,
   Notes as NotesIcon,
   Flag as FlagIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
+import * as XLSX from 'xlsx';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -142,7 +144,7 @@ function ServiceRequestList() {
               setProjects([]);
             }
           } catch (err) {
-            console.error('Failed to fetch projects:', err);
+            // Error handling without console
           }
         }
       } else {
@@ -166,7 +168,6 @@ function ServiceRequestList() {
             setProjects([]);
           }
         } catch (err) {
-          console.error('Failed to fetch projects for selected customer:', err);
           setProjects([]);
         }
       }
@@ -189,9 +190,7 @@ function ServiceRequestList() {
           const usersResponse = await userAPI.getAll();
           setCustomers(usersResponse.data.filter(u => u.role === 'ROLE_CUSTOMER'));
         } catch (err) {
-          if (err.response?.status !== 403) {
-            console.error('Failed to fetch customers:', err);
-          }
+          // Error handling without console
         }
       }
 
@@ -229,9 +228,7 @@ function ServiceRequestList() {
             }
           }
         } catch (err) {
-          if (err.response?.status !== 403) {
-            console.error('Failed to fetch projects:', err);
-          }
+          // Error handling without console
         }
       }
 
@@ -273,17 +270,9 @@ function ServiceRequestList() {
         dueDate: formatDateToYYYYMMDD(formData.dueDate)
       };
 
-      console.log('=== Submitting Service Request ===');
-      console.log('Form Data:', formData);
-      console.log('Submit Data:', submitData);
-      console.log('Editing Request:', editingRequest);
-
       if (editingRequest) {
-        console.log('Updating request ID:', editingRequest.id);
-        const response = await serviceRequestAPI.update(editingRequest.id, submitData);
-        console.log('Update response:', response.data);
+        await serviceRequestAPI.update(editingRequest.id, submitData);
       } else {
-        console.log('Creating new request');
         await serviceRequestAPI.create(submitData);
       }
 
@@ -300,7 +289,6 @@ function ServiceRequestList() {
       setEditingRequest(null);
       await fetchData(); // Wait for data to load before closing
     } catch (err) {
-      console.error('Submit error:', err);
       setError('Failed to save service request: ' + err.message);
     }
   };
@@ -626,6 +614,90 @@ function ServiceRequestList() {
     }
   ];
 
+  const handleExportToExcel = () => {
+    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(h)'];
+
+    const statusMap = {
+      'PENDING': '대기',
+      'IN_PROGRESS': '진행중',
+      'ON_HOLD': '보류',
+      'RESOLVED': '완료',
+      'CANCELLED': '취소'
+    };
+
+    const priorityMap = {
+      'LOW': '낮음',
+      'NORMAL': '보통',
+      'HIGH': '높음',
+      'URGENT': '긴급'
+    };
+
+    const excelData = requests.map(req => [
+      req.id,
+      req.title,
+      req.customerName,
+      req.projectName || '없음',
+      statusMap[req.status] || req.status,
+      priorityMap[req.priority] || req.priority,
+      req.dueDate ? formatDateForDisplay(req.dueDate) : '',
+      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '미배정',
+      req.createdAt ? formatDateTime(req.createdAt) : '',
+      req.hoursSpent || ''
+    ]);
+
+    const worksheetData = [headers, ...excelData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const columnWidths = [
+      { wch: 10 }, // 요청 ID
+      { wch: 30 }, // 제목
+      { wch: 15 }, // 요청자
+      { wch: 20 }, // 프로젝트
+      { wch: 10 }, // 상태
+      { wch: 10 }, // 우선순위
+      { wch: 12 }, // 마감일
+      { wch: 15 }, // 담당자
+      { wch: 20 }, // 생성일
+      { wch: 12 }  // 소요시간
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '서비스 요청');
+
+    const fileName = `서비스요청목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -638,8 +710,19 @@ function ServiceRequestList() {
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2">
-            서비스 요청 관리
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{
+              fontWeight: 600,
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            {user?.role === 'ROLE_CUSTOMER' ? '서비스 요청 등록' :
+             user?.role === 'ROLE_MANAGER' ? '서비스 요청 처리' :
+             '서비스 요청 관리'}
           </Typography>
           {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
             <Button
@@ -1034,6 +1117,9 @@ function ServiceRequestList() {
             autoHeight={false}
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',

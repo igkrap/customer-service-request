@@ -38,7 +38,7 @@ import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
 // 역할을 한글로 변환하는 함수
 const getRoleLabel = (role) => {
@@ -81,10 +81,6 @@ function DashboardHome() {
         headers: { Authorization: `Bearer ${token}` }
       };
 
-      console.log('=== Dashboard Data Fetch Start ===');
-      console.log('User:', user);
-      console.log('isAdmin:', isAdmin, 'isManager:', isManager, 'isCustomer:', isCustomer);
-
       if (isAdmin) {
         const [usersRes, companiesRes, projectsRes, requestsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/users`, config),
@@ -92,11 +88,6 @@ function DashboardHome() {
           axios.get(`${API_BASE_URL}/projects`, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
-
-        console.log('Users Response:', usersRes.data);
-        console.log('Companies Response:', companiesRes.data);
-        console.log('Projects Response:', projectsRes.data);
-        console.log('Requests Response:', requestsRes.data);
 
         const dashboardData = {
           users: usersRes.data.slice(0, 5),
@@ -106,22 +97,16 @@ function DashboardHome() {
           allRequests: requestsRes.data,
         };
 
-        console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isManager) {
         const projectsEndpoint = user.companyId
           ? `${API_BASE_URL}/projects/company/${user.companyId}`
           : `${API_BASE_URL}/projects`;
 
-        console.log('Manager Projects Endpoint:', projectsEndpoint);
-
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
-
-        console.log('Projects Response:', projectsRes.data);
-        console.log('Requests Response:', requestsRes.data);
 
         const allRequests = requestsRes.data;
         const dashboardData = {
@@ -132,55 +117,38 @@ function DashboardHome() {
           allRequests: allRequests,
         };
 
-        console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isCustomer) {
-        console.log('Customer companyId:', user.companyId);
+        // Customer는 할당된 프로젝트만 조회
+        const [requestsRes, userProjectsRes, userDataRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/service-requests`, config),
+          axios.get(`${API_BASE_URL}/users/${user.id}/projects`, config),
+          axios.get(`${API_BASE_URL}/users/${user.id}`, config),
+        ]);
 
-        // Customer는 companyId가 있어야 프로젝트 조회 가능
-        if (user.companyId) {
-          const [projectsRes, requestsRes] = await Promise.all([
-            axios.get(`${API_BASE_URL}/projects/company/${user.companyId}`, config),
-            axios.get(`${API_BASE_URL}/service-requests`, config),
-          ]);
+        const allRequests = requestsRes.data;
+        const assignedProjectIds = userProjectsRes.data;
+        const userData = userDataRes.data;
 
-          console.log('Projects Response:', projectsRes.data);
-          console.log('Requests Response:', requestsRes.data);
-
-          const allRequests = requestsRes.data;
-          const dashboardData = {
-            myProjects: projectsRes.data.slice(0, 5),
-            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
-            allRequests: allRequests,
-          };
-
-          console.log('Setting Dashboard Data:', dashboardData);
-          setData(dashboardData);
-        } else {
-          // companyId가 없으면 service requests만 조회
-          console.log('Customer has no companyId, fetching only service requests');
-          const requestsRes = await axios.get(`${API_BASE_URL}/service-requests`, config);
-
-          console.log('Requests Response:', requestsRes.data);
-
-          const allRequests = requestsRes.data;
-          const dashboardData = {
-            myProjects: [],
-            pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-            onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-            completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
-            allRequests: allRequests,
-          };
-
-          console.log('Setting Dashboard Data:', dashboardData);
-          setData(dashboardData);
+        // 할당된 프로젝트 ID가 있으면 회사 프로젝트 목록에서 필터링
+        let myProjects = [];
+        if (assignedProjectIds.length > 0 && userData.companyId) {
+          const companyProjectsRes = await axios.get(`${API_BASE_URL}/projects/company/${userData.companyId}`, config);
+          myProjects = companyProjectsRes.data.filter(p => assignedProjectIds.includes(p.id));
         }
+
+        const dashboardData = {
+          myProjects: myProjects.slice(0, 5),
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+          completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
+          allRequests: allRequests,
+        };
+
+        setData(dashboardData);
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      console.error('Error details:', error.response?.data);
+      // Error handling without console
     }
   };
 
@@ -229,7 +197,7 @@ function DashboardHome() {
               setHoveredDate(date);
             }
           } catch (err) {
-            console.error('Date parse error:', err);
+            // Error handling without console
           }
         }
       }
@@ -277,7 +245,6 @@ function DashboardHome() {
                 setWeather(data);
               }
             } catch (error) {
-              console.error('위치 기반 날씨 정보를 가져오는데 실패했습니다:', error);
               // 실패 시 기본 위치(서울)로 폴백
               await fetchDefaultWeather(API_KEY);
             } finally {
@@ -286,19 +253,16 @@ function DashboardHome() {
           },
           async (error) => {
             // 위치 정보를 가져오지 못한 경우 (거부, 에러 등)
-            console.log('위치 정보 접근 실패, 기본 위치(서울) 사용:', error.message);
             await fetchDefaultWeather(API_KEY);
             setWeatherLoading(false);
           }
         );
       } else {
         // Geolocation API를 지원하지 않는 경우
-        console.log('Geolocation을 지원하지 않는 브라우저입니다. 기본 위치(서울) 사용');
         await fetchDefaultWeather(API_KEY);
         setWeatherLoading(false);
       }
     } catch (error) {
-      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
       setWeatherLoading(false);
     }
   };
@@ -314,7 +278,7 @@ function DashboardHome() {
         setWeather(data);
       }
     } catch (error) {
-      console.error('기본 날씨 정보를 가져오는데 실패했습니다:', error);
+      // Error handling without console
     }
   };
 
@@ -370,7 +334,6 @@ function DashboardHome() {
   };
 
   const renderUserGrid = (users, title, icon) => {
-    console.log('Rendering User Grid with data:', users);
     return (
       <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
