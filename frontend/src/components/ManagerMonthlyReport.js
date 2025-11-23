@@ -9,14 +9,10 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField
+  TextField,
+  Chip
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import { userAPI, projectAPI, serviceRequestAPI } from '../services/api';
 
 function ManagerMonthlyReport() {
@@ -31,6 +27,8 @@ function ManagerMonthlyReport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [daysInMonth, setDaysInMonth] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [rows, setRows] = useState([]);
 
   useEffect(() => {
     fetchManagers();
@@ -47,6 +45,20 @@ function ManagerMonthlyReport() {
       fetchReportData();
     }
   }, [selectedManagerId, selectedMonth]);
+
+  useEffect(() => {
+    if (daysInMonth.length > 0) {
+      generateColumns();
+    }
+  }, [daysInMonth]);
+
+  useEffect(() => {
+    if (reportData.length > 0) {
+      generateRows();
+    } else {
+      setRows([]);
+    }
+  }, [reportData]);
 
   const fetchManagers = async () => {
     try {
@@ -175,6 +187,118 @@ function ManagerMonthlyReport() {
     setSelectedMonth(event.target.value);
   };
 
+  const generateColumns = () => {
+    const cols = [
+      {
+        field: 'projectName',
+        headerName: '프로젝트',
+        width: 200,
+        pinned: 'left',
+        headerAlign: 'center',
+        cellClassName: 'project-name-cell',
+        headerClassName: 'header-cell-primary',
+      },
+      {
+        field: 'contractManDays',
+        headerName: 'm/d',
+        width: 80,
+        pinned: 'left',
+        headerAlign: 'center',
+        align: 'center',
+        headerClassName: 'header-cell-primary',
+      },
+    ];
+
+    // 날짜별 컬럼 추가
+    daysInMonth.forEach(dayInfo => {
+      cols.push({
+        field: `day_${dayInfo.day}`,
+        headerName: `${dayInfo.day}\n(${dayInfo.dayName})`,
+        width: 70,
+        headerAlign: 'center',
+        align: 'center',
+        headerClassName: dayInfo.isWeekend ? 'header-cell-weekend' : 'header-cell-day',
+        cellClassName: dayInfo.isWeekend ? 'cell-weekend' : '',
+        renderHeader: () => (
+          <Box sx={{ textAlign: 'center', lineHeight: 1.2 }}>
+            <div style={{ fontWeight: 700 }}>{dayInfo.day}</div>
+            <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>({dayInfo.dayName})</div>
+          </Box>
+        ),
+        renderCell: (params) => {
+          const value = params.value;
+          if (!value || value === 0) {
+            return <span style={{ color: '#999' }}>-</span>;
+          }
+          return (
+            <Chip
+              label={value.toFixed(1)}
+              size="small"
+              sx={{
+                bgcolor: 'primary.light',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24,
+                '&:hover': {
+                  bgcolor: 'primary.main',
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.2s',
+              }}
+            />
+          );
+        },
+      });
+    });
+
+    // 합계 컬럼 추가
+    cols.push({
+      field: 'totalHours',
+      headerName: '합계',
+      width: 90,
+      headerAlign: 'center',
+      align: 'center',
+      headerClassName: 'header-cell-total',
+      cellClassName: 'cell-total',
+      renderCell: (params) => (
+        <Chip
+          label={params.value.toFixed(1)}
+          size="small"
+          sx={{
+            bgcolor: 'success.main',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            height: 26,
+          }}
+        />
+      ),
+    });
+
+    setColumns(cols);
+  };
+
+  const generateRows = () => {
+    const gridRows = reportData.map((row, index) => {
+      const rowData = {
+        id: index,
+        projectName: row.project.projectName,
+        contractManDays: row.project.contractManDays,
+        totalHours: row.totalHours,
+      };
+
+      // 각 날짜별 데이터 추가
+      daysInMonth.forEach(dayInfo => {
+        rowData[`day_${dayInfo.day}`] = row.dailyHours[dayInfo.day] || 0;
+      });
+
+      return rowData;
+    });
+
+    setRows(gridRows);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -232,204 +356,100 @@ function ManagerMonthlyReport() {
         </Box>
 
         {selectedManagerId && selectedMonth && (
-          <TableContainer
+          <Box
             sx={{
               mt: 3,
-              maxHeight: 600,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-                height: '8px',
+              height: 600,
+              width: '100%',
+              '& .header-cell-primary': {
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                borderRight: '2px solid rgba(255,255,255,0.3)',
               },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'grey.100',
+              '& .header-cell-day': {
+                background: 'linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.9rem',
               },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'grey.400',
-                borderRadius: '4px',
-                '&:hover': {
-                  backgroundColor: 'grey.500',
-                },
+              '& .header-cell-weekend': {
+                background: 'linear-gradient(135deg, #ef5350 0%, #e53935 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+              },
+              '& .header-cell-total': {
+                background: 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                borderLeft: '2px solid rgba(255,255,255,0.3)',
+              },
+              '& .project-name-cell': {
+                fontWeight: 600,
+                fontSize: '0.9rem',
+              },
+              '& .cell-weekend': {
+                bgcolor: 'rgba(239, 83, 80, 0.08)',
+              },
+              '& .cell-total': {
+                bgcolor: 'rgba(102, 187, 106, 0.1)',
+              },
+              '& .MuiDataGrid-root': {
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              },
+              '& .MuiDataGrid-row:nth-of-type(even)': {
+                bgcolor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                bgcolor: 'rgba(25, 118, 210, 0.08)',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                outline: 'none !important',
+              },
+              '& .MuiDataGrid-cell': {
+                outline: 'none !important',
+              },
+              '& .MuiDataGrid-pinnedColumnHeaders': {
+                boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+              },
+              '& .MuiDataGrid-pinnedColumns': {
+                boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
               },
             }}
           >
-            <Table stickyHeader size="small" sx={{ minWidth: 1200 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                      color: 'white',
-                      position: 'sticky',
-                      left: 0,
-                      zIndex: 3,
-                      minWidth: 200,
-                      borderRight: '2px solid rgba(255,255,255,0.3)',
-                      boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    프로젝트
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                      color: 'white',
-                      position: 'sticky',
-                      left: 200,
-                      zIndex: 3,
-                      minWidth: 80,
-                      borderRight: '2px solid rgba(255,255,255,0.3)',
-                      boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    m/d
-                  </TableCell>
-                  {daysInMonth.map(dayInfo => (
-                    <TableCell
-                      key={dayInfo.day}
-                      align="center"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        background: dayInfo.isWeekend
-                          ? 'linear-gradient(135deg, #ef5350 0%, #e53935 100%)'
-                          : 'linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%)',
-                        color: 'white',
-                        minWidth: 60,
-                        borderRight: '1px solid rgba(255,255,255,0.2)',
-                      }}
-                    >
-                      <div style={{ fontWeight: 700 }}>{dayInfo.day}</div>
-                      <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>({dayInfo.dayName})</div>
-                    </TableCell>
-                  ))}
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      background: 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)',
-                      color: 'white',
-                      minWidth: 80,
-                      borderLeft: '2px solid rgba(255,255,255,0.3)',
-                    }}
-                  >
-                    합계
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {reportData.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={daysInMonth.length + 3}
-                      align="center"
-                      sx={{
-                        py: 6,
-                        fontSize: '1rem',
-                        color: 'text.secondary',
-                        fontWeight: 500,
-                      }}
-                    >
-                      해당 조건의 데이터가 없습니다
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  reportData.map((row, index) => (
-                    <TableRow
-                      key={index}
-                      sx={{
-                        '&:hover': {
-                          bgcolor: 'action.hover',
-                          '& td': {
-                            bgcolor: 'inherit',
-                          },
-                        },
-                        '&:nth-of-type(even)': {
-                          bgcolor: 'rgba(0, 0, 0, 0.02)',
-                        },
-                      }}
-                    >
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          left: 0,
-                          bgcolor: index % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'background.paper',
-                          zIndex: 2,
-                          fontWeight: 600,
-                          fontSize: '0.9rem',
-                          borderRight: '1px solid',
-                          borderColor: 'divider',
-                          boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        {row.project.projectName}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          position: 'sticky',
-                          left: 200,
-                          bgcolor: index % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'background.paper',
-                          zIndex: 2,
-                          fontWeight: 600,
-                          fontSize: '0.85rem',
-                          borderRight: '1px solid',
-                          borderColor: 'divider',
-                          boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        {row.project.contractManDays}
-                      </TableCell>
-                      {daysInMonth.map(dayInfo => (
-                        <TableCell
-                          key={dayInfo.day}
-                          align="center"
-                          sx={{
-                            bgcolor: dayInfo.isWeekend ? 'rgba(239, 83, 80, 0.08)' : 'inherit',
-                            fontSize: '0.85rem',
-                            fontWeight: row.dailyHours[dayInfo.day] > 0 ? 600 : 400,
-                            color: row.dailyHours[dayInfo.day] > 0 ? 'text.primary' : 'text.disabled',
-                            borderRight: '1px solid',
-                            borderColor: 'divider',
-                            transition: 'all 0.2s',
-                            '&:hover': row.dailyHours[dayInfo.day] > 0 ? {
-                              bgcolor: 'primary.light',
-                              color: 'white',
-                              transform: 'scale(1.05)',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                            } : {},
-                          }}
-                        >
-                          {row.dailyHours[dayInfo.day] > 0 ? row.dailyHours[dayInfo.day].toFixed(1) : '-'}
-                        </TableCell>
-                      ))}
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontWeight: 700,
-                          fontSize: '0.9rem',
-                          bgcolor: 'rgba(102, 187, 106, 0.15)',
-                          color: 'success.dark',
-                          borderLeft: '2px solid',
-                          borderColor: 'success.main',
-                        }}
-                      >
-                        {row.totalHours.toFixed(1)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              disableRowSelectionOnClick
+              disableColumnMenu
+              hideFooter
+              initialState={{
+                pinnedColumns: { left: ['projectName', 'contractManDays'] },
+              }}
+              sx={{
+                '& .MuiDataGrid-virtualScroller::-webkit-scrollbar': {
+                  width: '8px',
+                  height: '8px',
+                },
+                '& .MuiDataGrid-virtualScroller::-webkit-scrollbar-track': {
+                  backgroundColor: '#f1f1f1',
+                },
+                '& .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#888',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    backgroundColor: '#555',
+                  },
+                },
+              }}
+            />
+          </Box>
         )}
       </Paper>
     </Box>
