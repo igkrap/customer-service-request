@@ -22,7 +22,7 @@ import {
   CircularProgress,
   IconButton
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -41,9 +41,11 @@ import {
   Timer as TimerIcon,
   Notes as NotesIcon,
   Flag as FlagIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
+import * as XLSX from 'xlsx';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -626,6 +628,90 @@ function ServiceRequestList() {
     }
   ];
 
+  const handleExportToExcel = () => {
+    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(h)'];
+
+    const statusMap = {
+      'PENDING': '대기',
+      'IN_PROGRESS': '진행중',
+      'ON_HOLD': '보류',
+      'RESOLVED': '완료',
+      'CANCELLED': '취소'
+    };
+
+    const priorityMap = {
+      'LOW': '낮음',
+      'NORMAL': '보통',
+      'HIGH': '높음',
+      'URGENT': '긴급'
+    };
+
+    const excelData = requests.map(req => [
+      req.id,
+      req.title,
+      req.customerName,
+      req.projectName || '없음',
+      statusMap[req.status] || req.status,
+      priorityMap[req.priority] || req.priority,
+      req.dueDate ? formatDateForDisplay(req.dueDate) : '',
+      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '미배정',
+      req.createdAt ? formatDateTime(req.createdAt) : '',
+      req.hoursSpent || ''
+    ]);
+
+    const worksheetData = [headers, ...excelData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const columnWidths = [
+      { wch: 10 }, // 요청 ID
+      { wch: 30 }, // 제목
+      { wch: 15 }, // 요청자
+      { wch: 20 }, // 프로젝트
+      { wch: 10 }, // 상태
+      { wch: 10 }, // 우선순위
+      { wch: 12 }, // 마감일
+      { wch: 15 }, // 담당자
+      { wch: 20 }, // 생성일
+      { wch: 12 }  // 소요시간
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '서비스 요청');
+
+    const fileName = `서비스요청목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -1034,6 +1120,9 @@ function ServiceRequestList() {
             autoHeight={false}
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',

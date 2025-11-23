@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
 import { companyAPI } from '../services/api';
 import { formatDateTime } from '../utils/dateFormatter';
+import * as XLSX from 'xlsx';
 
 function CompanyList() {
   const [companies, setCompanies] = useState([]);
@@ -147,6 +149,65 @@ function CompanyList() {
     }
   ];
 
+  const handleExportToExcel = () => {
+    const headers = ['회사 ID', '회사명', '회사 코드', '사업자 번호', '생성일'];
+
+    const excelData = companies.map(company => [
+      company.id,
+      company.companyName,
+      company.companyCode,
+      company.businessNumber,
+      company.createdAt ? formatDateTime(company.createdAt) : ''
+    ]);
+
+    const worksheetData = [headers, ...excelData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const columnWidths = [
+      { wch: 10 }, // 회사 ID
+      { wch: 25 }, // 회사명
+      { wch: 15 }, // 회사 코드
+      { wch: 20 }, // 사업자 번호
+      { wch: 20 }  // 생성일
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '회사');
+
+    const fileName = `회사목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -218,6 +279,9 @@ function CompanyList() {
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
             autoHeight={false}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{ height: '100%' }}
           />
         </Box>

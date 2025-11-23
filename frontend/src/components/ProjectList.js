@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
 import { projectAPI, companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import * as XLSX from 'xlsx';
 
 function ProjectList() {
   const { user } = useAuth();
@@ -232,6 +234,75 @@ function ProjectList() {
     }
   ];
 
+  const handleExportToExcel = () => {
+    const headers = ['프로젝트 ID', '프로젝트명', '회사', '서비스 유형', '계약 시작일', '계약 종료일', 'm/d'];
+
+    const serviceTypeMap = {
+      'DEVELOPMENT': '개발',
+      'MAINTENANCE': '유지보수',
+      'CONSULTING': '컨설팅'
+    };
+
+    const excelData = projects.map(proj => [
+      proj.id,
+      proj.projectName,
+      proj.companyName,
+      serviceTypeMap[proj.serviceType] || proj.serviceType,
+      proj.contractStartDate ? new Date(proj.contractStartDate).toLocaleDateString() : '',
+      proj.contractEndDate ? new Date(proj.contractEndDate).toLocaleDateString() : '',
+      proj.contractManDays || ''
+    ]);
+
+    const worksheetData = [headers, ...excelData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const columnWidths = [
+      { wch: 12 }, // 프로젝트 ID
+      { wch: 25 }, // 프로젝트명
+      { wch: 20 }, // 회사
+      { wch: 15 }, // 서비스 유형
+      { wch: 15 }, // 계약 시작일
+      { wch: 15 }, // 계약 종료일
+      { wch: 10 }  // m/d
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '프로젝트');
+
+    const fileName = `프로젝트목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -350,6 +421,9 @@ function ProjectList() {
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
             autoHeight={false}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{ height: '100%' }}
           />
         </Box>

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import DownloadIcon from '@mui/icons-material/Download';
 import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatDateTime } from '../utils/dateFormatter';
+import * as XLSX from 'xlsx';
 
 function UserList() {
   const { user } = useAuth();
@@ -370,6 +372,81 @@ function UserList() {
     }
   ];
 
+  const handleExportToExcel = () => {
+    const headers = ['사용자 ID', '사용자명', '이메일', '역할', '회사', '상태', '생성일'];
+
+    const roleMap = {
+      'ROLE_CUSTOMER': '유저',
+      'ROLE_MANAGER': '매니저',
+      'ROLE_ADMIN': '관리자'
+    };
+
+    const statusMap = {
+      'PENDING': '대기',
+      'APPROVED': '승인',
+      'REJECTED': '거부'
+    };
+
+    const excelData = users.map(u => [
+      u.userId,
+      u.username,
+      u.email,
+      roleMap[u.role] || u.role,
+      u.companyName || '없음',
+      statusMap[u.approvalStatus] || u.approvalStatus,
+      u.createdAt ? formatDateTime(u.createdAt) : ''
+    ]);
+
+    const worksheetData = [headers, ...excelData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const columnWidths = [
+      { wch: 12 }, // 사용자 ID
+      { wch: 20 }, // 사용자명
+      { wch: 25 }, // 이메일
+      { wch: 12 }, // 역할
+      { wch: 20 }, // 회사
+      { wch: 10 }, // 상태
+      { wch: 20 }  // 생성일
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '사용자');
+
+    const fileName = `사용자목록_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   return (
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -456,6 +533,9 @@ function UserList() {
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
             autoHeight={false}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{ height: '100%' }}
           />
         </Box>
