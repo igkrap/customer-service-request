@@ -38,7 +38,7 @@ import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
 // 역할을 한글로 변환하는 함수
 const getRoleLabel = (role) => {
