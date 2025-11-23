@@ -138,23 +138,26 @@ function DashboardHome() {
         console.log('Customer userId:', user.id);
 
         // Customer는 할당된 프로젝트만 조회
-        const [requestsRes, userProjectsRes] = await Promise.all([
+        const [requestsRes, userProjectsRes, userDataRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/service-requests`, config),
           axios.get(`${API_BASE_URL}/users/${user.id}/projects`, config),
+          axios.get(`${API_BASE_URL}/users/${user.id}`, config),
         ]);
 
         console.log('Requests Response:', requestsRes.data);
         console.log('User Projects Response:', userProjectsRes.data);
+        console.log('User Data Response:', userDataRes.data);
 
         const allRequests = requestsRes.data;
         const assignedProjectIds = userProjectsRes.data;
+        const userData = userDataRes.data;
 
-        // 할당된 프로젝트 ID가 있으면 전체 프로젝트 목록에서 필터링
+        // 할당된 프로젝트 ID가 있으면 회사 프로젝트 목록에서 필터링
         let myProjects = [];
-        if (assignedProjectIds.length > 0) {
-          const allProjectsRes = await axios.get(`${API_BASE_URL}/projects`, config);
-          console.log('All Projects Response:', allProjectsRes.data);
-          myProjects = allProjectsRes.data.filter(p => assignedProjectIds.includes(p.id));
+        if (assignedProjectIds.length > 0 && userData.companyId) {
+          const companyProjectsRes = await axios.get(`${API_BASE_URL}/projects/company/${userData.companyId}`, config);
+          console.log('Company Projects Response:', companyProjectsRes.data);
+          myProjects = companyProjectsRes.data.filter(p => assignedProjectIds.includes(p.id));
           console.log('Filtered My Projects:', myProjects);
         }
 
