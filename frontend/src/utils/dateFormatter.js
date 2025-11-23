@@ -21,7 +21,6 @@ export const formatDateTime = (dateValue) => {
 
     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
-    console.error('Error formatting date:', error);
     return '';
   }
 };
@@ -46,7 +45,6 @@ export const formatDate = (dateValue) => {
 
     return `${year}/${month}/${day}`;
   } catch (error) {
-    console.error('Error formatting date:', error);
     return '';
   }
 };

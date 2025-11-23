@@ -81,10 +81,6 @@ function DashboardHome() {
         headers: { Authorization: `Bearer ${token}` }
       };
 
-      console.log('=== Dashboard Data Fetch Start ===');
-      console.log('User:', user);
-      console.log('isAdmin:', isAdmin, 'isManager:', isManager, 'isCustomer:', isCustomer);
-
       if (isAdmin) {
         const [usersRes, companiesRes, projectsRes, requestsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/users`, config),
@@ -92,11 +88,6 @@ function DashboardHome() {
           axios.get(`${API_BASE_URL}/projects`, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
-
-        console.log('Users Response:', usersRes.data);
-        console.log('Companies Response:', companiesRes.data);
-        console.log('Projects Response:', projectsRes.data);
-        console.log('Requests Response:', requestsRes.data);
 
         const dashboardData = {
           users: usersRes.data.slice(0, 5),
@@ -106,22 +97,16 @@ function DashboardHome() {
           allRequests: requestsRes.data,
         };
 
-        console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isManager) {
         const projectsEndpoint = user.companyId
           ? `${API_BASE_URL}/projects/company/${user.companyId}`
           : `${API_BASE_URL}/projects`;
 
-        console.log('Manager Projects Endpoint:', projectsEndpoint);
-
         const [projectsRes, requestsRes] = await Promise.all([
           axios.get(projectsEndpoint, config),
           axios.get(`${API_BASE_URL}/service-requests`, config),
         ]);
-
-        console.log('Projects Response:', projectsRes.data);
-        console.log('Requests Response:', requestsRes.data);
 
         const allRequests = requestsRes.data;
         const dashboardData = {
@@ -132,21 +117,14 @@ function DashboardHome() {
           allRequests: allRequests,
         };
 
-        console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       } else if (isCustomer) {
-        console.log('Customer userId:', user.id);
-
         // Customer는 할당된 프로젝트만 조회
         const [requestsRes, userProjectsRes, userDataRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/service-requests`, config),
           axios.get(`${API_BASE_URL}/users/${user.id}/projects`, config),
           axios.get(`${API_BASE_URL}/users/${user.id}`, config),
         ]);
-
-        console.log('Requests Response:', requestsRes.data);
-        console.log('User Projects Response:', userProjectsRes.data);
-        console.log('User Data Response:', userDataRes.data);
 
         const allRequests = requestsRes.data;
         const assignedProjectIds = userProjectsRes.data;
@@ -156,9 +134,7 @@ function DashboardHome() {
         let myProjects = [];
         if (assignedProjectIds.length > 0 && userData.companyId) {
           const companyProjectsRes = await axios.get(`${API_BASE_URL}/projects/company/${userData.companyId}`, config);
-          console.log('Company Projects Response:', companyProjectsRes.data);
           myProjects = companyProjectsRes.data.filter(p => assignedProjectIds.includes(p.id));
-          console.log('Filtered My Projects:', myProjects);
         }
 
         const dashboardData = {
@@ -169,12 +145,10 @@ function DashboardHome() {
           allRequests: allRequests,
         };
 
-        console.log('Setting Dashboard Data:', dashboardData);
         setData(dashboardData);
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      console.error('Error details:', error.response?.data);
+      // Error handling without console
     }
   };
 
@@ -223,7 +197,7 @@ function DashboardHome() {
               setHoveredDate(date);
             }
           } catch (err) {
-            console.error('Date parse error:', err);
+            // Error handling without console
           }
         }
       }
@@ -271,7 +245,6 @@ function DashboardHome() {
                 setWeather(data);
               }
             } catch (error) {
-              console.error('위치 기반 날씨 정보를 가져오는데 실패했습니다:', error);
               // 실패 시 기본 위치(서울)로 폴백
               await fetchDefaultWeather(API_KEY);
             } finally {
@@ -280,19 +253,16 @@ function DashboardHome() {
           },
           async (error) => {
             // 위치 정보를 가져오지 못한 경우 (거부, 에러 등)
-            console.log('위치 정보 접근 실패, 기본 위치(서울) 사용:', error.message);
             await fetchDefaultWeather(API_KEY);
             setWeatherLoading(false);
           }
         );
       } else {
         // Geolocation API를 지원하지 않는 경우
-        console.log('Geolocation을 지원하지 않는 브라우저입니다. 기본 위치(서울) 사용');
         await fetchDefaultWeather(API_KEY);
         setWeatherLoading(false);
       }
     } catch (error) {
-      console.error('날씨 정보를 가져오는데 실패했습니다:', error);
       setWeatherLoading(false);
     }
   };
@@ -308,7 +278,7 @@ function DashboardHome() {
         setWeather(data);
       }
     } catch (error) {
-      console.error('기본 날씨 정보를 가져오는데 실패했습니다:', error);
+      // Error handling without console
     }
   };
 
@@ -364,7 +334,6 @@ function DashboardHome() {
   };
 
   const renderUserGrid = (users, title, icon) => {
-    console.log('Rendering User Grid with data:', users);
     return (
       <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
