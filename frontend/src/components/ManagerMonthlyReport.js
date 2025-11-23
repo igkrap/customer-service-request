@@ -10,9 +10,12 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  Chip
+  Chip,
+  Button
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import DownloadIcon from '@mui/icons-material/Download';
+import * as XLSX from 'xlsx';
 import { userAPI, projectAPI, serviceRequestAPI } from '../services/api';
 
 function ManagerMonthlyReport() {
@@ -299,6 +302,71 @@ function ManagerMonthlyReport() {
     setRows(gridRows);
   };
 
+  const handleExportToExcel = () => {
+    // 헤더 생성
+    const headers = ['프로젝트', 'm/d'];
+    daysInMonth.forEach(dayInfo => {
+      headers.push(`${dayInfo.day}(${dayInfo.dayName})`);
+    });
+    headers.push('합계');
+
+    // 데이터 행 생성
+    const excelData = reportData.map(row => {
+      const rowData = [row.project.projectName, row.project.contractManDays];
+
+      daysInMonth.forEach(dayInfo => {
+        const value = row.dailyHours[dayInfo.day];
+        rowData.push(value > 0 ? value : '');
+      });
+
+      rowData.push(row.totalHours);
+      return rowData;
+    });
+
+    // 헤더와 데이터 결합
+    const worksheetData = [headers, ...excelData];
+
+    // 워크시트 생성
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // 컬럼 너비 설정
+    const columnWidths = [
+      { wch: 25 }, // 프로젝트
+      { wch: 8 },  // m/d
+    ];
+    daysInMonth.forEach(() => {
+      columnWidths.push({ wch: 8 }); // 날짜
+    });
+    columnWidths.push({ wch: 10 }); // 합계
+    worksheet['!cols'] = columnWidths;
+
+    // 헤더 스타일링
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellAddress]) continue;
+
+      worksheet[cellAddress].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1976D2' } },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+    }
+
+    // 워크북 생성
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '월간 처리 현황');
+
+    // 파일명 생성
+    const selectedManager = managers.find(m => m.id === parseInt(selectedManagerId));
+    const managerName = selectedManager ? selectedManager.username : '매니저';
+    const [year, month] = selectedMonth.split('-');
+    const fileName = `${managerName}_월간처리현황_${year}년${month}월.xlsx`;
+
+    // 파일 다운로드
+    XLSX.writeFile(workbook, fileName);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -326,7 +394,7 @@ function ManagerMonthlyReport() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel>매니저 선택</InputLabel>
             <Select
@@ -353,6 +421,26 @@ function ManagerMonthlyReport() {
             }}
             sx={{ minWidth: 200 }}
           />
+
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportToExcel}
+            disabled={!selectedManagerId || !selectedMonth || rows.length === 0}
+            sx={{
+              height: 56,
+              fontWeight: 600,
+              boxShadow: '0 3px 5px rgba(0,0,0,0.2)',
+              '&:hover': {
+                boxShadow: '0 5px 8px rgba(0,0,0,0.3)',
+                transform: 'translateY(-2px)',
+              },
+              transition: 'all 0.2s',
+            }}
+          >
+            Excel 다운로드
+          </Button>
         </Box>
 
         {selectedManagerId && selectedMonth && (
