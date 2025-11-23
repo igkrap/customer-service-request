@@ -60,11 +60,11 @@ const formatDateFromYYYYMMDD = (yyyymmdd) => {
 
 const formatDateForDisplay = (yyyymmdd) => {
   if (!yyyymmdd || yyyymmdd.length !== 8) return '';
-  // yyyyMMdd → yyyy년 MM월 dd일
+  // yyyyMMdd → yyyy/MM/dd
   const year = yyyymmdd.substring(0, 4);
   const month = yyyymmdd.substring(4, 6);
   const day = yyyymmdd.substring(6, 8);
-  return `${year}년 ${month}월 ${day}일`;
+  return `${year}/${month}/${day}`;
 };
 
 // 현재 날짜를 yyyyMMdd 형식으로 반환
