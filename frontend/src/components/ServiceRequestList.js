@@ -734,7 +734,9 @@ function ServiceRequestList() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            서비스 요청 관리
+            {user?.role === 'ROLE_CUSTOMER' ? '서비스 요청 등록' :
+             user?.role === 'ROLE_MANAGER' ? '서비스 요청 처리' :
+             '서비스 요청 관리'}
           </Typography>
           {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
             <Button
