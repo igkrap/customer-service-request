@@ -212,7 +212,16 @@ function CompanyList() {
     <Box sx={{ p: 1, height: '100%' }}>
       <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2">
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{
+              fontWeight: 600,
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             회사 관리
           </Typography>
           {!showForm && (
