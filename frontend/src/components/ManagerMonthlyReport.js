@@ -13,7 +13,7 @@ import {
   Chip,
   Button
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import DownloadIcon from '@mui/icons-material/Download';
 import * as XLSX from 'xlsx';
 import { userAPI, projectAPI, serviceRequestAPI } from '../services/api';
@@ -367,6 +367,36 @@ function ManagerMonthlyReport() {
     XLSX.writeFile(workbook, fileName);
   };
 
+  // 커스텀 툴바 컴포넌트
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer
+        sx={{
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportToExcel}
+          sx={{
+            color: 'success.main',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: 'success.light',
+              color: 'white',
+            },
+          }}
+        >
+          Excel 내보내기
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -394,7 +424,7 @@ function ManagerMonthlyReport() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel>매니저 선택</InputLabel>
             <Select
@@ -421,26 +451,6 @@ function ManagerMonthlyReport() {
             }}
             sx={{ minWidth: 200 }}
           />
-
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportToExcel}
-            disabled={!selectedManagerId || !selectedMonth || rows.length === 0}
-            sx={{
-              height: 56,
-              fontWeight: 600,
-              boxShadow: '0 3px 5px rgba(0,0,0,0.2)',
-              '&:hover': {
-                boxShadow: '0 5px 8px rgba(0,0,0,0.3)',
-                transform: 'translateY(-2px)',
-              },
-              transition: 'all 0.2s',
-            }}
-          >
-            Excel 다운로드
-          </Button>
         </Box>
 
         {selectedManagerId && selectedMonth && (
@@ -517,6 +527,9 @@ function ManagerMonthlyReport() {
               disableRowSelectionOnClick
               disableColumnMenu
               hideFooter
+              slots={{
+                toolbar: CustomToolbar,
+              }}
               initialState={{
                 pinnedColumns: { left: ['projectName', 'contractManDays'] },
               }}
