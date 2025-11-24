@@ -48,7 +48,7 @@ public interface ServiceRequestMapper {
             "VALUES (#{title}, #{description}, #{status}, #{priority}, #{customerId}, " +
             "#{managerId}, #{projectId}, #{createdByUserId}, #{createdAt}, #{updatedAt}, #{resolvedAt}, " +
             "#{hoursSpent}, #{resolutionNotes}, #{dueDate})")
-    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ServiceRequest serviceRequest);
 
     @Update("UPDATE service_requests SET title = #{title}, description = #{description}, " +

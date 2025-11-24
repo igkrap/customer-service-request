@@ -28,7 +28,7 @@ public interface ProjectRequestMapper {
             "contract_start_date, contract_end_date, contract_man_days, request_status, created_at, updated_at) " +
             "VALUES (#{requestedByUserId}, #{companyId}, #{projectName}, #{serviceType}, #{contractStartDate}, " +
             "#{contractEndDate}, #{contractManDays}, #{requestStatus}, #{createdAt}, #{updatedAt})")
-    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ProjectRequest projectRequest);
 
     @Update("UPDATE project_requests SET request_status = #{requestStatus}, " +

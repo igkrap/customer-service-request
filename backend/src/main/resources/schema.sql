@@ -1,23 +1,47 @@
+-- Create companies table first (referenced by users and projects)
+CREATE TABLE IF NOT EXISTS companies (
+    id BIGSERIAL PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    company_code VARCHAR(50) NOT NULL UNIQUE,
+    business_number VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     user_id VARCHAR(50) NOT NULL UNIQUE,
     username VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20),
-    company_id INTEGER,
+    company_id BIGINT,
     approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
 );
 
+-- Create projects table
+CREATE TABLE IF NOT EXISTS projects (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    project_name VARCHAR(255) NOT NULL,
+    service_type VARCHAR(50) NOT NULL,
+    contract_start_date DATE NOT NULL,
+    contract_end_date DATE NOT NULL,
+    contract_man_days NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+
 -- Create customer_managers table for many-to-many relationship
 CREATE TABLE IF NOT EXISTS customer_managers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_id INTEGER NOT NULL,
-    manager_id INTEGER NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    manager_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -26,19 +50,19 @@ CREATE TABLE IF NOT EXISTS customer_managers (
 
 -- Create service_requests table
 CREATE TABLE IF NOT EXISTS service_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'OPEN',
     priority VARCHAR(50) NOT NULL DEFAULT 'MEDIUM',
-    customer_id INTEGER NOT NULL,
-    manager_id INTEGER,
-    project_id INTEGER,
-    created_by_user_id INTEGER,
+    customer_id BIGINT NOT NULL,
+    manager_id BIGINT,
+    project_id BIGINT,
+    created_by_user_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP,
-    hours_spent REAL,
+    hours_spent DOUBLE PRECISION,
     resolution_notes TEXT,
     due_date TEXT,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -47,35 +71,11 @@ CREATE TABLE IF NOT EXISTS service_requests (
     FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Create companies table
-CREATE TABLE IF NOT EXISTS companies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    company_name VARCHAR(255) NOT NULL,
-    company_code VARCHAR(50) NOT NULL UNIQUE,
-    business_number VARCHAR(50) NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create projects table
-CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    company_id INTEGER NOT NULL,
-    project_name VARCHAR(255) NOT NULL,
-    service_type VARCHAR(50) NOT NULL,
-    contract_start_date DATE NOT NULL,
-    contract_end_date DATE NOT NULL,
-    contract_man_days DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
-);
-
 -- Create user_projects table for many-to-many relationship between users and projects
 CREATE TABLE IF NOT EXISTS user_projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    project_id INTEGER NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    project_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -84,16 +84,16 @@ CREATE TABLE IF NOT EXISTS user_projects (
 
 -- Create project_requests table for customers to request new projects
 CREATE TABLE IF NOT EXISTS project_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    requested_by_user_id INTEGER NOT NULL,
-    company_id INTEGER NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    requested_by_user_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
     project_name VARCHAR(255) NOT NULL,
     service_type VARCHAR(50) NOT NULL,
     contract_start_date DATE NOT NULL,
     contract_end_date DATE NOT NULL,
-    contract_man_days DECIMAL(10, 2) NOT NULL,
+    contract_man_days NUMERIC(10, 2) NOT NULL,
     request_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    approved_by_user_id INTEGER,
+    approved_by_user_id BIGINT,
     approval_notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
