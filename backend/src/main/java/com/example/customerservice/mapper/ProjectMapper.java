@@ -22,7 +22,7 @@ public interface ProjectMapper {
             "contract_end_date, contract_man_days, created_at, updated_at) " +
             "VALUES (#{companyId}, #{projectName}, #{serviceType}, #{contractStartDate}, " +
             "#{contractEndDate}, #{contractManDays}, #{createdAt}, #{updatedAt})")
-    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(Project project);
 
     @Update("UPDATE projects SET company_id = #{companyId}, project_name = #{projectName}, " +

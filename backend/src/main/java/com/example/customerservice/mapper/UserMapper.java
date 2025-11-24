@@ -48,7 +48,7 @@ public interface UserMapper {
 
     @Insert("INSERT INTO users (user_id, username, email, password, role, company_id, approval_status, created_at, updated_at) " +
             "VALUES (#{userId}, #{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{createdAt}, #{updatedAt})")
-    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(User user);
 
     @Update("UPDATE users SET user_id = #{userId}, username = #{username}, email = #{email}, " +

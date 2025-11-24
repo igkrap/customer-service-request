@@ -20,7 +20,7 @@ public interface CompanyMapper {
 
     @Insert("INSERT INTO companies (company_name, company_code, business_number, created_at, updated_at) " +
             "VALUES (#{companyName}, #{companyCode}, #{businessNumber}, #{createdAt}, #{updatedAt})")
-    @SelectKey(statement = "SELECT last_insert_rowid()", keyProperty = "id", before = false, resultType = Long.class)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(Company company);
 
     @Update("UPDATE companies SET company_name = #{companyName}, company_code = #{companyCode}, " +
