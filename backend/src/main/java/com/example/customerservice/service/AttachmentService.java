@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -38,6 +39,7 @@ public class AttachmentService {
 
     private Path fileStorageLocation;
 
+    @PostConstruct
     public void init() {
         try {
             this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
@@ -48,9 +50,6 @@ public class AttachmentService {
     }
 
     public AttachmentDTO uploadFile(MultipartFile file, Long userId) {
-        if (fileStorageLocation == null) {
-            init();
-        }
 
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String storedFileName = UUID.randomUUID().toString() + "_" + originalFileName;

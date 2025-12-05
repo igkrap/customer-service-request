@@ -31,9 +31,6 @@ public class ServiceRequestService {
     @Autowired
     private AttachmentService attachmentService;
 
-    @Autowired
-    private ServiceRequestCommentService commentService;
-
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -355,17 +352,12 @@ public class ServiceRequestService {
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
 
-        // Load attachments
-        dto.setAttachments(attachmentService.getAttachmentsByServiceRequestId(serviceRequest.getId()));
-
-        // Load comments
-        dto.setComments(commentService.getCommentsByServiceRequestId(serviceRequest.getId()));
-
-        // Load follow-up requests
-        List<ServiceRequest> followUps = serviceRequestMapper.findByParentId(serviceRequest.getId());
-        dto.setFollowUpRequests(followUps.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList()));
+        // Note: Attachments, comments, and follow-ups are loaded separately via dedicated API endpoints
+        // to avoid N+1 query issues and recursive loading problems.
+        // Frontend should call:
+        // - GET /api/attachments/service-request/{id}
+        // - GET /api/service-request-comments/service-request/{id}
+        // - GET /api/service-requests/{id}/follow-ups
 
         return dto;
     }
