@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -39,6 +40,8 @@ public class ServiceRequestDTO {
 
     private Long createdByUserId;
 
+    private Long parentId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
@@ -47,4 +50,8 @@ public class ServiceRequestDTO {
     private String resolutionNotes;
 
     private String dueDate;
+
+    private List<AttachmentDTO> attachments;
+    private List<ServiceRequestCommentDTO> comments;
+    private List<ServiceRequestDTO> followUpRequests;
 }

@@ -71,12 +71,44 @@ export const serviceRequestAPI = {
   getByManagerId: (managerId) => api.get(`/service-requests/manager/${managerId}`),
   getByStatus: (status) => api.get(`/service-requests/status/${status}`),
   getByPriority: (priority) => api.get(`/service-requests/priority/${priority}`),
+  getFollowUps: (parentId) => api.get(`/service-requests/${parentId}/follow-ups`),
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
   updateStatus: (id, status, hoursSpent, resolutionNotes) =>
     api.patch(`/service-requests/${id}/status`, { status, hoursSpent, resolutionNotes }),
   unassign: (id) => api.patch(`/service-requests/${id}/unassign`),
   delete: (id) => api.delete(`/service-requests/${id}`),
+};
+
+// Attachment API
+export const attachmentAPI = {
+  upload: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/attachments/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  getById: (id) => api.get(`/attachments/${id}`),
+  download: (id) => api.get(`/attachments/${id}/download`, { responseType: 'blob' }),
+  getByServiceRequestId: (serviceRequestId) => api.get(`/attachments/service-request/${serviceRequestId}`),
+  getByCommentId: (commentId) => api.get(`/attachments/comment/${commentId}`),
+  linkToServiceRequest: (serviceRequestId, attachmentId) =>
+    api.post(`/attachments/link/service-request?serviceRequestId=${serviceRequestId}&attachmentId=${attachmentId}`),
+  linkToComment: (commentId, attachmentId) =>
+    api.post(`/attachments/link/comment?commentId=${commentId}&attachmentId=${attachmentId}`),
+  delete: (id) => api.delete(`/attachments/${id}`),
+};
+
+// Service Request Comment API
+export const commentAPI = {
+  create: (comment) => api.post('/service-request-comments', comment),
+  getById: (id) => api.get(`/service-request-comments/${id}`),
+  getByServiceRequestId: (serviceRequestId) => api.get(`/service-request-comments/service-request/${serviceRequestId}`),
+  update: (id, comment) => api.put(`/service-request-comments/${id}`, comment),
+  delete: (id) => api.delete(`/service-request-comments/${id}`),
 };
 
 // Company API

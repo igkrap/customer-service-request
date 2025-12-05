@@ -28,6 +28,12 @@ public class ServiceRequestService {
     @Autowired
     private ProjectMapper projectMapper;
 
+    @Autowired
+    private AttachmentService attachmentService;
+
+    @Autowired
+    private ServiceRequestCommentService commentService;
+
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -76,6 +82,12 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestDTO> getFollowUpRequests(Long parentId) {
+        return serviceRequestMapper.findByParentId(parentId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public ServiceRequest getServiceRequestEntityById(Long id) {
         return serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
@@ -114,6 +126,16 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+
+        // Link attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    attachmentService.linkToServiceRequest(serviceRequest.getId(), attachmentDTO.getId());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -149,6 +171,16 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+
+        // Link attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    attachmentService.linkToServiceRequest(serviceRequest.getId(), attachmentDTO.getId());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -315,12 +347,26 @@ public class ServiceRequestService {
         }
 
         dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
+        dto.setParentId(serviceRequest.getParentId());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
+
+        // Load attachments
+        dto.setAttachments(attachmentService.getAttachmentsByServiceRequestId(serviceRequest.getId()));
+
+        // Load comments
+        dto.setComments(commentService.getCommentsByServiceRequestId(serviceRequest.getId()));
+
+        // Load follow-up requests
+        List<ServiceRequest> followUps = serviceRequestMapper.findByParentId(serviceRequest.getId());
+        dto.setFollowUpRequests(followUps.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList()));
+
         return dto;
     }
 
@@ -332,6 +378,7 @@ public class ServiceRequestService {
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
+        serviceRequest.setParentId(dto.getParentId());
         serviceRequest.setHoursSpent(dto.getHoursSpent());
         serviceRequest.setResolutionNotes(dto.getResolutionNotes());
         serviceRequest.setDueDate(dto.getDueDate());

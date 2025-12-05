@@ -39,21 +39,24 @@ public interface ServiceRequestMapper {
     @Select("SELECT * FROM service_requests WHERE created_by_user_id = #{userId}")
     List<ServiceRequest> findByCreatedByUserId(Long userId);
 
+    @Select("SELECT * FROM service_requests WHERE parent_id = #{parentId}")
+    List<ServiceRequest> findByParentId(Long parentId);
+
     @Select("SELECT COUNT(*) > 0 FROM service_requests WHERE id = #{id}")
     boolean existsById(Long id);
 
     @Insert("INSERT INTO service_requests (title, description, status, priority, customer_id, " +
-            "manager_id, project_id, created_by_user_id, created_at, updated_at, resolved_at, " +
+            "manager_id, project_id, created_by_user_id, parent_id, created_at, updated_at, resolved_at, " +
             "hours_spent, resolution_notes, due_date) " +
             "VALUES (#{title}, #{description}, #{status}, #{priority}, #{customerId}, " +
-            "#{managerId}, #{projectId}, #{createdByUserId}, #{createdAt}, #{updatedAt}, #{resolvedAt}, " +
+            "#{managerId}, #{projectId}, #{createdByUserId}, #{parentId}, #{createdAt}, #{updatedAt}, #{resolvedAt}, " +
             "#{hoursSpent}, #{resolutionNotes}, #{dueDate})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ServiceRequest serviceRequest);
 
     @Update("UPDATE service_requests SET title = #{title}, description = #{description}, " +
             "status = #{status}, priority = #{priority}, customer_id = #{customerId}, " +
-            "manager_id = #{managerId}, project_id = #{projectId}, updated_at = #{updatedAt}, resolved_at = #{resolvedAt}, " +
+            "manager_id = #{managerId}, project_id = #{projectId}, parent_id = #{parentId}, updated_at = #{updatedAt}, resolved_at = #{resolvedAt}, " +
             "hours_spent = #{hoursSpent}, resolution_notes = #{resolutionNotes}, due_date = #{dueDate} " +
             "WHERE id = #{id}")
     int update(ServiceRequest serviceRequest);

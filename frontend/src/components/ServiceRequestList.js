@@ -46,6 +46,8 @@ import {
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
+import ServiceRequestDetail from './ServiceRequestDetail';
+import FileUpload from './FileUpload';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -117,6 +119,8 @@ function ServiceRequestList() {
     projectId: '',
     dueDate: ''
   });
+  const [attachments, setAttachments] = useState([]);
+  const [viewDetailId, setViewDetailId] = useState(null);
 
   useEffect(() => {
     fetchData();

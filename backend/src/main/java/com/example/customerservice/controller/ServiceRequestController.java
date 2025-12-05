@@ -93,6 +93,12 @@ public class ServiceRequestController {
         return ResponseEntity.ok(requests);
     }
 
+    @GetMapping("/{parentId}/follow-ups")
+    public ResponseEntity<List<ServiceRequestDTO>> getFollowUpRequests(@PathVariable Long parentId) {
+        List<ServiceRequestDTO> followUps = serviceRequestService.getFollowUpRequests(parentId);
+        return ResponseEntity.ok(followUps);
+    }
+
     @PostMapping
     public ResponseEntity<?> createServiceRequest(@Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
