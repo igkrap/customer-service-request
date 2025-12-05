@@ -21,7 +21,6 @@ import { attachmentAPI } from '../services/api';
 
 const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({});
 
   const handleFileSelect = async (event) => {
     const files = Array.from(event.target.files);
@@ -30,10 +29,8 @@ const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false })
     setUploading(true);
 
     try {
-      const uploadPromises = files.map(async (file, index) => {
-        setUploadProgress((prev) => ({ ...prev, [index]: 0 }));
+      const uploadPromises = files.map(async (file) => {
         const response = await attachmentAPI.upload(file);
-        setUploadProgress((prev) => ({ ...prev, [index]: 100 }));
         return response.data;
       });
 
@@ -44,7 +41,6 @@ const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false })
       alert('파일 업로드 실패: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
-      setUploadProgress({});
     }
   };
 

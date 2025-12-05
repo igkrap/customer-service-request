@@ -12,7 +12,6 @@ import {
   TextField,
   List,
   ListItem,
-  ListItemText,
   Paper,
   IconButton,
   Collapse,
@@ -26,12 +25,11 @@ import {
   ExpandLess as ExpandLessIcon,
   Reply as ReplyIcon,
 } from '@mui/icons-material';
-import { serviceRequestAPI, commentAPI, attachmentAPI } from '../services/api';
+import { serviceRequestAPI, commentAPI } from '../services/api';
 import FileUpload from './FileUpload';
 
 const ServiceRequestDetail = ({ open, onClose, requestId, onUpdate }) => {
   const [request, setRequest] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentAttachments, setCommentAttachments] = useState([]);
   const [followUpTitle, setFollowUpTitle] = useState('');
@@ -47,15 +45,12 @@ const ServiceRequestDetail = ({ open, onClose, requestId, onUpdate }) => {
   }, [open, requestId]);
 
   const loadRequest = async () => {
-    setLoading(true);
     try {
       const response = await serviceRequestAPI.getById(requestId);
       setRequest(response.data);
     } catch (error) {
       console.error('Failed to load request:', error);
       alert('서비스 요청 로드 실패');
-    } finally {
-      setLoading(false);
     }
   };
 
