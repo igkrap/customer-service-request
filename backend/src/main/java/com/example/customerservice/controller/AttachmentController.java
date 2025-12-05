@@ -45,7 +45,7 @@ public class AttachmentController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         Resource resource = attachmentService.loadFileAsResource(id);
         AttachmentDTO attachment = attachmentService.getAttachmentById(id);
 
