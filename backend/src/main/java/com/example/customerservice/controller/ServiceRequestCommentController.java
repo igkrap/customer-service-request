@@ -1,11 +1,12 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ServiceRequestCommentDTO;
-import com.example.customerservice.security.JwtUtil;
+import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.model.User;
 import com.example.customerservice.service.ServiceRequestCommentService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,16 +19,17 @@ public class ServiceRequestCommentController {
     private ServiceRequestCommentService commentService;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private UserMapper userMapper;
 
     @PostMapping
     public ResponseEntity<ServiceRequestCommentDTO> createComment(
             @RequestBody ServiceRequestCommentDTO dto,
-            HttpServletRequest request) {
+            Authentication authentication) {
 
-        String token = extractToken(request);
-        Long userId = jwtUtil.extractUserId(token);
-        dto.setUserId(userId);
+        String userId = authentication.getName();
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        dto.setUserId(user.getId());
 
         ServiceRequestCommentDTO createdComment = commentService.createComment(dto);
         return ResponseEntity.ok(createdComment);
@@ -59,13 +61,5 @@ public class ServiceRequestCommentController {
     public ResponseEntity<Void> deleteComment(@PathVariable Long id) {
         commentService.deleteComment(id);
         return ResponseEntity.ok().build();
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new RuntimeException("No JWT token found in request headers");
     }
 }

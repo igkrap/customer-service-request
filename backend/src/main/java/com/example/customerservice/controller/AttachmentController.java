@@ -1,18 +1,18 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.AttachmentDTO;
-import com.example.customerservice.security.JwtUtil;
+import com.example.customerservice.mapper.UserMapper;
+import com.example.customerservice.model.User;
 import com.example.customerservice.service.AttachmentService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,17 +23,18 @@ public class AttachmentController {
     private AttachmentService attachmentService;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private UserMapper userMapper;
 
     @PostMapping("/upload")
     public ResponseEntity<AttachmentDTO> uploadFile(
             @RequestParam("file") MultipartFile file,
-            HttpServletRequest request) {
+            Authentication authentication) {
 
-        String token = extractToken(request);
-        Long userId = jwtUtil.extractUserId(token);
+        String userId = authentication.getName();
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        AttachmentDTO attachment = attachmentService.uploadFile(file, userId);
+        AttachmentDTO attachment = attachmentService.uploadFile(file, user.getId());
         return ResponseEntity.ok(attachment);
     }
 
@@ -94,13 +95,5 @@ public class AttachmentController {
     public ResponseEntity<Void> deleteAttachment(@PathVariable Long id) {
         attachmentService.deleteAttachment(id);
         return ResponseEntity.ok().build();
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new RuntimeException("No JWT token found in request headers");
     }
 }
