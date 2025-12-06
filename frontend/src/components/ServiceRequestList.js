@@ -1179,6 +1179,7 @@ function ServiceRequestList() {
             slots={{
               toolbar: CustomToolbar,
             }}
+            showToolbar
             sx={{
               height: '100%',
               minHeight: 500,
