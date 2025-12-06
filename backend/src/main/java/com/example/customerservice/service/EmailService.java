@@ -65,7 +65,7 @@ public class EmailService {
             helper.setFrom(settings.getFromEmail(), settings.getFromName() != null ? settings.getFromName() : settings.getFromEmail());
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(body, false); // false = Plain text
+            helper.setText(body, true); // true = HTML email
 
             log.info("Attempting to send email...");
             mailSender.send(message);

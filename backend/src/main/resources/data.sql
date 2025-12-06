@@ -13,22 +13,13 @@ ON CONFLICT (company_code) DO NOTHING;
 -- Insert default email templates
 INSERT INTO email_templates (template_code, template_name, subject, body, description, variables, enabled)
 VALUES
-('TEST_EMAIL', 'Test Email', 'Test Email', 'This is a test email. Your email configuration is working.', 'Test email template', 'toEmail', true),
-('SERVICE_REQUEST_CREATED', 'Service Request Created', 'New Request: {{requestTitle}}', 'New service request ID {{requestId}} has been assigned to you.
-Title: {{requestTitle}}', 'Sent to manager when a new service request is created', 'requestTitle, requestId', true),
-('SERVICE_REQUEST_STATUS_CHANGED', 'Service Request Status Changed', 'Status Update: {{requestTitle}}', 'Your service request status has been updated.
-Title: {{requestTitle}}
-Status: {{oldStatus}} -> {{newStatus}}', 'Sent to customer when service request status changes', 'requestTitle, oldStatus, newStatus', true),
-('SERVICE_REQUEST_RESOLVED', 'Service Request Resolved', 'Resolved: {{requestTitle}}', 'Your service request has been resolved.
-Title: {{requestTitle}}
-Notes: {{resolutionNotes}}', 'Sent to customer when service request is resolved', 'requestTitle, resolutionNotes', true),
-('USER_APPROVED', 'User Approved', 'Account Approved', 'Hello {{username}}, your account has been approved. You can now log in.', 'Sent to user when account is approved', 'username', true),
-('USER_REJECTED', 'User Rejected', 'Account Registration', 'Hello {{username}}, your account registration has been rejected. Please contact the administrator.', 'Sent to user when account is rejected', 'username', true),
-('PROJECT_REQUEST_APPROVED', 'Project Request Approved', 'Project Approved: {{projectName}}', 'Your project request has been approved.
-Project: {{projectName}}', 'Sent to requester when project request is approved', 'projectName', true),
-('PROJECT_REQUEST_REJECTED', 'Project Request Rejected', 'Project Rejected: {{projectName}}', 'Your project request has been rejected.
-Project: {{projectName}}
-Reason: {{approvalNotes}}', 'Sent to requester when project request is rejected', 'projectName, approvalNotes', true),
-('MANAGER_ASSIGNED', 'Manager Assigned', 'Assigned: {{requestTitle}}', 'You have been assigned to service request ID {{requestId}}.
-Title: {{requestTitle}}', 'Sent to manager when assigned to a service request', 'requestTitle, requestId', true)
+('TEST_EMAIL', '테스트 이메일', '테스트 이메일', '<h2>테스트 이메일</h2><p>이메일 설정이 정상적으로 작동하고 있습니다.</p><p>수신 이메일: <strong>{{toEmail}}</strong></p>', '이메일 설정 테스트용 템플릿', 'toEmail', true),
+('SERVICE_REQUEST_CREATED', '서비스 요청 생성', '[새 요청] {{requestTitle}}', '<h2>새로운 서비스 요청이 배정되었습니다</h2><p>새로운 서비스 요청이 귀하에게 배정되었습니다.</p><ul><li><strong>요청 ID:</strong> {{requestId}}</li><li><strong>제목:</strong> {{requestTitle}}</li></ul><p>시스템에 로그인하여 자세한 내용을 확인해주세요.</p>', '담당자에게 새 서비스 요청 생성 시 발송', 'requestTitle, requestId', true),
+('SERVICE_REQUEST_STATUS_CHANGED', '서비스 요청 상태 변경', '[상태 변경] {{requestTitle}}', '<h2>서비스 요청 상태가 변경되었습니다</h2><p>귀하의 서비스 요청 상태가 업데이트되었습니다.</p><ul><li><strong>제목:</strong> {{requestTitle}}</li><li><strong>상태 변경:</strong> {{oldStatus}} → {{newStatus}}</li></ul><p>자세한 내용은 시스템에서 확인해주세요.</p>', '고객에게 요청 상태 변경 시 발송', 'requestTitle, oldStatus, newStatus', true),
+('SERVICE_REQUEST_RESOLVED', '서비스 요청 완료', '[완료] {{requestTitle}}', '<h2>서비스 요청이 완료되었습니다</h2><p>귀하의 서비스 요청이 성공적으로 처리되었습니다.</p><ul><li><strong>제목:</strong> {{requestTitle}}</li><li><strong>처리 내용:</strong> {{resolutionNotes}}</li></ul><p>감사합니다.</p>', '고객에게 요청 완료 시 발송', 'requestTitle, resolutionNotes', true),
+('USER_APPROVED', '사용자 승인', '계정이 승인되었습니다', '<h2>계정 승인 완료</h2><p>안녕하세요, <strong>{{username}}</strong>님</p><p>귀하의 계정이 승인되었습니다. 이제 시스템에 로그인하실 수 있습니다.</p><p>감사합니다.</p>', '사용자 계정 승인 시 발송', 'username', true),
+('USER_REJECTED', '사용자 거부', '계정 등록 거부', '<h2>계정 등록 거부</h2><p>안녕하세요, <strong>{{username}}</strong>님</p><p>귀하의 계정 등록이 거부되었습니다. 자세한 사항은 관리자에게 문의해주세요.</p>', '사용자 계정 거부 시 발송', 'username', true),
+('PROJECT_REQUEST_APPROVED', '프로젝트 요청 승인', '[승인] {{projectName}}', '<h2>프로젝트 요청이 승인되었습니다</h2><p>귀하의 프로젝트 요청이 승인되었습니다.</p><ul><li><strong>프로젝트:</strong> {{projectName}}</li></ul><p>프로젝트를 진행해주세요.</p>', '프로젝트 요청 승인 시 발송', 'projectName', true),
+('PROJECT_REQUEST_REJECTED', '프로젝트 요청 거부', '[거부] {{projectName}}', '<h2>프로젝트 요청이 거부되었습니다</h2><p>귀하의 프로젝트 요청이 거부되었습니다.</p><ul><li><strong>프로젝트:</strong> {{projectName}}</li><li><strong>거부 사유:</strong> {{approvalNotes}}</li></ul>', '프로젝트 요청 거부 시 발송', 'projectName, approvalNotes', true),
+('MANAGER_ASSIGNED', '담당자 배정', '[배정] {{requestTitle}}', '<h2>새로운 요청이 배정되었습니다</h2><p>서비스 요청이 귀하에게 배정되었습니다.</p><ul><li><strong>요청 ID:</strong> {{requestId}}</li><li><strong>제목:</strong> {{requestTitle}}</li></ul><p>시스템에서 확인 후 처리해주세요.</p>', '담당자 배정 시 발송', 'requestTitle, requestId', true)
 ON CONFLICT (template_code) DO NOTHING;

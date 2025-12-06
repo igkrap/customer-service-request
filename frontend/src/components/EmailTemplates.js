@@ -29,6 +29,8 @@ import {
   Save as SaveIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import api from '../services/api';
 
 function EmailTemplates() {
@@ -88,6 +90,22 @@ function EmailTemplates() {
   const handleChange = (field) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
     setCurrentTemplate({ ...currentTemplate, [field]: value });
+  };
+
+  const handleBodyChange = (value) => {
+    setCurrentTemplate({ ...currentTemplate, body: value });
+  };
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['link'],
+      ['clean']
+    ]
   };
 
   if (loading) {
@@ -190,15 +208,21 @@ function EmailTemplates() {
                 helperText="변수 사용 가능 (예: {{username}})"
               />
 
-              <TextField
-                label="본문"
-                value={currentTemplate.body}
-                onChange={handleChange('body')}
-                fullWidth
-                multiline
-                rows={8}
-                helperText="변수 사용 가능 (예: {{username}})"
-              />
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  본문 (HTML 에디터)
+                </Typography>
+                <ReactQuill
+                  theme="snow"
+                  value={currentTemplate.body}
+                  onChange={handleBodyChange}
+                  modules={quillModules}
+                  style={{ height: '300px', marginBottom: '60px' }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  변수 사용 가능 (예: {'{{'} username {'}}'})
+                </Typography>
+              </Box>
 
               <TextField
                 label="설명"
