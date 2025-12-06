@@ -21,11 +21,6 @@ public interface AttachmentMapper {
             "WHERE sra.service_request_id = #{serviceRequestId}")
     List<Attachment> findByServiceRequestId(Long serviceRequestId);
 
-    @Select("SELECT a.* FROM attachments a " +
-            "JOIN comment_attachments ca ON a.id = ca.attachment_id " +
-            "WHERE ca.comment_id = #{commentId}")
-    List<Attachment> findByCommentId(Long commentId);
-
     @Delete("DELETE FROM attachments WHERE id = #{id}")
     int delete(Long id);
 
@@ -33,13 +28,6 @@ public interface AttachmentMapper {
             "VALUES (#{serviceRequestId}, #{attachmentId}, CURRENT_TIMESTAMP)")
     int linkToServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId);
 
-    @Insert("INSERT INTO comment_attachments (comment_id, attachment_id, created_at) " +
-            "VALUES (#{commentId}, #{attachmentId}, CURRENT_TIMESTAMP)")
-    int linkToComment(@Param("commentId") Long commentId, @Param("attachmentId") Long attachmentId);
-
     @Delete("DELETE FROM service_request_attachments WHERE service_request_id = #{serviceRequestId} AND attachment_id = #{attachmentId}")
     int unlinkFromServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId);
-
-    @Delete("DELETE FROM comment_attachments WHERE comment_id = #{commentId} AND attachment_id = #{attachmentId}")
-    int unlinkFromComment(@Param("commentId") Long commentId, @Param("attachmentId") Long attachmentId);
 }

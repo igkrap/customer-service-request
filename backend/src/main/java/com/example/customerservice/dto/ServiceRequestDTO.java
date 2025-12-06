@@ -21,13 +21,10 @@ public class ServiceRequestDTO {
 
     private String description;
 
-    @NotNull(message = "Status is required")
     private ServiceRequest.RequestStatus status;
 
-    @NotNull(message = "Priority is required")
     private ServiceRequest.Priority priority;
 
-    @NotNull(message = "Customer ID is required")
     private Long customerId;
 
     private String customerName;
@@ -52,6 +49,5 @@ public class ServiceRequestDTO {
     private String dueDate;
 
     private List<AttachmentDTO> attachments;
-    private List<ServiceRequestCommentDTO> comments;
     private List<ServiceRequestDTO> followUpRequests;
 }

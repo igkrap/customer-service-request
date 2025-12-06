@@ -114,19 +114,8 @@ public class AttachmentService {
                 .collect(Collectors.toList());
     }
 
-    public List<AttachmentDTO> getAttachmentsByCommentId(Long commentId) {
-        List<Attachment> attachments = attachmentMapper.findByCommentId(commentId);
-        return attachments.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
     public void linkToServiceRequest(Long serviceRequestId, Long attachmentId) {
         attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId);
-    }
-
-    public void linkToComment(Long commentId, Long attachmentId) {
-        attachmentMapper.linkToComment(commentId, attachmentId);
     }
 
     public void deleteAttachment(Long id) {

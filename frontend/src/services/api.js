@@ -94,21 +94,9 @@ export const attachmentAPI = {
   getById: (id) => api.get(`/attachments/${id}`),
   download: (id) => api.get(`/attachments/${id}/download`, { responseType: 'blob' }),
   getByServiceRequestId: (serviceRequestId) => api.get(`/attachments/service-request/${serviceRequestId}`),
-  getByCommentId: (commentId) => api.get(`/attachments/comment/${commentId}`),
   linkToServiceRequest: (serviceRequestId, attachmentId) =>
     api.post(`/attachments/link/service-request?serviceRequestId=${serviceRequestId}&attachmentId=${attachmentId}`),
-  linkToComment: (commentId, attachmentId) =>
-    api.post(`/attachments/link/comment?commentId=${commentId}&attachmentId=${attachmentId}`),
   delete: (id) => api.delete(`/attachments/${id}`),
-};
-
-// Service Request Comment API
-export const commentAPI = {
-  create: (comment) => api.post('/service-request-comments', comment),
-  getById: (id) => api.get(`/service-request-comments/${id}`),
-  getByServiceRequestId: (serviceRequestId) => api.get(`/service-request-comments/service-request/${serviceRequestId}`),
-  update: (id, comment) => api.put(`/service-request-comments/${id}`, comment),
-  delete: (id) => api.delete(`/service-request-comments/${id}`),
 };
 
 // Company API

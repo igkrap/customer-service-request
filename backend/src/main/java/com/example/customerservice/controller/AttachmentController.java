@@ -68,26 +68,11 @@ public class AttachmentController {
         return ResponseEntity.ok(attachments);
     }
 
-    @GetMapping("/comment/{commentId}")
-    public ResponseEntity<List<AttachmentDTO>> getCommentAttachments(
-            @PathVariable Long commentId) {
-        List<AttachmentDTO> attachments = attachmentService.getAttachmentsByCommentId(commentId);
-        return ResponseEntity.ok(attachments);
-    }
-
     @PostMapping("/link/service-request")
     public ResponseEntity<Void> linkToServiceRequest(
             @RequestParam Long serviceRequestId,
             @RequestParam Long attachmentId) {
         attachmentService.linkToServiceRequest(serviceRequestId, attachmentId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/link/comment")
-    public ResponseEntity<Void> linkToComment(
-            @RequestParam Long commentId,
-            @RequestParam Long attachmentId) {
-        attachmentService.linkToComment(commentId, attachmentId);
         return ResponseEntity.ok().build();
     }
 

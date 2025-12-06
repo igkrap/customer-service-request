@@ -117,19 +117,6 @@ CREATE TABLE IF NOT EXISTS attachments (
     FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Create service_request_comments table for comments/responses on service requests
-CREATE TABLE IF NOT EXISTS service_request_comments (
-    id BIGSERIAL PRIMARY KEY,
-    service_request_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
-    comment_text TEXT NOT NULL,
-    is_internal BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 -- Create service_request_attachments table (many-to-many relationship)
 CREATE TABLE IF NOT EXISTS service_request_attachments (
     id BIGSERIAL PRIMARY KEY,
@@ -139,17 +126,6 @@ CREATE TABLE IF NOT EXISTS service_request_attachments (
     FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
     UNIQUE(service_request_id, attachment_id)
-);
-
--- Create comment_attachments table (many-to-many relationship)
-CREATE TABLE IF NOT EXISTS comment_attachments (
-    id BIGSERIAL PRIMARY KEY,
-    comment_id BIGINT NOT NULL,
-    attachment_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (comment_id) REFERENCES service_request_comments(id) ON DELETE CASCADE,
-    FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
-    UNIQUE(comment_id, attachment_id)
 );
 
 -- Create indexes for better query performance

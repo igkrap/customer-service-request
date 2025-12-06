@@ -34,7 +34,6 @@ import {
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
-import ServiceRequestDetail from './ServiceRequestDetail';
 import FileUpload from './FileUpload';
 
 // 날짜 형식 변환 함수
@@ -89,14 +88,12 @@ function ServiceRequestList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
   const [resolutionData, setResolutionData] = useState({
     hoursSpent: '',
     resolutionNotes: ''
   });
-  const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -105,7 +102,8 @@ function ServiceRequestList() {
     priority: 'MEDIUM',
     customerId: '',
     projectId: '',
-    dueDate: ''
+    dueDate: '',
+    parentId: ''
   });
   const [attachments, setAttachments] = useState([]);
 
@@ -258,6 +256,7 @@ function ServiceRequestList() {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
         projectId: formData.projectId ? parseInt(formData.projectId) : null,
+        parentId: formData.parentId ? parseInt(formData.parentId) : null,
         dueDate: formatDateToYYYYMMDD(formData.dueDate),
         attachments: attachments
       };
@@ -275,7 +274,8 @@ function ServiceRequestList() {
         priority: 'MEDIUM',
         customerId: '',
         projectId: '',
-        dueDate: ''
+        dueDate: '',
+        parentId: ''
       });
       setAttachments([]);
       setShowForm(false);
@@ -295,7 +295,8 @@ function ServiceRequestList() {
       priority: request.priority,
       customerId: request.customerId.toString(),
       projectId: request.projectId ? request.projectId.toString() : '',
-      dueDate: formatDateFromYYYYMMDD(request.dueDate)
+      dueDate: formatDateFromYYYYMMDD(request.dueDate),
+      parentId: request.parentId ? request.parentId.toString() : ''
     });
     setAttachments(request.attachments || []);
     setShowForm(true);
@@ -323,7 +324,8 @@ function ServiceRequestList() {
       priority: 'MEDIUM',
       customerId: '',
       projectId: '',
-      dueDate: ''
+      dueDate: '',
+      parentId: ''
     });
   };
 
@@ -836,6 +838,25 @@ function ServiceRequestList() {
                   </Select>
                 </FormControl>
 
+                <FormControl fullWidth>
+                  <InputLabel>관련 서비스 요청 (후속 요청인 경우)</InputLabel>
+                  <Select
+                    name="parentId"
+                    value={formData.parentId}
+                    onChange={handleInputChange}
+                    label="관련 서비스 요청 (후속 요청인 경우)"
+                  >
+                    <MenuItem value="">없음 (새로운 요청)</MenuItem>
+                    {requests
+                      .filter(req => !editingRequest || req.id !== editingRequest.id)
+                      .map(request => (
+                        <MenuItem key={request.id} value={request.id}>
+                          #{request.id} - {request.title}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+
                 <TextField
                   fullWidth
                   type="date"
@@ -868,17 +889,6 @@ function ServiceRequestList() {
             </DialogActions>
           </form>
         </Dialog>
-
-        {/* Detail View Dialog */}
-        <ServiceRequestDetail
-          open={showDetailDialog}
-          onClose={() => {
-            setShowDetailDialog(false);
-            setSelectedRequest(null);
-          }}
-          requestId={selectedRequest?.id}
-          onUpdate={fetchData}
-        />
 
         {/* Resolution Dialog */}
         <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth>
