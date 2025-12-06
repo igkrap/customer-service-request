@@ -41,8 +41,17 @@ public class EmailService {
 
         if (settings == null || !settings.getEnabled()) {
             log.warn("Email settings not configured or disabled. Email not sent.");
-            return;
+            throw new MessagingException("Email settings not configured or disabled");
         }
+
+        log.info("=== Email Sending Started ===");
+        log.info("To: {}", to);
+        log.info("Subject: {}", subject);
+        log.info("SMTP Host: {}", settings.getSmtpHost());
+        log.info("SMTP Port: {}", settings.getSmtpPort());
+        log.info("SMTP Username: {}", settings.getSmtpUsername());
+        log.info("From Email: {}", settings.getFromEmail());
+        log.info("TLS: {}, SSL: {}", settings.getUseTls(), settings.getUseSsl());
 
         try {
             JavaMailSenderImpl mailSender = createMailSender(settings);
@@ -54,11 +63,15 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(body, true); // true = HTML
 
+            log.info("Attempting to send email...");
             mailSender.send(message);
-            log.info("Email sent successfully to: {}", to);
+            log.info("✅ Email sent successfully to: {}", to);
         } catch (Exception e) {
-            log.error("Failed to send email to: {}", to, e);
-            throw new MessagingException("Failed to send email: " + e.getMessage());
+            log.error("❌ Failed to send email to: {}", to);
+            log.error("Error type: {}", e.getClass().getName());
+            log.error("Error message: {}", e.getMessage());
+            log.error("Full stack trace:", e);
+            throw new MessagingException("Failed to send email: " + e.getMessage(), e);
         }
     }
 

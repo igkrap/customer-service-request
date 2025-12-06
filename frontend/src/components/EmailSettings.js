@@ -87,13 +87,22 @@ function EmailSettings() {
   const handleSendTestEmail = async () => {
     setSendingTest(true);
     try {
-      await api.post('/email-settings/test', { toEmail: testEmail });
-      setSnackbar({ open: true, message: `테스트 이메일이 ${testEmail}로 전송되었습니다.`, severity: 'success' });
+      const response = await api.post('/email-settings/test', { toEmail: testEmail });
+      setSnackbar({
+        open: true,
+        message: `테스트 이메일이 ${testEmail}로 전송되었습니다. 받은편지함과 스팸 폴더를 확인하세요.`,
+        severity: 'success'
+      });
       setTestEmailDialog(false);
       setTestEmail('');
     } catch (error) {
       console.error('Failed to send test email:', error);
-      setSnackbar({ open: true, message: '테스트 이메일 전송에 실패했습니다.', severity: 'error' });
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || '알 수 없는 오류';
+      setSnackbar({
+        open: true,
+        message: `테스트 이메일 전송 실패: ${errorMsg}`,
+        severity: 'error'
+      });
     } finally {
       setSendingTest(false);
     }
