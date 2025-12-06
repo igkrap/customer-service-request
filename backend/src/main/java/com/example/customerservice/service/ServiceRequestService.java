@@ -232,6 +232,24 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Update attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    // Check if attachment is already linked
+                    List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                        attachmentService.getAttachmentsByServiceRequestId(id);
+                    boolean alreadyLinked = existingAttachments.stream()
+                        .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
+
+                    if (!alreadyLinked) {
+                        attachmentService.linkToServiceRequest(id, attachmentDTO.getId());
+                    }
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 

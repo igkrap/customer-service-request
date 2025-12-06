@@ -291,7 +291,7 @@ function ServiceRequestList() {
     }
   };
 
-  const handleEdit = (request) => {
+  const handleEdit = async (request) => {
     setEditingRequest(request);
     setFormData({
       title: request.title,
@@ -303,7 +303,16 @@ function ServiceRequestList() {
       dueDate: formatDateFromYYYYMMDD(request.dueDate),
       parentId: request.parentId ? request.parentId.toString() : ''
     });
-    setAttachments(request.attachments || []);
+
+    // Load existing attachments
+    try {
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
+      setAttachments(attachmentsResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+      setAttachments([]);
+    }
+
     setShowForm(true);
   };
 
