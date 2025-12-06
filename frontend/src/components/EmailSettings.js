@@ -47,7 +47,7 @@ function EmailSettings() {
   const fetchEmailSettings = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/api/email-settings/active');
+      const response = await api.get('/email-settings/active');
       if (response.data) {
         setSettings(response.data);
       }
@@ -69,10 +69,10 @@ function EmailSettings() {
     setSaving(true);
     try {
       if (settings.id) {
-        await api.put(`/api/email-settings/${settings.id}`, settings);
+        await api.put(`/email-settings/${settings.id}`, settings);
         setSnackbar({ open: true, message: '이메일 설정이 성공적으로 업데이트되었습니다.', severity: 'success' });
       } else {
-        const response = await api.post('/api/email-settings', settings);
+        const response = await api.post('/email-settings', settings);
         setSettings(response.data);
         setSnackbar({ open: true, message: '이메일 설정이 성공적으로 생성되었습니다.', severity: 'success' });
       }
@@ -87,7 +87,7 @@ function EmailSettings() {
   const handleSendTestEmail = async () => {
     setSendingTest(true);
     try {
-      await api.post('/api/email-settings/test', { toEmail: testEmail });
+      await api.post('/email-settings/test', { toEmail: testEmail });
       setSnackbar({ open: true, message: `테스트 이메일이 ${testEmail}로 전송되었습니다.`, severity: 'success' });
       setTestEmailDialog(false);
       setTestEmail('');
