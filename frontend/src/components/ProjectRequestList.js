@@ -448,6 +448,7 @@ function ProjectRequestList() {
             slots={{
               toolbar: CustomToolbar,
             }}
+            showToolbar
           />
         </Box>
       </Paper>
