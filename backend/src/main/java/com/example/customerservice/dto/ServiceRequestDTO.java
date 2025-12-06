@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,13 +21,10 @@ public class ServiceRequestDTO {
 
     private String description;
 
-    @NotNull(message = "Status is required")
     private ServiceRequest.RequestStatus status;
 
-    @NotNull(message = "Priority is required")
     private ServiceRequest.Priority priority;
 
-    @NotNull(message = "Customer ID is required")
     private Long customerId;
 
     private String customerName;
@@ -39,6 +37,8 @@ public class ServiceRequestDTO {
 
     private Long createdByUserId;
 
+    private Long parentId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
@@ -47,4 +47,7 @@ public class ServiceRequestDTO {
     private String resolutionNotes;
 
     private String dueDate;
+
+    private List<AttachmentDTO> attachments;
+    private List<ServiceRequestDTO> followUpRequests;
 }

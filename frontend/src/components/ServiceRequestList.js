@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { serviceRequestAPI, userAPI, projectAPI } from '../services/api';
+import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Box,
@@ -16,7 +16,6 @@ import {
   Chip,
   Typography,
   Paper,
-  Grid,
   Divider,
   Alert,
   CircularProgress,
@@ -29,23 +28,14 @@ import {
   Delete as DeleteIcon,
   PlayArrow as StartIcon,
   Check as CompleteIcon,
-  Close as CloseIcon,
   Pause as HoldIcon,
-  Visibility as ViewIcon,
   PersonRemove as UnassignIcon,
-  Assignment as AssignmentIcon,
-  Description as DescriptionIcon,
-  Person as PersonIcon,
-  Work as WorkIcon,
-  CalendarToday as CalendarIcon,
-  Timer as TimerIcon,
-  Notes as NotesIcon,
-  Flag as FlagIcon,
-  Schedule as ScheduleIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
+import FileUpload from './FileUpload';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -100,13 +90,15 @@ function ServiceRequestList() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedAttachments, setSelectedAttachments] = useState([]);
+  const [selectedFollowUps, setSelectedFollowUps] = useState([]);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
   const [resolutionData, setResolutionData] = useState({
     hoursSpent: '',
     resolutionNotes: ''
   });
-  const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -115,8 +107,10 @@ function ServiceRequestList() {
     priority: 'MEDIUM',
     customerId: '',
     projectId: '',
-    dueDate: ''
+    dueDate: '',
+    parentId: ''
   });
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -267,7 +261,9 @@ function ServiceRequestList() {
         ...formData,
         customerId: parseInt(formData.customerId || user?.id),
         projectId: formData.projectId ? parseInt(formData.projectId) : null,
-        dueDate: formatDateToYYYYMMDD(formData.dueDate)
+        parentId: formData.parentId ? parseInt(formData.parentId) : null,
+        dueDate: formatDateToYYYYMMDD(formData.dueDate),
+        attachments: attachments
       };
 
       if (editingRequest) {
@@ -283,8 +279,10 @@ function ServiceRequestList() {
         priority: 'MEDIUM',
         customerId: '',
         projectId: '',
-        dueDate: ''
+        dueDate: '',
+        parentId: ''
       });
+      setAttachments([]);
       setShowForm(false);
       setEditingRequest(null);
       await fetchData(); // Wait for data to load before closing
@@ -293,7 +291,7 @@ function ServiceRequestList() {
     }
   };
 
-  const handleEdit = (request) => {
+  const handleEdit = async (request) => {
     setEditingRequest(request);
     setFormData({
       title: request.title,
@@ -302,8 +300,19 @@ function ServiceRequestList() {
       priority: request.priority,
       customerId: request.customerId.toString(),
       projectId: request.projectId ? request.projectId.toString() : '',
-      dueDate: formatDateFromYYYYMMDD(request.dueDate)
+      dueDate: formatDateFromYYYYMMDD(request.dueDate),
+      parentId: request.parentId ? request.parentId.toString() : ''
     });
+
+    // Load existing attachments
+    try {
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
+      setAttachments(attachmentsResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+      setAttachments([]);
+    }
+
     setShowForm(true);
   };
 
@@ -321,6 +330,7 @@ function ServiceRequestList() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingRequest(null);
+    setAttachments([]);
     setFormData({
       title: '',
       description: '',
@@ -328,7 +338,8 @@ function ServiceRequestList() {
       priority: 'MEDIUM',
       customerId: '',
       projectId: '',
-      dueDate: ''
+      dueDate: '',
+      parentId: ''
     });
   };
 
@@ -392,9 +403,51 @@ function ServiceRequestList() {
     }
   };
 
-  const handleRowClick = (params) => {
+  const handleRowClick = async (params) => {
     setSelectedRequest(params.row);
     setShowDetailDialog(true);
+
+    // Load attachments
+    try {
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(params.row.id);
+      setSelectedAttachments(attachmentsResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+      setSelectedAttachments([]);
+    }
+
+    // Load follow-up requests
+    try {
+      const followUpsResponse = await serviceRequestAPI.getFollowUps(params.row.id);
+      setSelectedFollowUps(followUpsResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load follow-ups:', err);
+      setSelectedFollowUps([]);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetailDialog(false);
+    setSelectedRequest(null);
+    setSelectedAttachments([]);
+    setSelectedFollowUps([]);
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      const response = await attachmentAPI.download(attachment.id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', attachment.originalFileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('File download failed:', error);
+      alert('파일 다운로드 실패');
+    }
   };
 
   const canEditRequest = (request) => {
@@ -707,8 +760,8 @@ function ServiceRequestList() {
   }
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 2, height: '100%', bgcolor: '#fafafa' }}>
+      <Paper elevation={2} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography
             variant="h5"
@@ -738,7 +791,7 @@ function ServiceRequestList() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
               {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
@@ -841,6 +894,25 @@ function ServiceRequestList() {
                   </Select>
                 </FormControl>
 
+                <FormControl fullWidth>
+                  <InputLabel>관련 서비스 요청 (후속 요청인 경우)</InputLabel>
+                  <Select
+                    name="parentId"
+                    value={formData.parentId}
+                    onChange={handleInputChange}
+                    label="관련 서비스 요청 (후속 요청인 경우)"
+                  >
+                    <MenuItem value="">없음 (새로운 요청)</MenuItem>
+                    {requests
+                      .filter(req => !editingRequest || req.id !== editingRequest.id)
+                      .map(request => (
+                        <MenuItem key={request.id} value={request.id}>
+                          #{request.id} - {request.title}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+
                 <TextField
                   fullWidth
                   type="date"
@@ -856,6 +928,13 @@ function ServiceRequestList() {
                   }}
                   helperText="마감일을 선택하세요 (오늘 이후만 가능)"
                 />
+
+                <Divider sx={{ my: 1 }} />
+
+                <FileUpload
+                  attachments={attachments}
+                  onAttachmentsChange={setAttachments}
+                />
               </Box>
             </DialogContent>
             <DialogActions>
@@ -868,203 +947,180 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Detail View Dialog */}
-        <Dialog open={showDetailDialog} onClose={() => setShowDetailDialog(false)} maxWidth="md" fullWidth>
-          <DialogTitle sx={{ pb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AssignmentIcon color="primary" />
-                <Typography variant="h6">서비스 요청 상세</Typography>
-              </Box>
-              <IconButton onClick={() => setShowDetailDialog(false)} size="small">
-                <CloseIcon />
-              </IconButton>
-            </Box>
+        <Dialog open={showDetailDialog} onClose={handleCloseDetail} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+          <DialogTitle>
+            서비스 요청 상세정보
+            <IconButton
+              onClick={handleCloseDetail}
+              sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
           </DialogTitle>
-          <DialogContent dividers>
+          <DialogContent>
             {selectedRequest && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Header Section: Status & Priority */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
-                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                        <FlagIcon fontSize="small" />
-                        상태
-                      </Typography>
-                      {getStatusChip(selectedRequest.status)}
+                  <Typography variant="h6" gutterBottom>기본 정보</Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">제목</Typography>
+                      <Typography variant="body1">{selectedRequest.title}</Typography>
                     </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                        <FlagIcon fontSize="small" />
-                        우선순위
-                      </Typography>
-                      {getPriorityChip(selectedRequest.priority)}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">상태</Typography>
+                      <Box>
+                        <Chip
+                          label={selectedRequest.status === 'OPEN' ? '열림' :
+                                 selectedRequest.status === 'IN_PROGRESS' ? '진행중' :
+                                 selectedRequest.status === 'RESOLVED' ? '해결됨' :
+                                 selectedRequest.status === 'HOLD' ? '보류' : '취소됨'}
+                          color={selectedRequest.status === 'OPEN' ? 'primary' :
+                                 selectedRequest.status === 'IN_PROGRESS' ? 'info' :
+                                 selectedRequest.status === 'RESOLVED' ? 'success' :
+                                 selectedRequest.status === 'HOLD' ? 'warning' : 'default'}
+                          size="small"
+                        />
+                      </Box>
                     </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                        요청 ID
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">우선순위</Typography>
+                      <Box>
+                        <Chip
+                          label={selectedRequest.priority === 'LOW' ? '낮음' :
+                                 selectedRequest.priority === 'MEDIUM' ? '보통' :
+                                 selectedRequest.priority === 'HIGH' ? '높음' : '긴급'}
+                          color={selectedRequest.priority === 'URGENT' ? 'error' :
+                                 selectedRequest.priority === 'HIGH' ? 'warning' : 'default'}
+                          size="small"
+                        />
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">고객</Typography>
+                      <Typography variant="body1">{selectedRequest.customerName || '-'}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">담당자</Typography>
+                      <Typography variant="body1">{selectedRequest.managerName || '미할당'}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">프로젝트</Typography>
+                      <Typography variant="body1">{selectedRequest.projectName || '-'}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">마감일</Typography>
+                      <Typography variant="body1">
+                        {selectedRequest.dueDate ? formatDateForDisplay(selectedRequest.dueDate) : '-'}
                       </Typography>
-                      <Chip label={`#${selectedRequest.id}`} size="small" variant="outlined" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">생성일</Typography>
+                      <Typography variant="body1">{formatDateTime(selectedRequest.createdAt)}</Typography>
                     </Box>
                   </Box>
                 </Box>
 
-                <Divider />
-
-                {/* Main Content Section */}
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                    <AssignmentIcon fontSize="small" />
-                    제목
-                  </Typography>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {selectedRequest.title}
-                  </Typography>
-
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                    <DescriptionIcon fontSize="small" />
-                    설명
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {selectedRequest.description || '설명이 제공되지 않았습니다'}
+                {selectedRequest.description && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">설명</Typography>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
+                      {selectedRequest.description}
                     </Typography>
-                  </Paper>
-                </Box>
+                  </Box>
+                )}
 
-                <Divider />
-
-                {/* Assignment & Project Info */}
-                <Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <PersonIcon fontSize="small" />
-                        요청자
+                {selectedRequest.resolutionNotes && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">처리 내용</Typography>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
+                      {selectedRequest.resolutionNotes}
+                    </Typography>
+                    {selectedRequest.hoursSpent && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        소요 시간: {selectedRequest.hoursSpent}시간
                       </Typography>
-                      <Chip
-                        label={selectedRequest.customerName}
-                        color="primary"
-                        variant="outlined"
-                        icon={<PersonIcon />}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <PersonIcon fontSize="small" />
-                        담당자
-                      </Typography>
-                      <Chip
-                        label={selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? selectedRequest.managerName : '미배정'}
-                        color={selectedRequest.managerName && selectedRequest.managerName.trim() !== '' ? 'success' : 'default'}
-                        variant="outlined"
-                        icon={<PersonIcon />}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <WorkIcon fontSize="small" />
-                        프로젝트
-                      </Typography>
-                      <Chip
-                        label={selectedRequest.projectName || '없음'}
-                        color={selectedRequest.projectName ? 'info' : 'default'}
-                        variant="outlined"
-                        icon={<WorkIcon />}
-                      />
-                    </Grid>
-                  </Grid>
-                </Box>
-
-                <Divider />
-
-                {/* Date Information */}
-                <Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <ScheduleIcon fontSize="small" />
-                        생성일
-                      </Typography>
-                      <Typography variant="body2">
-                        {formatDateTime(selectedRequest.createdAt)}
-                      </Typography>
-                    </Grid>
-                    {selectedRequest.dueDate && (
-                      <Grid item xs={6}>
-                        <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                          <CalendarIcon fontSize="small" />
-                          마감일
-                        </Typography>
-                        <Typography variant="body2" color="error.main" fontWeight="medium">
-                          {formatDateForDisplay(selectedRequest.dueDate)}
-                        </Typography>
-                      </Grid>
                     )}
-                    {selectedRequest.resolvedAt && (
-                      <Grid item xs={6}>
-                        <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                          <CompleteIcon fontSize="small" />
-                          해결일
-                        </Typography>
-                        <Typography variant="body2" color="success.main" fontWeight="medium">
-                          {new Date(selectedRequest.resolvedAt).toLocaleString()}
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-                </Box>
+                  </Box>
+                )}
 
-                {/* Resolution Information (if completed) */}
-                {(selectedRequest.hoursSpent || selectedRequest.resolutionNotes) && (
-                  <>
-                    <Divider />
-                    <Box>
-                      <Typography variant="subtitle1" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2, fontWeight: 'bold' }}>
-                        <CompleteIcon />
-                        처리 완료 정보
-                      </Typography>
-                      {selectedRequest.hoursSpent && (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <TimerIcon fontSize="small" />
-                            소요시간
+                {selectedAttachments.length > 0 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>첨부파일</Typography>
+                    <Divider sx={{ mb: 1 }} />
+                    {selectedAttachments.map((attachment) => (
+                      <Box
+                        key={attachment.id}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          p: 1,
+                          borderRadius: 1,
+                          '&:hover': { backgroundColor: 'action.hover' }
+                        }}
+                      >
+                        <Typography variant="body2">{attachment.originalFileName}</Typography>
+                        <Button
+                          size="small"
+                          startIcon={<DownloadIcon />}
+                          onClick={() => handleDownloadAttachment(attachment)}
+                        >
+                          다운로드
+                        </Button>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+                {selectedFollowUps.length > 0 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>후속 요청</Typography>
+                    <Divider sx={{ mb: 1 }} />
+                    {selectedFollowUps.map((followUp) => (
+                      <Box
+                        key={followUp.id}
+                        sx={{
+                          p: 1,
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          mb: 1
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            #{followUp.id} - {followUp.title}
                           </Typography>
                           <Chip
-                            label={`${selectedRequest.hoursSpent}시간`}
-                            color="success"
-                            icon={<TimerIcon />}
+                            label={followUp.status === 'OPEN' ? '열림' :
+                                   followUp.status === 'IN_PROGRESS' ? '진행중' :
+                                   followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
+                            size="small"
+                            color={followUp.status === 'RESOLVED' ? 'success' :
+                                   followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
                           />
                         </Box>
-                      )}
-                      {selectedRequest.resolutionNotes && (
-                        <Box>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <NotesIcon fontSize="small" />
-                            처리 내용
+                        {followUp.description && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            {followUp.description}
                           </Typography>
-                          <Paper variant="outlined" sx={{ p: 2, bgcolor: 'success.50' }}>
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                              {selectedRequest.resolutionNotes}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                      )}
-                    </Box>
-                  </>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
                 )}
               </Box>
             )}
           </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={() => setShowDetailDialog(false)} variant="outlined">
-              닫기
-            </Button>
+          <DialogActions>
+            <Button onClick={handleCloseDetail}>닫기</Button>
           </DialogActions>
         </Dialog>
 
         {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth>
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <DialogTitle>서비스 요청 완료</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>

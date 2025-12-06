@@ -28,6 +28,9 @@ public class ServiceRequestService {
     @Autowired
     private ProjectMapper projectMapper;
 
+    @Autowired
+    private AttachmentService attachmentService;
+
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -76,6 +79,12 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestDTO> getFollowUpRequests(Long parentId) {
+        return serviceRequestMapper.findByParentId(parentId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public ServiceRequest getServiceRequestEntityById(Long id) {
         return serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
@@ -114,6 +123,16 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+
+        // Link attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    attachmentService.linkToServiceRequest(serviceRequest.getId(), attachmentDTO.getId());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -149,6 +168,16 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+
+        // Link attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    attachmentService.linkToServiceRequest(serviceRequest.getId(), attachmentDTO.getId());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -203,6 +232,24 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Update attachments if provided
+        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
+                if (attachmentDTO.getId() != null) {
+                    // Check if attachment is already linked
+                    List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                        attachmentService.getAttachmentsByServiceRequestId(id);
+                    boolean alreadyLinked = existingAttachments.stream()
+                        .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
+
+                    if (!alreadyLinked) {
+                        attachmentService.linkToServiceRequest(id, attachmentDTO.getId());
+                    }
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -315,12 +362,21 @@ public class ServiceRequestService {
         }
 
         dto.setCreatedByUserId(serviceRequest.getCreatedByUserId());
+        dto.setParentId(serviceRequest.getParentId());
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
+
+        // Note: Attachments, comments, and follow-ups are loaded separately via dedicated API endpoints
+        // to avoid N+1 query issues and recursive loading problems.
+        // Frontend should call:
+        // - GET /api/attachments/service-request/{id}
+        // - GET /api/service-request-comments/service-request/{id}
+        // - GET /api/service-requests/{id}/follow-ups
+
         return dto;
     }
 
@@ -332,6 +388,7 @@ public class ServiceRequestService {
         serviceRequest.setPriority(dto.getPriority());
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
+        serviceRequest.setParentId(dto.getParentId());
         serviceRequest.setHoursSpent(dto.getHoursSpent());
         serviceRequest.setResolutionNotes(dto.getResolutionNotes());
         serviceRequest.setDueDate(dto.getDueDate());

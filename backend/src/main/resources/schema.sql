@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     manager_id BIGINT,
     project_id BIGINT,
     created_by_user_id BIGINT,
+    parent_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP,
@@ -68,7 +69,8 @@ CREATE TABLE IF NOT EXISTS service_requests (
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_id) REFERENCES service_requests(id) ON DELETE CASCADE
 );
 
 -- Create user_projects table for many-to-many relationship between users and projects
@@ -102,6 +104,30 @@ CREATE TABLE IF NOT EXISTS project_requests (
     FOREIGN KEY (approved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Create attachments table for file uploads
+CREATE TABLE IF NOT EXISTS attachments (
+    id BIGSERIAL PRIMARY KEY,
+    original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100),
+    uploaded_by_user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create service_request_attachments table (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS service_request_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    service_request_id BIGINT NOT NULL,
+    attachment_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+    FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
+    UNIQUE(service_request_id, attachment_id)
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -118,6 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(statu
 CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(priority);
 CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_requests(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_service_requests_due_date ON service_requests(due_date);
+CREATE INDEX IF NOT EXISTS idx_service_requests_parent_id ON service_requests(parent_id);
 CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON user_projects(user_id);
@@ -126,3 +153,10 @@ CREATE INDEX IF NOT EXISTS idx_project_requests_requested_by_user_id ON project_
 CREATE INDEX IF NOT EXISTS idx_project_requests_company_id ON project_requests(company_id);
 CREATE INDEX IF NOT EXISTS idx_project_requests_request_status ON project_requests(request_status);
 CREATE INDEX IF NOT EXISTS idx_project_requests_approved_by_user_id ON project_requests(approved_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_attachments_uploaded_by_user_id ON attachments(uploaded_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_comments_service_request_id ON service_request_comments(service_request_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_comments_user_id ON service_request_comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_attachments_service_request_id ON service_request_attachments(service_request_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_attachments_attachment_id ON service_request_attachments(attachment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_attachments_comment_id ON comment_attachments(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_attachments_attachment_id ON comment_attachments(attachment_id);

@@ -31,6 +31,8 @@ public class ServiceRequest {
 
     private Long createdByUserId;
 
+    private Long parentId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

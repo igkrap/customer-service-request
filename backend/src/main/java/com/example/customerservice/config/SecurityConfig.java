@@ -61,6 +61,9 @@ public class SecurityConfig {
                         // Service Request endpoints - require CUSTOMER, MANAGER, or ADMIN role
                         .requestMatchers("/api/service-requests/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
 
+                        // Attachment endpoints - require CUSTOMER, MANAGER, or ADMIN role
+                        .requestMatchers("/api/attachments/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
+
                         // Company endpoints - require authentication
                         // Additional @PreAuthorize("hasRole('ADMIN')") on CompanyController
                         .requestMatchers("/api/companies/**").authenticated()
