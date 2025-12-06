@@ -65,7 +65,27 @@ public class EmailService {
             helper.setFrom(settings.getFromEmail(), settings.getFromName() != null ? settings.getFromName() : settings.getFromEmail());
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(body, true); // true = HTML email
+
+            // Wrap body in complete HTML structure with UTF-8 charset for proper Korean rendering
+            String htmlBody = "<!DOCTYPE html>" +
+                    "<html lang=\"ko\">" +
+                    "<head>" +
+                    "<meta charset=\"UTF-8\">" +
+                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                    "<style>" +
+                    "body { font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; line-height: 1.6; color: #333; }" +
+                    "h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }" +
+                    "ul { list-style-type: none; padding-left: 0; }" +
+                    "li { padding: 5px 0; }" +
+                    "strong { color: #2980b9; }" +
+                    "</style>" +
+                    "</head>" +
+                    "<body>" +
+                    body +
+                    "</body>" +
+                    "</html>";
+
+            helper.setText(htmlBody, true); // true = HTML email
 
             log.info("Attempting to send email...");
             mailSender.send(message);
