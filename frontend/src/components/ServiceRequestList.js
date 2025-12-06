@@ -1163,7 +1163,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%', minHeight: 400 }}>
+        <Box sx={{ width: '100%', height: 600 }}>
           <DataGrid
             rows={requests}
             columns={columns}
@@ -1176,7 +1176,6 @@ function ServiceRequestList() {
               toolbar: CustomToolbar,
             }}
             sx={{
-              height: '100%',
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'
