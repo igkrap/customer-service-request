@@ -14,6 +14,7 @@ import AdminProjectMapping from './components/AdminProjectMapping';
 import ProjectRequestList from './components/ProjectRequestList';
 import ProjectRequestApproval from './components/ProjectRequestApproval';
 import ManagerMonthlyReport from './components/ManagerMonthlyReport';
+import EmailSettings from './components/EmailSettings';
 import {
   Box,
   Drawer,
@@ -78,6 +79,7 @@ function Dashboard() {
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
     { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
+    { key: 'emailsettings', label: '이메일 서버 설정', icon: <SettingsIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
@@ -91,6 +93,7 @@ function Dashboard() {
     if (activeTab === 'projects' && isAdmin) return <ProjectList />;
     if (activeTab === 'userprojects' && isAdmin) return <AdminProjectMapping />;
     if (activeTab === 'managerreport' && isAdmin) return <ManagerMonthlyReport />;
+    if (activeTab === 'emailsettings' && isAdmin) return <EmailSettings />;
     if (activeTab === 'profile') return <UserProfile />;
     return null;
   };

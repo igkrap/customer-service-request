@@ -128,6 +128,22 @@ CREATE TABLE IF NOT EXISTS service_request_attachments (
     UNIQUE(service_request_id, attachment_id)
 );
 
+-- Create email_settings table for SMTP configuration
+CREATE TABLE IF NOT EXISTS email_settings (
+    id BIGSERIAL PRIMARY KEY,
+    smtp_host VARCHAR(255) NOT NULL,
+    smtp_port INTEGER NOT NULL,
+    smtp_username VARCHAR(255) NOT NULL,
+    smtp_password VARCHAR(255) NOT NULL,
+    from_email VARCHAR(255) NOT NULL,
+    from_name VARCHAR(255),
+    use_tls BOOLEAN NOT NULL DEFAULT true,
+    use_ssl BOOLEAN NOT NULL DEFAULT false,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

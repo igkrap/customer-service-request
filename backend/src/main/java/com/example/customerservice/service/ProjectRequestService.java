@@ -33,6 +33,9 @@ public class ProjectRequestService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private EmailService emailService;
+
     public List<ProjectRequestDTO> getAllProjectRequests() {
         return projectRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -149,6 +152,13 @@ public class ProjectRequestService {
         projectRequest.setUpdatedAt(LocalDateTime.now());
 
         projectRequestMapper.updateStatus(projectRequest);
+
+        // Send email notification to requester
+        User requester = userMapper.findById(projectRequest.getRequestedByUserId()).orElse(null);
+        if (requester != null && requester.getEmail() != null) {
+            emailService.sendProjectRequestApprovedEmail(requester.getEmail(), projectRequest.getProjectName());
+        }
+
         return convertToDTO(projectRequest);
     }
 
@@ -166,6 +176,13 @@ public class ProjectRequestService {
         projectRequest.setUpdatedAt(LocalDateTime.now());
 
         projectRequestMapper.updateStatus(projectRequest);
+
+        // Send email notification to requester
+        User requester = userMapper.findById(projectRequest.getRequestedByUserId()).orElse(null);
+        if (requester != null && requester.getEmail() != null) {
+            emailService.sendProjectRequestRejectedEmail(requester.getEmail(), projectRequest.getProjectName(), approvalNotes);
+        }
+
         return convertToDTO(projectRequest);
     }
 

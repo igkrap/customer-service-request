@@ -27,6 +27,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private EmailService emailService;
+
     public List<UserDTO> getAllUsers() {
         return userMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -139,6 +142,12 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.update(user);
+
+        // Send email notification to user
+        if (user.getEmail() != null) {
+            emailService.sendUserApprovedEmail(user.getEmail(), user.getUsername());
+        }
+
         return convertToDTO(user);
     }
 
@@ -150,6 +159,12 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.update(user);
+
+        // Send email notification to user
+        if (user.getEmail() != null) {
+            emailService.sendUserRejectedEmail(user.getEmail(), user.getUsername());
+        }
+
         return convertToDTO(user);
     }
 
