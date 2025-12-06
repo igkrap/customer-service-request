@@ -79,6 +79,10 @@ public class SecurityConfig {
                         // Additional @PreAuthorize("hasRole('ADMIN')") on EmailSettingsController
                         .requestMatchers("/api/email-settings/**").authenticated()
 
+                        // Email templates endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on EmailTemplateController
+                        .requestMatchers("/api/email-templates/**").authenticated()
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );

@@ -2,6 +2,7 @@ package com.example.customerservice.service;
 
 import com.example.customerservice.mapper.EmailSettingsMapper;
 import com.example.customerservice.model.EmailSettings;
+import com.example.customerservice.model.EmailTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 @Service
@@ -18,6 +21,7 @@ import java.util.Properties;
 public class EmailService {
 
     private final EmailSettingsMapper emailSettingsMapper;
+    private final EmailTemplateService emailTemplateService;
 
     private JavaMailSenderImpl createMailSender(EmailSettings settings) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
@@ -76,18 +80,36 @@ public class EmailService {
     }
 
     public void sendTestEmail(String to) throws MessagingException {
-        String subject = "Test Email";
-        String body = "This is a test email. Your email configuration is working.";
-        sendEmail(to, subject, body);
+        try {
+            EmailTemplate template = emailTemplateService.getTemplateByCode("TEST_EMAIL");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("toEmail", to);
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
+            sendEmail(to, subject, body);
+        } catch (RuntimeException e) {
+            // Fallback if template not found
+            String subject = "Test Email";
+            String body = "This is a test email. Your email configuration is working.";
+            sendEmail(to, subject, body);
+        }
     }
 
     // Service Request Created - Notify Manager
     public void sendServiceRequestCreatedEmail(String managerEmail, String requestTitle, Long requestId) {
         try {
-            String subject = "New Request: " + requestTitle;
-            String body = "New service request ID " + requestId + " has been assigned to you.\nTitle: " + requestTitle;
+            EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_CREATED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("requestTitle", requestTitle);
+            variables.put("requestId", String.valueOf(requestId));
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(managerEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send service request created email", e);
         }
     }
@@ -95,10 +117,17 @@ public class EmailService {
     // Service Request Status Changed - Notify Customer
     public void sendServiceRequestStatusChangedEmail(String customerEmail, String requestTitle, String oldStatus, String newStatus) {
         try {
-            String subject = "Status Update: " + requestTitle;
-            String body = "Your service request status has been updated.\nTitle: " + requestTitle + "\nStatus: " + oldStatus + " -> " + newStatus;
+            EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_STATUS_CHANGED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("requestTitle", requestTitle);
+            variables.put("oldStatus", oldStatus);
+            variables.put("newStatus", newStatus);
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(customerEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send status changed email", e);
         }
     }
@@ -106,10 +135,16 @@ public class EmailService {
     // Service Request Resolved - Notify Customer
     public void sendServiceRequestResolvedEmail(String customerEmail, String requestTitle, String resolutionNotes) {
         try {
-            String subject = "Resolved: " + requestTitle;
-            String body = "Your service request has been resolved.\nTitle: " + requestTitle + "\nNotes: " + (resolutionNotes != null ? resolutionNotes : "N/A");
+            EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_RESOLVED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("requestTitle", requestTitle);
+            variables.put("resolutionNotes", resolutionNotes != null ? resolutionNotes : "N/A");
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(customerEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send request resolved email", e);
         }
     }
@@ -117,10 +152,15 @@ public class EmailService {
     // User Approved - Notify User
     public void sendUserApprovedEmail(String userEmail, String username) {
         try {
-            String subject = "Account Approved";
-            String body = "Hello " + username + ", your account has been approved. You can now log in.";
+            EmailTemplate template = emailTemplateService.getTemplateByCode("USER_APPROVED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("username", username);
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(userEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send user approved email", e);
         }
     }
@@ -128,10 +168,15 @@ public class EmailService {
     // User Rejected - Notify User
     public void sendUserRejectedEmail(String userEmail, String username) {
         try {
-            String subject = "Account Registration";
-            String body = "Hello " + username + ", your account registration has been rejected. Please contact the administrator.";
+            EmailTemplate template = emailTemplateService.getTemplateByCode("USER_REJECTED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("username", username);
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(userEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send user rejected email", e);
         }
     }
@@ -139,10 +184,15 @@ public class EmailService {
     // Project Request Approved - Notify Requester
     public void sendProjectRequestApprovedEmail(String requesterEmail, String projectName) {
         try {
-            String subject = "Project Approved: " + projectName;
-            String body = "Your project request has been approved.\nProject: " + projectName;
+            EmailTemplate template = emailTemplateService.getTemplateByCode("PROJECT_REQUEST_APPROVED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("projectName", projectName);
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(requesterEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send project approved email", e);
         }
     }
@@ -150,10 +200,16 @@ public class EmailService {
     // Project Request Rejected - Notify Requester
     public void sendProjectRequestRejectedEmail(String requesterEmail, String projectName, String approvalNotes) {
         try {
-            String subject = "Project Rejected: " + projectName;
-            String body = "Your project request has been rejected.\nProject: " + projectName + "\nReason: " + (approvalNotes != null ? approvalNotes : "N/A");
+            EmailTemplate template = emailTemplateService.getTemplateByCode("PROJECT_REQUEST_REJECTED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("projectName", projectName);
+            variables.put("approvalNotes", approvalNotes != null ? approvalNotes : "N/A");
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(requesterEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send project rejected email", e);
         }
     }
@@ -161,10 +217,16 @@ public class EmailService {
     // Manager Assigned - Notify Manager
     public void sendManagerAssignedEmail(String managerEmail, String requestTitle, Long requestId) {
         try {
-            String subject = "Assigned: " + requestTitle;
-            String body = "You have been assigned to service request ID " + requestId + ".\nTitle: " + requestTitle;
+            EmailTemplate template = emailTemplateService.getTemplateByCode("MANAGER_ASSIGNED");
+            Map<String, String> variables = new HashMap<>();
+            variables.put("requestTitle", requestTitle);
+            variables.put("requestId", String.valueOf(requestId));
+
+            String subject = emailTemplateService.processTemplate(template.getSubject(), variables);
+            String body = emailTemplateService.processTemplate(template.getBody(), variables);
+
             sendEmail(managerEmail, subject, body);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send manager assigned email", e);
         }
     }

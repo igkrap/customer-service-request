@@ -144,6 +144,20 @@ CREATE TABLE IF NOT EXISTS email_settings (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create email_templates table for customizable email templates
+CREATE TABLE IF NOT EXISTS email_templates (
+    id BIGSERIAL PRIMARY KEY,
+    template_code VARCHAR(100) NOT NULL UNIQUE,
+    template_name VARCHAR(255) NOT NULL,
+    subject VARCHAR(500) NOT NULL,
+    body TEXT NOT NULL,
+    description TEXT,
+    variables TEXT,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
