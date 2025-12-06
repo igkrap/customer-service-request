@@ -389,11 +389,6 @@ function ServiceRequestList() {
     }
   };
 
-  const handleRowClick = (params) => {
-    setSelectedRequest(params.row);
-    setShowDetailDialog(true);
-  };
-
   const canEditRequest = (request) => {
     if (user?.role === 'ROLE_ADMIN') return true;
     if (user?.role === 'ROLE_CUSTOMER' && request.customerId === user?.id) return true;
@@ -942,16 +937,11 @@ function ServiceRequestList() {
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
             autoHeight={false}
-            onRowClick={handleRowClick}
             getRowId={(row) => row.id}
             slots={{
               toolbar: CustomToolbar,
             }}
             sx={{
-              '& .MuiDataGrid-row:hover': {
-                cursor: 'pointer',
-                backgroundColor: 'action.hover'
-              }
             }}
           />
         </Box>
