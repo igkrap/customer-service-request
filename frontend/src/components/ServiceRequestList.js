@@ -760,8 +760,8 @@ function ServiceRequestList() {
   }
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 2, height: '100%', bgcolor: '#fafafa' }}>
+      <Paper elevation={2} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography
             variant="h5"
@@ -791,7 +791,7 @@ function ServiceRequestList() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
               {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
@@ -947,7 +947,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Detail View Dialog */}
-        <Dialog open={showDetailDialog} onClose={handleCloseDetail} maxWidth="md" fullWidth>
+        <Dialog open={showDetailDialog} onClose={handleCloseDetail} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <DialogTitle>
             서비스 요청 상세정보
             <IconButton
@@ -1120,7 +1120,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth>
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <DialogTitle>서비스 요청 완료</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
