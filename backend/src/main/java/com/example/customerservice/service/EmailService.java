@@ -82,6 +82,12 @@ public class EmailService {
     public void sendTestEmail(String to) throws MessagingException {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("TEST_EMAIL");
+
+            if (!template.getEnabled()) {
+                log.info("Template TEST_EMAIL is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("toEmail", to);
 
@@ -101,6 +107,12 @@ public class EmailService {
     public void sendServiceRequestCreatedEmail(String managerEmail, String requestTitle, Long requestId) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_CREATED");
+
+            if (!template.getEnabled()) {
+                log.info("Template SERVICE_REQUEST_CREATED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("requestTitle", requestTitle);
             variables.put("requestId", String.valueOf(requestId));
@@ -118,6 +130,12 @@ public class EmailService {
     public void sendServiceRequestStatusChangedEmail(String customerEmail, String requestTitle, String oldStatus, String newStatus) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_STATUS_CHANGED");
+
+            if (!template.getEnabled()) {
+                log.info("Template SERVICE_REQUEST_STATUS_CHANGED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("requestTitle", requestTitle);
             variables.put("oldStatus", oldStatus);
@@ -136,6 +154,12 @@ public class EmailService {
     public void sendServiceRequestResolvedEmail(String customerEmail, String requestTitle, String resolutionNotes) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("SERVICE_REQUEST_RESOLVED");
+
+            if (!template.getEnabled()) {
+                log.info("Template SERVICE_REQUEST_RESOLVED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("requestTitle", requestTitle);
             variables.put("resolutionNotes", resolutionNotes != null ? resolutionNotes : "N/A");
@@ -153,6 +177,12 @@ public class EmailService {
     public void sendUserApprovedEmail(String userEmail, String username) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("USER_APPROVED");
+
+            if (!template.getEnabled()) {
+                log.info("Template USER_APPROVED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("username", username);
 
@@ -169,6 +199,12 @@ public class EmailService {
     public void sendUserRejectedEmail(String userEmail, String username) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("USER_REJECTED");
+
+            if (!template.getEnabled()) {
+                log.info("Template USER_REJECTED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("username", username);
 
@@ -185,6 +221,12 @@ public class EmailService {
     public void sendProjectRequestApprovedEmail(String requesterEmail, String projectName) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("PROJECT_REQUEST_APPROVED");
+
+            if (!template.getEnabled()) {
+                log.info("Template PROJECT_REQUEST_APPROVED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("projectName", projectName);
 
@@ -201,6 +243,12 @@ public class EmailService {
     public void sendProjectRequestRejectedEmail(String requesterEmail, String projectName, String approvalNotes) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("PROJECT_REQUEST_REJECTED");
+
+            if (!template.getEnabled()) {
+                log.info("Template PROJECT_REQUEST_REJECTED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("projectName", projectName);
             variables.put("approvalNotes", approvalNotes != null ? approvalNotes : "N/A");
@@ -218,6 +266,12 @@ public class EmailService {
     public void sendManagerAssignedEmail(String managerEmail, String requestTitle, Long requestId) {
         try {
             EmailTemplate template = emailTemplateService.getTemplateByCode("MANAGER_ASSIGNED");
+
+            if (!template.getEnabled()) {
+                log.info("Template MANAGER_ASSIGNED is disabled. Email not sent.");
+                return;
+            }
+
             Map<String, String> variables = new HashMap<>();
             variables.put("requestTitle", requestTitle);
             variables.put("requestId", String.valueOf(requestId));
