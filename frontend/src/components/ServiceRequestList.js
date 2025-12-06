@@ -1167,16 +1167,22 @@ function ServiceRequestList() {
           <DataGrid
             rows={requests}
             columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10, 25, 50]}
-            disableSelectionOnClick
-            autoHeight={false}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10 },
+              },
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}
             slots={{
               toolbar: CustomToolbar,
             }}
+            showToolbar
             sx={{
+              height: '100%',
+              minHeight: 500,
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'

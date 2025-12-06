@@ -546,6 +546,7 @@ function UserList() {
             slots={{
               toolbar: CustomToolbar,
             }}
+            showToolbar
             sx={{ height: '100%' }}
           />
         </Box>

@@ -585,6 +585,7 @@ function ManagerMonthlyReport() {
               slots={{
                 toolbar: CustomToolbar,
               }}
+              showToolbar
               getCellClassName={(params) => {
                 // 회사명 셀 병합 스타일
                 if (params.field === 'companyName') {
