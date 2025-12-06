@@ -1163,20 +1163,20 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%', minHeight: 400 }}>
           <DataGrid
             rows={requests}
             columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10, 25, 50]}
             disableSelectionOnClick
-            autoHeight={false}
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}
             slots={{
               toolbar: CustomToolbar,
             }}
             sx={{
+              height: '100%',
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'
