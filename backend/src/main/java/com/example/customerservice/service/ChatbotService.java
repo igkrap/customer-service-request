@@ -23,10 +23,11 @@ public class ChatbotService {
 
     private final LlmConfigurationMapper llmConfigurationMapper;
     private final RagDocumentMapper ragDocumentMapper;
+    private final ChatbotContextService contextService;
     private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
 
-    public ChatResponse chat(ChatRequest request) {
+    public ChatResponse chat(ChatRequest request, String userId) {
         try {
             // 1. Get active LLM configuration
             LlmConfiguration config = llmConfigurationMapper.getActiveLlmConfiguration();
@@ -42,13 +43,17 @@ public class ChatbotService {
             String embeddingStr = arrayToVectorString(paddedEmbedding);
             List<RagDocument> similarDocs = ragDocumentMapper.findSimilarDocuments(embeddingStr, queryEmbedding.length, 3);
 
-            // 4. Build context from RAG documents
-            String context = buildContext(similarDocs);
+            // 4. Get database context based on user query
+            String dbContext = contextService.getDatabaseContext(request.getMessage(), userId);
 
-            // 5. Generate response using LLM with RAG context
-            String llmResponse = generateLlmResponse(request.getMessage(), context, config);
+            // 5. Build context from RAG documents and database
+            String ragContext = buildContext(similarDocs);
+            String fullContext = ragContext + dbContext;
 
-            // 6. Extract sources
+            // 6. Generate response using LLM with full context
+            String llmResponse = generateLlmResponse(request.getMessage(), fullContext, config);
+
+            // 7. Extract sources
             List<String> sources = similarDocs.stream()
                     .map(RagDocument::getTitle)
                     .collect(Collectors.toList());
@@ -121,8 +126,10 @@ public class ChatbotService {
 
             // Build system prompt
             String systemPrompt = "당신은 고객 서비스 지원 AI 어시스턴트입니다. " +
-                    "제공된 참고 자료를 바탕으로 사용자의 질문에 정확하고 친절하게 답변해주세요. " +
-                    "참고 자료에 없는 내용은 답변하지 말고, 모르는 내용은 솔직하게 모른다고 답변하세요.";
+                    "제공된 참고 자료에는 시스템 사용 가이드(FAQ)와 사용자의 실시간 데이터(서비스 요청, 프로젝트 목록 등)가 포함되어 있습니다. " +
+                    "이 정보를 바탕으로 사용자의 질문에 정확하고 친절하게 답변해주세요. " +
+                    "참고 자료에 없는 내용은 답변하지 말고, 모르는 내용은 솔직하게 모른다고 답변하세요. " +
+                    "실시간 데이터가 제공된 경우, 구체적인 수치와 상태를 포함하여 답변해주세요.";
 
             String userPrompt = String.format("%s\n\n사용자 질문: %s", context, userQuery);
 
