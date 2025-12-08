@@ -9,3 +9,6 @@
 INSERT INTO companies (company_name, company_code, business_number, created_at, updated_at)
 VALUES ('TEST', 'ACME', '123-45-67890', '2025-10-28 10:30:00', '2025-10-28 10:30:00')
 ON CONFLICT (company_code) DO NOTHING;
+
+-- Email templates are initialized by Spring Boot DataInitializer
+-- See: com.example.customerservice.config.DataInitializer

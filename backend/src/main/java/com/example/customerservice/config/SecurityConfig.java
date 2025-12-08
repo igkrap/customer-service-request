@@ -72,6 +72,17 @@ public class SecurityConfig {
                         // Additional @PreAuthorize("hasRole('ADMIN')") on ProjectController
                         .requestMatchers("/api/projects/**").authenticated()
 
+                        // Project Request endpoints - require authentication
+                        .requestMatchers("/api/project-requests/**").authenticated()
+
+                        // Email settings endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on EmailSettingsController
+                        .requestMatchers("/api/email-settings/**").authenticated()
+
+                        // Email templates endpoints - require authentication
+                        // Additional @PreAuthorize("hasRole('ADMIN')") on EmailTemplateController
+                        .requestMatchers("/api/email-templates/**").authenticated()
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );

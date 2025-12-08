@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.customerservice.mapper.EmailSettingsMapper">
+
+    <resultMap id="EmailSettingsResultMap" type="com.example.customerservice.model.EmailSettings">
+        <id property="id" column="id"/>
+        <result property="smtpHost" column="smtp_host"/>
+        <result property="smtpPort" column="smtp_port"/>
+        <result property="smtpUsername" column="smtp_username"/>
+        <result property="smtpPassword" column="smtp_password"/>
+        <result property="fromEmail" column="from_email"/>
+        <result property="fromName" column="from_name"/>
+        <result property="useTls" column="use_tls"/>
+        <result property="useSsl" column="use_ssl"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insertEmailSettings" parameterType="com.example.customerservice.model.EmailSettings"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO email_settings (smtp_host, smtp_port, smtp_username, smtp_password, from_email,
+                                     from_name, use_tls, use_ssl, enabled, created_at, updated_at)
+        VALUES (#{smtpHost}, #{smtpPort}, #{smtpUsername}, #{smtpPassword}, #{fromEmail},
+                #{fromName}, #{useTls}, #{useSsl}, #{enabled}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+
+    <select id="getEmailSettingsById" resultMap="EmailSettingsResultMap">
+        SELECT * FROM email_settings WHERE id = #{id}
+    </select>
+
+    <select id="getActiveEmailSettings" resultMap="EmailSettingsResultMap">
+        SELECT * FROM email_settings WHERE enabled = true ORDER BY id DESC LIMIT 1
+    </select>
+
+    <select id="getAllEmailSettings" resultMap="EmailSettingsResultMap">
+        SELECT * FROM email_settings ORDER BY id DESC
+    </select>
+
+    <update id="updateEmailSettings" parameterType="com.example.customerservice.model.EmailSettings">
+        UPDATE email_settings
+        SET smtp_host = #{smtpHost},
+            smtp_port = #{smtpPort},
+            smtp_username = #{smtpUsername},
+            smtp_password = #{smtpPassword},
+            from_email = #{fromEmail},
+            from_name = #{fromName},
+            use_tls = #{useTls},
+            use_ssl = #{useSsl},
+            enabled = #{enabled},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteEmailSettings">
+        DELETE FROM email_settings WHERE id = #{id}
+    </delete>
+
+</mapper>

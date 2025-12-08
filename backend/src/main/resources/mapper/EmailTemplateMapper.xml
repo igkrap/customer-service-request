@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.customerservice.mapper.EmailTemplateMapper">
+
+    <resultMap id="EmailTemplateResultMap" type="com.example.customerservice.model.EmailTemplate">
+        <id property="id" column="id"/>
+        <result property="templateCode" column="template_code"/>
+        <result property="templateName" column="template_name"/>
+        <result property="subject" column="subject"/>
+        <result property="body" column="body"/>
+        <result property="description" column="description"/>
+        <result property="variables" column="variables"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.example.customerservice.model.EmailTemplate"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO email_templates (template_code, template_name, subject, body, description,
+                                      variables, enabled, created_at, updated_at)
+        VALUES (#{templateCode}, #{templateName}, #{subject}, #{body}, #{description},
+                #{variables}, #{enabled}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+
+    <select id="findById" resultMap="EmailTemplateResultMap">
+        SELECT * FROM email_templates WHERE id = #{id}
+    </select>
+
+    <select id="findByTemplateCode" resultMap="EmailTemplateResultMap">
+        SELECT * FROM email_templates WHERE template_code = #{templateCode}
+    </select>
+
+    <select id="findAll" resultMap="EmailTemplateResultMap">
+        SELECT * FROM email_templates ORDER BY template_code
+    </select>
+
+    <update id="update" parameterType="com.example.customerservice.model.EmailTemplate">
+        UPDATE email_templates
+        SET template_name = #{templateName},
+            subject = #{subject},
+            body = #{body},
+            description = #{description},
+            variables = #{variables},
+            enabled = #{enabled},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM email_templates WHERE id = #{id}
+    </delete>
+
+</mapper>

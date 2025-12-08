@@ -31,6 +31,9 @@ public class ServiceRequestService {
     @Autowired
     private AttachmentService attachmentService;
 
+    @Autowired
+    private EmailService emailService;
+
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -133,6 +136,14 @@ public class ServiceRequestService {
             }
         }
 
+        // Send email notification to manager if assigned
+        if (dto.getManagerId() != null) {
+            User manager = userMapper.findById(dto.getManagerId()).orElse(null);
+            if (manager != null && manager.getEmail() != null) {
+                emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -178,6 +189,14 @@ public class ServiceRequestService {
             }
         }
 
+        // Send email notification to manager if assigned
+        if (dto.getManagerId() != null) {
+            User manager = userMapper.findById(dto.getManagerId()).orElse(null);
+            if (manager != null && manager.getEmail() != null) {
+                emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -186,6 +205,7 @@ public class ServiceRequestService {
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
         ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+        Long oldManagerId = serviceRequest.getManagerId();
 
         serviceRequest.setTitle(dto.getTitle());
         serviceRequest.setDescription(dto.getDescription());
@@ -250,6 +270,28 @@ public class ServiceRequestService {
             }
         }
 
+        // Send email notifications
+        // 1. If manager changed, notify new manager
+        if (dto.getManagerId() != null && !dto.getManagerId().equals(oldManagerId)) {
+            User manager = userMapper.findById(dto.getManagerId()).orElse(null);
+            if (manager != null && manager.getEmail() != null) {
+                emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+        }
+
+        // 2. If status changed, notify customer
+        if (dto.getStatus() != oldStatus) {
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null && customer.getEmail() != null) {
+                if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
+                    emailService.sendServiceRequestResolvedEmail(customer.getEmail(), serviceRequest.getTitle(), serviceRequest.getResolutionNotes());
+                } else {
+                    emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
+                        oldStatus != null ? oldStatus.name() : "UNKNOWN", dto.getStatus().name());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -283,6 +325,20 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Send email notification to customer if status changed
+        if (status != oldStatus) {
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null && customer.getEmail() != null) {
+                if (status == ServiceRequest.RequestStatus.RESOLVED) {
+                    emailService.sendServiceRequestResolvedEmail(customer.getEmail(), serviceRequest.getTitle(), serviceRequest.getResolutionNotes());
+                } else {
+                    emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
+                        oldStatus != null ? oldStatus.name() : "UNKNOWN", status.name());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -315,6 +371,29 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Send email notifications
+        // 1. If manager assigned, notify manager
+        if (status == ServiceRequest.RequestStatus.IN_PROGRESS && oldStatus != ServiceRequest.RequestStatus.IN_PROGRESS && managerId != null) {
+            User manager = userMapper.findById(managerId).orElse(null);
+            if (manager != null && manager.getEmail() != null) {
+                emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+        }
+
+        // 2. If status changed, notify customer
+        if (status != oldStatus) {
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null && customer.getEmail() != null) {
+                if (status == ServiceRequest.RequestStatus.RESOLVED) {
+                    emailService.sendServiceRequestResolvedEmail(customer.getEmail(), serviceRequest.getTitle(), serviceRequest.getResolutionNotes());
+                } else {
+                    emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
+                        oldStatus != null ? oldStatus.name() : "UNKNOWN", status.name());
+                }
+            }
+        }
+
         return convertToDTO(serviceRequest);
     }
 
