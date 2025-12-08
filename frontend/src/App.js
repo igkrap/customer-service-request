@@ -16,6 +16,9 @@ import ProjectRequestApproval from './components/ProjectRequestApproval';
 import ManagerMonthlyReport from './components/ManagerMonthlyReport';
 import EmailSettings from './components/EmailSettings';
 import EmailTemplates from './components/EmailTemplates';
+import ChatBot from './components/ChatBot';
+import LlmSettings from './components/LlmSettings';
+import RagManagement from './components/RagManagement';
 import {
   Box,
   Drawer,
@@ -46,7 +49,10 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Settings as SettingsIcon,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  Chat as ChatIcon,
+  SmartToy as AiIcon,
+  Storage as StorageIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -71,6 +77,7 @@ function Dashboard() {
 
   const menuItems = [
     { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
+    { key: 'chatbot', label: 'AI 챗봇', icon: <ChatIcon />, show: true },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
@@ -82,10 +89,13 @@ function Dashboard() {
     { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
     { key: 'emailsettings', label: '이메일 서버 설정', icon: <SettingsIcon />, show: isAdmin },
     { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <SettingsIcon />, show: isAdmin },
+    { key: 'llmsettings', label: 'LLM 설정', icon: <AiIcon />, show: isAdmin },
+    { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <StorageIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
     if (activeTab === 'home') return <DashboardHome />;
+    if (activeTab === 'chatbot') return <ChatBot />;
     if (activeTab === 'requests') return <ServiceRequestList />;
     if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
     if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
@@ -97,6 +107,8 @@ function Dashboard() {
     if (activeTab === 'managerreport' && isAdmin) return <ManagerMonthlyReport />;
     if (activeTab === 'emailsettings' && isAdmin) return <EmailSettings />;
     if (activeTab === 'emailtemplates' && isAdmin) return <EmailTemplates />;
+    if (activeTab === 'llmsettings' && isAdmin) return <LlmSettings />;
+    if (activeTab === 'ragmanagement' && isAdmin) return <RagManagement />;
     if (activeTab === 'profile') return <UserProfile />;
     return null;
   };
