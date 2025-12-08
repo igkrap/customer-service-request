@@ -36,10 +36,11 @@ public class ChatbotService {
 
             // 2. Generate embedding for user query
             float[] queryEmbedding = generateEmbedding(request.getMessage(), config);
+            float[] paddedEmbedding = padEmbedding(queryEmbedding, 3072); // Pad to match DB dimension
 
-            // 3. Search for similar documents in RAG database
-            String embeddingStr = arrayToVectorString(queryEmbedding);
-            List<RagDocument> similarDocs = ragDocumentMapper.findSimilarDocuments(embeddingStr, 3);
+            // 3. Search for similar documents in RAG database (same dimension only)
+            String embeddingStr = arrayToVectorString(paddedEmbedding);
+            List<RagDocument> similarDocs = ragDocumentMapper.findSimilarDocuments(embeddingStr, queryEmbedding.length, 3);
 
             // 4. Build context from RAG documents
             String context = buildContext(similarDocs);
@@ -71,7 +72,7 @@ public class ChatbotService {
             // Build request for embedding endpoint (assuming OpenAI-compatible API)
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("input", text);
-            requestBody.put("model", config.getModelName());
+            requestBody.put("model", config.getEmbeddingModelName());
 
             String response = webClient.post()
                     .uri(config.getApiEndpoint() + "/embeddings")
@@ -160,5 +161,17 @@ public class ChatbotService {
         return "[" + Arrays.stream(array)
                 .mapToObj(String::valueOf)
                 .collect(Collectors.joining(",")) + "]";
+    }
+
+    // Pad embedding to target dimension with zeros
+    private float[] padEmbedding(float[] embedding, int targetDimension) {
+        if (embedding.length >= targetDimension) {
+            return embedding;
+        }
+
+        float[] paddedEmbedding = new float[targetDimension];
+        System.arraycopy(embedding, 0, paddedEmbedding, 0, embedding.length);
+        // Remaining elements are automatically 0 in Java
+        return paddedEmbedding;
     }
 }

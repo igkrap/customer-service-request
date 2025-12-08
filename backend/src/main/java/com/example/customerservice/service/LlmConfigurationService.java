@@ -20,6 +20,8 @@ public class LlmConfigurationService {
         LlmConfiguration config = new LlmConfiguration();
         config.setApiEndpoint(dto.getApiEndpoint());
         config.setModelName(dto.getModelName());
+        config.setEmbeddingModelName(dto.getEmbeddingModelName());
+        config.setEmbeddingDimension(dto.getEmbeddingDimension() != null ? dto.getEmbeddingDimension() : 1536);
         config.setApiKey(dto.getApiKey());
         config.setTemperature(dto.getTemperature() != null ? dto.getTemperature() : 0.7);
         config.setMaxTokens(dto.getMaxTokens() != null ? dto.getMaxTokens() : 2000);
@@ -51,6 +53,8 @@ public class LlmConfigurationService {
 
         config.setApiEndpoint(dto.getApiEndpoint());
         config.setModelName(dto.getModelName());
+        config.setEmbeddingModelName(dto.getEmbeddingModelName());
+        config.setEmbeddingDimension(dto.getEmbeddingDimension());
         config.setApiKey(dto.getApiKey());
         config.setTemperature(dto.getTemperature());
         config.setMaxTokens(dto.getMaxTokens());

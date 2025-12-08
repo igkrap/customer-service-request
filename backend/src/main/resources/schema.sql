@@ -199,6 +199,8 @@ CREATE TABLE IF NOT EXISTS llm_configurations (
     id BIGSERIAL PRIMARY KEY,
     api_endpoint VARCHAR(500) NOT NULL,
     model_name VARCHAR(255) NOT NULL,
+    embedding_model_name VARCHAR(255) NOT NULL,
+    embedding_dimension INTEGER NOT NULL DEFAULT 1536,
     api_key VARCHAR(500),
     temperature DOUBLE PRECISION DEFAULT 0.7,
     max_tokens INTEGER DEFAULT 2000,
@@ -209,11 +211,13 @@ CREATE TABLE IF NOT EXISTS llm_configurations (
 );
 
 -- Create rag_documents table for knowledge base with vector embeddings
+-- Using vector(3072) to support various embedding models (768, 1536, 3072 dimensions)
 CREATE TABLE IF NOT EXISTS rag_documents (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
     content TEXT NOT NULL,
-    embedding vector(1536),
+    embedding vector(3072),
+    embedding_dimension INTEGER NOT NULL DEFAULT 1536,
     metadata JSONB,
     category VARCHAR(100),
     enabled BOOLEAN NOT NULL DEFAULT true,

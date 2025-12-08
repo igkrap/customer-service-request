@@ -31,13 +31,20 @@ public class RagDocumentService {
 
     @Transactional
     public RagDocument createRagDocument(RagDocumentDTO dto, Long userId) {
+        // Get active LLM configuration for embedding dimension
+        LlmConfiguration config = llmConfigurationMapper.getActiveLlmConfiguration();
+        if (config == null) {
+            throw new RuntimeException("No active LLM configuration found. Please configure LLM settings first.");
+        }
+
         // Generate embedding for the document content
-        float[] embedding = generateEmbedding(dto.getContent());
+        float[] embedding = generateEmbedding(dto.getContent(), config);
 
         RagDocument document = new RagDocument();
         document.setTitle(dto.getTitle());
         document.setContent(dto.getContent());
-        document.setEmbedding(embedding);
+        document.setEmbedding(padEmbedding(embedding, 3072)); // Pad to max dimension
+        document.setEmbeddingDimension(embedding.length); // Store actual dimension
         document.setCategory(dto.getCategory());
         document.setEnabled(dto.getEnabled() != null ? dto.getEnabled() : true);
         document.setUploadedByUserId(userId);
@@ -71,8 +78,14 @@ public class RagDocumentService {
 
         // Regenerate embedding if content changed
         if (!document.getContent().equals(dto.getContent())) {
-            float[] embedding = generateEmbedding(dto.getContent());
-            document.setEmbedding(embedding);
+            LlmConfiguration config = llmConfigurationMapper.getActiveLlmConfiguration();
+            if (config == null) {
+                throw new RuntimeException("No active LLM configuration found. Please configure LLM settings first.");
+            }
+
+            float[] embedding = generateEmbedding(dto.getContent(), config);
+            document.setEmbedding(padEmbedding(embedding, 3072)); // Pad to max dimension
+            document.setEmbeddingDimension(embedding.length); // Store actual dimension
         }
 
         document.setTitle(dto.getTitle());
@@ -89,19 +102,13 @@ public class RagDocumentService {
         ragDocumentMapper.deleteRagDocument(id);
     }
 
-    private float[] generateEmbedding(String text) {
+    private float[] generateEmbedding(String text, LlmConfiguration config) {
         try {
-            LlmConfiguration config = llmConfigurationMapper.getActiveLlmConfiguration();
-            if (config == null) {
-                log.warn("No active LLM configuration found, using zero vector");
-                return new float[1536];
-            }
-
             WebClient webClient = webClientBuilder.build();
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("input", text);
-            requestBody.put("model", config.getModelName());
+            requestBody.put("model", config.getEmbeddingModelName());
 
             String response = webClient.post()
                     .uri(config.getApiEndpoint() + "/embeddings")
@@ -124,7 +131,19 @@ public class RagDocumentService {
 
         } catch (Exception e) {
             log.error("Error generating embedding: ", e);
-            return new float[1536]; // Return zero vector as fallback
+            throw new RuntimeException("Failed to generate embedding: " + e.getMessage());
         }
+    }
+
+    // Pad embedding to target dimension with zeros
+    private float[] padEmbedding(float[] embedding, int targetDimension) {
+        if (embedding.length >= targetDimension) {
+            return embedding;
+        }
+
+        float[] paddedEmbedding = new float[targetDimension];
+        System.arraycopy(embedding, 0, paddedEmbedding, 0, embedding.length);
+        // Remaining elements are automatically 0 in Java
+        return paddedEmbedding;
     }
 }

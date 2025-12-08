@@ -8,8 +8,8 @@ import java.util.List;
 @Mapper
 public interface LlmConfigurationMapper {
 
-    @Insert("INSERT INTO llm_configurations (api_endpoint, model_name, api_key, temperature, max_tokens, top_p, enabled, created_at, updated_at) " +
-            "VALUES (#{apiEndpoint}, #{modelName}, #{apiKey}, #{temperature}, #{maxTokens}, #{topP}, #{enabled}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    @Insert("INSERT INTO llm_configurations (api_endpoint, model_name, embedding_model_name, embedding_dimension, api_key, temperature, max_tokens, top_p, enabled, created_at, updated_at) " +
+            "VALUES (#{apiEndpoint}, #{modelName}, #{embeddingModelName}, #{embeddingDimension}, #{apiKey}, #{temperature}, #{maxTokens}, #{topP}, #{enabled}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertLlmConfiguration(LlmConfiguration llmConfiguration);
 
@@ -25,6 +25,8 @@ public interface LlmConfigurationMapper {
     @Update("UPDATE llm_configurations SET " +
             "api_endpoint = #{apiEndpoint}, " +
             "model_name = #{modelName}, " +
+            "embedding_model_name = #{embeddingModelName}, " +
+            "embedding_dimension = #{embeddingDimension}, " +
             "api_key = #{apiKey}, " +
             "temperature = #{temperature}, " +
             "max_tokens = #{maxTokens}, " +

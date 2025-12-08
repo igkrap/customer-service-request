@@ -13,6 +13,8 @@ public class LlmConfiguration {
     private Long id;
     private String apiEndpoint;
     private String modelName;
+    private String embeddingModelName;
+    private Integer embeddingDimension;
     private String apiKey;
     private Double temperature;
     private Integer maxTokens;

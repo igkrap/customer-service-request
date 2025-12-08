@@ -14,6 +14,7 @@ public class RagDocument {
     private String title;
     private String content;
     private float[] embedding; // pgvector embedding
+    private Integer embeddingDimension; // actual dimension used (768, 1536, 3072 etc.)
     private String metadata; // JSON string
     private String category;
     private Boolean enabled;

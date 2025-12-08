@@ -35,6 +35,8 @@ function LlmSettings() {
   const [currentConfig, setCurrentConfig] = useState({
     apiEndpoint: '',
     modelName: '',
+    embeddingModelName: '',
+    embeddingDimension: 1536,
     apiKey: '',
     temperature: 0.7,
     maxTokens: 2000,
@@ -144,6 +146,8 @@ function LlmSettings() {
     setCurrentConfig({
       apiEndpoint: '',
       modelName: '',
+      embeddingModelName: '',
+      embeddingDimension: 1536,
       apiKey: '',
       temperature: 0.7,
       maxTokens: 2000,
@@ -207,6 +211,31 @@ function LlmSettings() {
             />
           </Grid>
 
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="임베딩 모델 이름"
+              value={currentConfig.embeddingModelName}
+              onChange={handleChange('embeddingModelName')}
+              placeholder="nomic-embed-text, text-embedding-ada-002 등"
+              helperText="벡터 임베딩 전용 모델"
+              required
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="임베딩 차원"
+              type="number"
+              value={currentConfig.embeddingDimension}
+              onChange={handleChange('embeddingDimension')}
+              inputProps={{ min: 384, max: 3072, step: 1 }}
+              helperText="768 (nomic), 1536 (ada-002), 3072 (text-embedding-3-large)"
+              required
+            />
+          </Grid>
+
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -261,7 +290,7 @@ function LlmSettings() {
                 variant="contained"
                 startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
                 onClick={handleSave}
-                disabled={saving || !currentConfig.apiEndpoint || !currentConfig.modelName}
+                disabled={saving || !currentConfig.apiEndpoint || !currentConfig.modelName || !currentConfig.embeddingModelName}
               >
                 {editMode ? '수정' : '저장'}
               </Button>
@@ -290,9 +319,9 @@ function LlmSettings() {
               <TableHead>
                 <TableRow>
                   <TableCell>API 엔드포인트</TableCell>
-                  <TableCell>모델</TableCell>
-                  <TableCell>Temperature</TableCell>
-                  <TableCell>Max Tokens</TableCell>
+                  <TableCell>채팅 모델</TableCell>
+                  <TableCell>임베딩 모델</TableCell>
+                  <TableCell>차원</TableCell>
                   <TableCell>상태</TableCell>
                   <TableCell align="right">작업</TableCell>
                 </TableRow>
@@ -309,8 +338,8 @@ function LlmSettings() {
                     <TableRow key={config.id}>
                       <TableCell>{config.apiEndpoint}</TableCell>
                       <TableCell>{config.modelName}</TableCell>
-                      <TableCell>{config.temperature}</TableCell>
-                      <TableCell>{config.maxTokens}</TableCell>
+                      <TableCell>{config.embeddingModelName}</TableCell>
+                      <TableCell>{config.embeddingDimension}</TableCell>
                       <TableCell>
                         <Chip
                           label={config.enabled ? '활성화' : '비활성화'}
