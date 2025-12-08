@@ -41,6 +41,7 @@ public class Project {
 
     public enum ServiceType {
         MAINTENANCE,        // 유지보수
-        DEFECT_REPAIR      // 하자보수
+        DEFECT_REPAIR,      // 하자보수
+        ETC                 // 기타
     }
 }
