@@ -50,8 +50,6 @@ import {
   AccountTree as MappingIcon,
   Person as ProfileIcon,
   Logout as LogoutIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   Settings as SettingsIcon,
   Assessment as AssessmentIcon,
   Chat as ChatIcon,
@@ -71,7 +69,7 @@ function Dashboard() {
   const isManager = user?.role === 'ROLE_MANAGER';
   const isCustomerOrManager = isCustomer || isManager;
   const [activeTab, setActiveTab] = useState('home');
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const getRoleText = () => {
@@ -143,7 +141,7 @@ function Dashboard() {
           <Box
             sx={{
               display: 'flex',
-              justifyContent: drawerOpen ? 'space-between' : 'center',
+              justifyContent: 'center',
               alignItems: 'center',
               px: drawerOpen ? 2 : 1,
               minHeight: 80, // Fixed height
@@ -151,7 +149,7 @@ function Dashboard() {
             }}
           >
             {drawerOpen && (
-              <Box sx={{ minHeight: 56 }}> {/* Fixed height for user info */}
+              <Box sx={{ minHeight: 56, width: '100%' }}> {/* Fixed height for user info */}
                 <Chip
                   label={getRoleText()}
                   color="primary"
@@ -173,15 +171,6 @@ function Dashboard() {
                 </Typography>
               </Box>
             )}
-            <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="right">
-              <IconButton
-                onClick={() => setDrawerOpen(!drawerOpen)}
-                size="small"
-                sx={{ minHeight: 40, minWidth: 40 }} // Fixed button size
-              >
-                {drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-              </IconButton>
-            </Tooltip>
           </Box>
           <Divider />
           <List>
@@ -286,10 +275,10 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           p: 1,
-          width: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)`,
+          ml: `${collapsedDrawerWidth}px`,
+          width: `calc(100% - ${collapsedDrawerWidth}px)`,
           height: '100%',
-          overflow: 'auto',
-          transition: 'width 0.3s ease'
+          overflow: 'auto'
         }}
       >
         <Fade in={true} timeout={300} key={activeTab}>
