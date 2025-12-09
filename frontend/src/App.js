@@ -77,10 +77,6 @@ function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
 
-  console.log('Dashboard user:', user);
-  console.log('Profile picture ID from user:', user?.profilePictureId);
-  console.log('Profile picture URL:', getProfilePictureUrl(user?.profilePictureId));
-
   const getRoleText = () => {
     if (isAdmin) return '관리자';
     if (isManager) return '매니저';

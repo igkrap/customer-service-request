@@ -31,9 +31,6 @@ function Login() {
       const response = await authAPI.login(formData);
       const { token, id, userId, username, email, role, profilePictureId } = response.data;
 
-      console.log('Login response:', response.data);
-      console.log('Profile picture ID:', profilePictureId);
-
       login({ id, userId, username, email, role, profilePictureId }, token);
       navigate('/');
     } catch (err) {
