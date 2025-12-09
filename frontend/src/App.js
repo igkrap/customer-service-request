@@ -127,11 +127,16 @@ function Dashboard() {
             width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
             transition: 'width 0.3s ease',
-            overflowX: 'hidden'
+            overflowX: 'hidden',
+            position: 'fixed',
+            height: '100vh',
+            zIndex: 1200,
           },
         }}
         variant="permanent"
         anchor="left"
+        onMouseEnter={() => setDrawerOpen(true)}
+        onMouseLeave={() => setDrawerOpen(false)}
       >
         <Box sx={{ overflow: 'auto', mt: 4 }}>
           {/* User Info Section with Fixed Height */}
