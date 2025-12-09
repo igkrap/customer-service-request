@@ -119,24 +119,6 @@ function Dashboard() {
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 1,
-          width: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)`,
-          height: '100%',
-          overflow: 'auto',
-          transition: 'width 0.3s ease'
-        }}
-      >
-        <Fade in={true} timeout={300} key={activeTab}>
-          <Box sx={{ height: '100%' }}>
-            {renderContent()}
-          </Box>
-        </Fade>
-      </Box>
-
       <Drawer
         sx={{
           width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
@@ -149,7 +131,7 @@ function Dashboard() {
           },
         }}
         variant="permanent"
-        anchor="right"
+        anchor="left"
       >
         <Box sx={{ overflow: 'auto', mt: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: drawerOpen ? 'space-between' : 'center', alignItems: 'center', px: drawerOpen ? 2 : 1, pb: 2 }}>
@@ -166,9 +148,9 @@ function Dashboard() {
                 </Typography>
               </Box>
             )}
-            <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="left">
+            <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="right">
               <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
-                {drawerOpen ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                {drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
               </IconButton>
             </Tooltip>
           </Box>
@@ -176,7 +158,7 @@ function Dashboard() {
           <List>
             {menuItems.filter(item => item.show).map((item) => (
               <ListItem key={item.key} disablePadding>
-                <Tooltip title={!drawerOpen ? item.label : ""} placement="left">
+                <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
                   <ListItemButton
                     selected={activeTab === item.key}
                     onClick={() => setActiveTab(item.key)}
@@ -214,7 +196,7 @@ function Dashboard() {
           <Divider />
           <List>
             <ListItem disablePadding>
-              <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="left">
+              <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
                 <ListItemButton
                   onClick={logout}
                   sx={{
@@ -240,6 +222,24 @@ function Dashboard() {
         </Box>
       </Drawer>
 
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 1,
+          width: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)`,
+          height: '100%',
+          overflow: 'auto',
+          transition: 'width 0.3s ease'
+        }}
+      >
+        <Fade in={true} timeout={300} key={activeTab}>
+          <Box sx={{ height: '100%' }}>
+            {renderContent()}
+          </Box>
+        </Fade>
+      </Box>
+
       {/* Floating Chatbot Button */}
       <Fab
         color="primary"
@@ -248,7 +248,7 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          left: 24,
+          right: 24,
           zIndex: 1000,
         }}
       >
@@ -265,7 +265,7 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 24,
-            left: 24,
+            right: 24,
             m: 0,
             maxHeight: '70vh',
             height: '600px',
