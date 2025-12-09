@@ -20,7 +20,7 @@ import {
   Lock as LockIcon,
   CameraAlt as CameraAltIcon
 } from '@mui/icons-material';
-import { userAPI } from '../services/api';
+import { userAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function UserProfile({ onBack }) {
@@ -38,7 +38,7 @@ function UserProfile({ onBack }) {
     confirmPassword: ''
   });
   const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(user?.profilePictureUrl || null);
+  const [previewUrl, setPreviewUrl] = useState(getProfilePictureUrl(user?.profilePictureId) || null);
 
   const handleUsernameChange = (e) => {
     setUsernameForm({ username: e.target.value });
@@ -149,8 +149,8 @@ function UserProfile({ onBack }) {
 
       const response = await userAPI.updateProfilePicture(user.id, selectedFile);
 
-      // Update user in context with new profile picture URL
-      const updatedUser = { ...user, profilePictureUrl: response.data.profilePictureUrl };
+      // Update user in context with new profile picture ID
+      const updatedUser = { ...user, profilePictureId: response.data.profilePictureId };
       updateUser(updatedUser);
 
       setSelectedFile(null);

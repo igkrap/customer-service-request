@@ -29,9 +29,9 @@ function Login() {
 
     try {
       const response = await authAPI.login(formData);
-      const { token, id, userId, username, email, role, profilePictureUrl } = response.data;
+      const { token, id, userId, username, email, role, profilePictureId } = response.data;
 
-      login({ id, userId, username, email, role, profilePictureUrl }, token);
+      login({ id, userId, username, email, role, profilePictureId }, token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data || '로그인에 실패했습니다. 자격 증명을 확인하세요.');

@@ -61,6 +61,7 @@ import {
   MenuBook as KnowledgeIcon
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
+import { getProfilePictureUrl } from './services/api';
 import './styles/App.css';
 
 const drawerWidth = 280;
@@ -162,7 +163,7 @@ function Dashboard() {
               transition: 'gap 0.3s ease, justify-content 0.3s ease'
             }}>
               <Avatar
-                src={user?.profilePictureUrl}
+                src={getProfilePictureUrl(user?.profilePictureId)}
                 sx={{
                   width: drawerOpen ? 56 : 40,
                   height: drawerOpen ? 56 : 40,
@@ -172,7 +173,7 @@ function Dashboard() {
                   flexShrink: 0
                 }}
               >
-                {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
+                {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
               </Avatar>
               {drawerOpen && (
                 <Box sx={{

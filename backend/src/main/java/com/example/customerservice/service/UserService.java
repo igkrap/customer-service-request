@@ -6,7 +6,6 @@ import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.Company;
 import com.example.customerservice.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +29,6 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
-
-    @Value("${app.server.url}")
-    private String serverUrl;
 
     public List<UserDTO> getAllUsers() {
         return userMapper.findAll().stream()
@@ -201,10 +197,8 @@ public class UserService {
             });
         }
 
-        // Set profile picture URL if exists
-        if (user.getProfilePictureId() != null) {
-            dto.setProfilePictureUrl(serverUrl + "/api/users/profile-picture/" + user.getProfilePictureId());
-        }
+        // Set profile picture ID if exists
+        dto.setProfilePictureId(user.getProfilePictureId());
 
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
