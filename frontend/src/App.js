@@ -278,7 +278,8 @@ function Dashboard() {
           pl: `${collapsedDrawerWidth}px`,
           width: '100%',
           height: '100%',
-          overflow: 'auto'
+          overflow: 'auto',
+          bgcolor: '#fff'
         }}
       >
         <Fade in={true} timeout={300} key={activeTab}>
