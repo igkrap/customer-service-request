@@ -119,20 +119,17 @@ function EmailTemplates() {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <EmailIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            이메일 템플릿 관리
-          </Typography>
-        </Box>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          이메일 템플릿 관리
+        </Typography>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
