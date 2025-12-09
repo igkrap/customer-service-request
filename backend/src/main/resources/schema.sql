@@ -18,9 +18,11 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20),
     company_id BIGINT,
     approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    profile_picture_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
+    FOREIGN KEY (profile_picture_id) REFERENCES attachments(id) ON DELETE SET NULL
 );
 
 -- Create projects table

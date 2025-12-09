@@ -55,6 +55,15 @@ export const userAPI = {
   updateRole: (id, roleData) => api.put(`/users/${id}/role`, roleData),
   updateEmail: (id, email) => api.put(`/users/${id}/email`, email),
   updatePassword: (id, password) => api.put(`/users/${id}/password`, password),
+  updateProfilePicture: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/users/${id}/profile-picture`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   delete: (id) => api.delete(`/users/${id}`),
   getPending: () => api.get('/users/pending'),
   approve: (id, role, companyId, approvalStatus) => api.post(`/users/${id}/approve`, { role, companyId, approvalStatus }),

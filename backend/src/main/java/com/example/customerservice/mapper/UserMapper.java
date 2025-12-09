@@ -46,13 +46,13 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE approval_status = #{approvalStatus}")
     List<User> findByApprovalStatus(@Param("approvalStatus") String approvalStatus);
 
-    @Insert("INSERT INTO users (user_id, username, email, password, role, company_id, approval_status, created_at, updated_at) " +
-            "VALUES (#{userId}, #{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO users (user_id, username, email, password, role, company_id, approval_status, profile_picture_id, created_at, updated_at) " +
+            "VALUES (#{userId}, #{username}, #{email}, #{password}, #{role}, #{companyId}, #{approvalStatus}, #{profilePictureId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(User user);
 
     @Update("UPDATE users SET user_id = #{userId}, username = #{username}, email = #{email}, " +
-            "role = #{role}, company_id = #{companyId}, approval_status = #{approvalStatus}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "role = #{role}, company_id = #{companyId}, approval_status = #{approvalStatus}, profile_picture_id = #{profilePictureId}, updated_at = #{updatedAt} WHERE id = #{id}")
     int update(User user);
 
     @Update("UPDATE users SET password = #{password}, updated_at = #{updatedAt} WHERE id = #{id}")

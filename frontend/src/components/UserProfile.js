@@ -17,7 +17,8 @@ import {
   ArrowBack as ArrowBackIcon,
   Person as PersonIcon,
   Email as EmailIcon,
-  Lock as LockIcon
+  Lock as LockIcon,
+  CameraAlt as CameraAltIcon
 } from '@mui/icons-material';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -36,6 +37,8 @@ function UserProfile({ onBack }) {
     password: '',
     confirmPassword: ''
   });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(user?.profilePictureUrl || null);
 
   const handleUsernameChange = (e) => {
     setUsernameForm({ username: e.target.value });
@@ -106,6 +109,57 @@ function UserProfile({ onBack }) {
     }
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('이미지 파일만 업로드 가능합니다');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('파일 크기는 5MB를 초과할 수 없습니다');
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfilePictureSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!selectedFile) {
+      setError('업로드할 파일을 선택하세요');
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccess(null);
+
+      const response = await userAPI.updateProfilePicture(user.id, selectedFile);
+
+      // Update user in context with new profile picture URL
+      const updatedUser = { ...user, profilePictureUrl: response.data.profilePictureUrl };
+      updateUser(updatedUser);
+
+      setSelectedFile(null);
+      setSuccess('프로필 사진이 성공적으로 업데이트되었습니다!');
+    } catch (err) {
+      setError('프로필 사진 업데이트 실패: ' + (err.response?.data || err.message));
+    }
+  };
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -133,8 +187,67 @@ function UserProfile({ onBack }) {
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
 
-      {/* 3개 타일 */}
+      {/* 프로필 사진 + 정보 변경 타일 */}
       <Grid container spacing={2} direction="column">
+        {/* 프로필 사진 변경 타일 */}
+        <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+          <Card elevation={3} sx={{ width: '100%' }}>
+            <CardHeader
+              avatar={<Avatar sx={{ bgcolor: 'secondary.main' }}><CameraAltIcon /></Avatar>}
+              title="프로필 사진 변경"
+              titleTypographyProps={{ variant: 'h6' }}
+            />
+            <CardContent>
+              <form onSubmit={handleProfilePictureSubmit}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                  <Avatar
+                    src={previewUrl}
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      mb: 2,
+                      border: '3px solid',
+                      borderColor: 'primary.main'
+                    }}
+                  >
+                    {!previewUrl && user?.username?.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="profile-picture-upload"
+                    type="file"
+                    onChange={handleFileSelect}
+                  />
+                  <label htmlFor="profile-picture-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<CameraAltIcon />}
+                    >
+                      사진 선택
+                    </Button>
+                  </label>
+                  {selectedFile && (
+                    <Typography variant="caption" sx={{ mt: 1 }}>
+                      선택된 파일: {selectedFile.name}
+                    </Typography>
+                  )}
+                </Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  disabled={!selectedFile}
+                >
+                  프로필 사진 업데이트
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* 사용자명 변경 타일 */}
         <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
           <Card elevation={3} sx={{ width: '100%' }}>
