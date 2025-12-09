@@ -151,9 +151,19 @@ function Dashboard() {
                   label={getRoleText()}
                   color="primary"
                   size="small"
-                  sx={{ mb: 1 }}
+                  sx={{ mb: 1, height: 24 }}
                 />
-                <Typography variant="caption" display="block" color="text.secondary">
+                <Typography
+                  variant="caption"
+                  display="block"
+                  color="text.secondary"
+                  sx={{
+                    lineHeight: '16px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
                   환영합니다, {user?.username}님
                 </Typography>
               </Box>
@@ -203,7 +213,20 @@ function Dashboard() {
                     >
                       {item.icon}
                     </ListItemIcon>
-                    {drawerOpen && <ListItemText primary={item.label} sx={{ ml: 1 }} />}
+                    {drawerOpen && (
+                      <ListItemText
+                        primary={item.label}
+                        sx={{
+                          ml: 1,
+                          '& .MuiTypography-root': {
+                            lineHeight: '24px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }
+                        }}
+                      />
+                    )}
                   </ListItemButton>
                 </Tooltip>
               </ListItem>
@@ -232,7 +255,20 @@ function Dashboard() {
                   >
                     <LogoutIcon />
                   </ListItemIcon>
-                  {drawerOpen && <ListItemText primary="로그아웃" sx={{ ml: 1 }} />}
+                  {drawerOpen && (
+                    <ListItemText
+                      primary="로그아웃"
+                      sx={{
+                        ml: 1,
+                        '& .MuiTypography-root': {
+                          lineHeight: '24px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }
+                      }}
+                    />
+                  )}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
