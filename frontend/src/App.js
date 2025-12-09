@@ -120,7 +120,7 @@ function Dashboard() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Drawer
         sx={{
           '& .MuiDrawer-paper': {
@@ -307,7 +307,6 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           pl: `${collapsedDrawerWidth}px`,
-          width: '100%',
           height: '100%',
           overflow: 'auto',
           bgcolor: '#fff'
