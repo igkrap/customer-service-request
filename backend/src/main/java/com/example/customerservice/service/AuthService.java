@@ -87,7 +87,7 @@ public class AuthService {
         // Get profile picture URL if exists
         String profilePictureUrl = null;
         if (user.getProfilePictureId() != null) {
-            profilePictureUrl = "/api/attachments/" + user.getProfilePictureId() + "/download";
+            profilePictureUrl = "/api/users/profile-picture/" + user.getProfilePictureId();
         }
 
         return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name(), profilePictureUrl);

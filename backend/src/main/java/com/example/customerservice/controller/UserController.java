@@ -12,7 +12,10 @@ import com.example.customerservice.service.AttachmentService;
 import com.example.customerservice.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -250,6 +253,26 @@ public class UserController {
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/profile-picture/{attachmentId}")
+    public ResponseEntity<Resource> getProfilePicture(@PathVariable Long attachmentId) {
+        try {
+            Resource resource = attachmentService.loadFileAsResource(attachmentId);
+            AttachmentDTO attachment = attachmentService.getAttachmentById(attachmentId);
+
+            String contentType = attachment.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                contentType = "image/jpeg";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + attachment.getOriginalFileName() + "\"")
+                    .body(resource);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }
