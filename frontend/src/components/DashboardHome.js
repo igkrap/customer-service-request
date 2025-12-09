@@ -607,6 +607,7 @@ function DashboardHome() {
             </IconButton>
           </Tooltip>
           <Avatar
+            src={user?.profilePictureUrl}
             sx={{
               width: 80,
               height: 80,
@@ -614,9 +615,11 @@ function DashboardHome() {
               mb: 2,
               bgcolor: 'primary.main',
               fontSize: '2rem',
+              border: '3px solid',
+              borderColor: 'primary.main',
             }}
           >
-            {user?.username?.charAt(0).toUpperCase()}
+            {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
           </Avatar>
           <Typography variant="h5" gutterBottom>
             {user?.username}
