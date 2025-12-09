@@ -275,8 +275,7 @@ function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 1,
-          pl: `${collapsedDrawerWidth + 8}px`,
+          pl: `${collapsedDrawerWidth}px`,
           width: '100%',
           height: '100%',
           overflow: 'auto'
