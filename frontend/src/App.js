@@ -141,7 +141,7 @@ function Dashboard() {
         onMouseEnter={() => setDrawerOpen(true)}
         onMouseLeave={() => setDrawerOpen(false)}
       >
-        <Box sx={{ overflow: 'auto', mt: 4 }}>
+        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', mt: 4 }}>
           {/* User Info Section with Fixed Height */}
           <Box
             sx={{
