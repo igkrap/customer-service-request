@@ -153,21 +153,34 @@ function Dashboard() {
               pb: 2
             }}
           >
-            {drawerOpen ? (
-              // Expanded state: Profile picture on the left, role and welcome text on the right
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
-                <Avatar
-                  src={user?.profilePictureUrl}
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    border: '2px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              gap: drawerOpen ? 2 : 0,
+              justifyContent: drawerOpen ? 'flex-start' : 'center',
+              transition: 'gap 0.3s ease, justify-content 0.3s ease'
+            }}>
+              <Avatar
+                src={user?.profilePictureUrl}
+                sx={{
+                  width: drawerOpen ? 56 : 40,
+                  height: drawerOpen ? 56 : 40,
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  transition: 'width 0.3s ease, height 0.3s ease',
+                  flexShrink: 0
+                }}
+              >
+                {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
+              </Avatar>
+              {drawerOpen && (
+                <Box sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  opacity: drawerOpen ? 1 : 0,
+                  transition: 'opacity 0.3s ease'
+                }}>
                   <Chip
                     label={getRoleText()}
                     color="primary"
@@ -188,21 +201,8 @@ function Dashboard() {
                     환영합니다, {user?.username}님
                   </Typography>
                 </Box>
-              </Box>
-            ) : (
-              // Collapsed state: Only show profile picture centered
-              <Avatar
-                src={user?.profilePictureUrl}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  border: '2px solid',
-                  borderColor: 'primary.main'
-                }}
-              >
-                {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
-              </Avatar>
-            )}
+              )}
+            </Box>
           </Box>
           <Divider />
           <List>
