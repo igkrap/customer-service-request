@@ -271,22 +271,22 @@ function EmailSettings() {
             </Box>
           </Grid>
         </Grid>
-      </Paper>
 
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          이메일 알림이 발송되는 경우
-        </Typography>
-        <Typography variant="body2" color="text.secondary" component="div">
-          <ul>
-            <li>서비스 요청 생성 시 → 배정된 매니저에게 알림</li>
-            <li>서비스 요청 상태 변경 시 → 고객에게 알림</li>
-            <li>서비스 요청 해결 완료 시 → 고객에게 알림</li>
-            <li>매니저 배정/변경 시 → 새 매니저에게 알림</li>
-            <li>사용자 가입 승인/거부 시 → 사용자에게 알림</li>
-            <li>프로젝트 요청 승인/거부 시 → 요청자에게 알림</li>
-          </ul>
-        </Typography>
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            이메일 알림이 발송되는 경우
+          </Typography>
+          <Typography variant="body2" color="text.secondary" component="div">
+            <ul>
+              <li>서비스 요청 생성 시 → 배정된 매니저에게 알림</li>
+              <li>서비스 요청 상태 변경 시 → 고객에게 알림</li>
+              <li>서비스 요청 해결 완료 시 → 고객에게 알림</li>
+              <li>매니저 배정/변경 시 → 새 매니저에게 알림</li>
+              <li>사용자 가입 승인/거부 시 → 사용자에게 알림</li>
+              <li>프로젝트 요청 승인/거부 시 → 요청자에게 알림</li>
+            </ul>
+          </Typography>
+        </Box>
       </Box>
 
       <Dialog open={testEmailDialog} onClose={() => setTestEmailDialog(false)}>
