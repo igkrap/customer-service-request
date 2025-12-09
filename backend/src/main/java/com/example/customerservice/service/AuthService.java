@@ -7,6 +7,7 @@ import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.User;
 import com.example.customerservice.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,9 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Value("${app.server.url}")
+    private String serverUrl;
 
     public AuthResponse signup(SignupRequest request) {
         // Check if userId already exists
@@ -87,7 +91,7 @@ public class AuthService {
         // Get profile picture URL if exists
         String profilePictureUrl = null;
         if (user.getProfilePictureId() != null) {
-            profilePictureUrl = "http://localhost:8080/api/users/profile-picture/" + user.getProfilePictureId();
+            profilePictureUrl = serverUrl + "/api/users/profile-picture/" + user.getProfilePictureId();
         }
 
         return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name(), profilePictureUrl);
