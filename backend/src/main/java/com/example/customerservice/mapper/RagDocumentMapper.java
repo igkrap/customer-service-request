@@ -1,5 +1,6 @@
 package com.example.customerservice.mapper;
 
+import com.example.customerservice.config.VectorTypeHandler;
 import com.example.customerservice.model.RagDocument;
 import org.apache.ibatis.annotations.*;
 
@@ -9,30 +10,42 @@ import java.util.List;
 public interface RagDocumentMapper {
 
     @Insert("INSERT INTO rag_documents (title, content, embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at) " +
-            "VALUES (#{title}, #{content}, #{embedding}::vector, #{embeddingDimension}, #{metadata}::jsonb, #{category}, #{enabled}, #{uploadedByUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+            "VALUES (#{title}, #{content}, #{embedding, typeHandler=com.example.customerservice.config.VectorTypeHandler}::vector, #{embeddingDimension}, #{metadata}::jsonb, #{category}, #{enabled}, #{uploadedByUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertRagDocument(RagDocument ragDocument);
 
     @Select("SELECT id, title, content, embedding::text as embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at " +
             "FROM rag_documents WHERE id = #{id}")
+    @Results({
+        @Result(property = "embedding", column = "embedding", typeHandler = VectorTypeHandler.class)
+    })
     RagDocument getRagDocumentById(Long id);
 
     @Select("SELECT id, title, content, embedding::text as embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at " +
             "FROM rag_documents WHERE enabled = true ORDER BY created_at DESC")
+    @Results({
+        @Result(property = "embedding", column = "embedding", typeHandler = VectorTypeHandler.class)
+    })
     List<RagDocument> getAllEnabledRagDocuments();
 
     @Select("SELECT id, title, content, embedding::text as embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at " +
             "FROM rag_documents ORDER BY created_at DESC")
+    @Results({
+        @Result(property = "embedding", column = "embedding", typeHandler = VectorTypeHandler.class)
+    })
     List<RagDocument> getAllRagDocuments();
 
     @Select("SELECT id, title, content, embedding::text as embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at " +
             "FROM rag_documents WHERE category = #{category} AND enabled = true ORDER BY created_at DESC")
+    @Results({
+        @Result(property = "embedding", column = "embedding", typeHandler = VectorTypeHandler.class)
+    })
     List<RagDocument> getRagDocumentsByCategory(String category);
 
     @Update("UPDATE rag_documents SET " +
             "title = #{title}, " +
             "content = #{content}, " +
-            "embedding = #{embedding}::vector, " +
+            "embedding = #{embedding, typeHandler=com.example.customerservice.config.VectorTypeHandler}::vector, " +
             "embedding_dimension = #{embeddingDimension}, " +
             "metadata = #{metadata}::jsonb, " +
             "category = #{category}, " +
@@ -52,5 +65,8 @@ public interface RagDocumentMapper {
             "WHERE enabled = true AND embedding_dimension = #{dimension} " +
             "ORDER BY embedding <=> #{queryEmbedding}::vector " +
             "LIMIT #{limit}")
+    @Results({
+        @Result(property = "embedding", column = "embedding", typeHandler = VectorTypeHandler.class)
+    })
     List<RagDocument> findSimilarDocuments(@Param("queryEmbedding") String queryEmbedding, @Param("dimension") int dimension, @Param("limit") int limit);
 }
