@@ -149,9 +149,14 @@ function UserProfile({ onBack }) {
 
       const response = await userAPI.updateProfilePicture(user.id, selectedFile);
 
+      console.log('Profile picture update response:', response.data);
+
       // Update user in context with new profile picture ID
       const updatedUser = { ...user, profilePictureId: response.data.profilePictureId };
       updateUser(updatedUser);
+
+      // Update preview URL with the new profile picture
+      setPreviewUrl(getProfilePictureUrl(response.data.profilePictureId));
 
       setSelectedFile(null);
       setSuccess('프로필 사진이 성공적으로 업데이트되었습니다!');
