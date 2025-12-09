@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  Alert,
+  IconButton,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
+} from '@mui/material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -209,12 +221,11 @@ function CompanyList() {
   }
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography
             variant="h5"
-            component="h2"
             sx={{
               fontWeight: 600,
               background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
@@ -234,51 +245,51 @@ function CompanyList() {
             </Button>
           )}
         </Box>
-
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
-            <div className="form-group">
-              <label>회사명 *</label>
-              <input
-                type="text"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>회사 코드 *</label>
-              <input
-                type="text"
-                name="companyCode"
-                value={formData.companyCode}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>사업자 번호 *</label>
-              <input
-                type="text"
-                name="businessNumber"
-                value={formData.businessNumber}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-success">
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>{editingCompany ? '회사 정보 수정' : '새 회사 등록'}</DialogTitle>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                <TextField
+                  fullWidth
+                  required
+                  label="회사명"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  label="회사 코드"
+                  name="companyCode"
+                  value={formData.companyCode}
+                  onChange={handleInputChange}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  label="사업자 번호"
+                  name="businessNumber"
+                  value={formData.businessNumber}
+                  onChange={handleInputChange}
+                />
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancel}>취소</Button>
+              <Button type="submit" variant="contained" color="primary">
                 {editingCompany ? '수정' : '등록'}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                취소
-              </button>
-            </div>
+              </Button>
+            </DialogActions>
           </form>
-        )}
+        </Dialog>
 
         <Box sx={{ flex: 1 }}>
           <DataGrid
@@ -295,7 +306,7 @@ function CompanyList() {
             sx={{ height: '100%' }}
           />
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

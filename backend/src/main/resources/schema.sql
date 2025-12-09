@@ -190,3 +190,48 @@ CREATE INDEX IF NOT EXISTS idx_service_request_attachments_service_request_id ON
 CREATE INDEX IF NOT EXISTS idx_service_request_attachments_attachment_id ON service_request_attachments(attachment_id);
 CREATE INDEX IF NOT EXISTS idx_comment_attachments_comment_id ON comment_attachments(comment_id);
 CREATE INDEX IF NOT EXISTS idx_comment_attachments_attachment_id ON comment_attachments(attachment_id);
+
+-- Enable pgvector extension for vector similarity search
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Create llm_configurations table for LLM settings
+CREATE TABLE IF NOT EXISTS llm_configurations (
+    id BIGSERIAL PRIMARY KEY,
+    api_endpoint VARCHAR(500) NOT NULL,
+    model_name VARCHAR(255) NOT NULL,
+    embedding_model_name VARCHAR(255) NOT NULL,
+    embedding_dimension INTEGER NOT NULL DEFAULT 1536,
+    api_key VARCHAR(500),
+    temperature DOUBLE PRECISION DEFAULT 0.7,
+    max_tokens INTEGER DEFAULT 2000,
+    top_p DOUBLE PRECISION DEFAULT 0.9,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create rag_documents table for knowledge base with vector embeddings
+-- Using vector(3072) to support various embedding models (768, 1536, 3072 dimensions)
+CREATE TABLE IF NOT EXISTS rag_documents (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    content TEXT NOT NULL,
+    embedding vector(3072),
+    embedding_dimension INTEGER NOT NULL DEFAULT 1536,
+    metadata JSONB,
+    category VARCHAR(100),
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    uploaded_by_user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create indexes for RAG documents
+CREATE INDEX IF NOT EXISTS idx_rag_documents_category ON rag_documents(category);
+CREATE INDEX IF NOT EXISTS idx_rag_documents_enabled ON rag_documents(enabled);
+CREATE INDEX IF NOT EXISTS idx_rag_documents_uploaded_by_user_id ON rag_documents(uploaded_by_user_id);
+
+-- Create vector similarity search index (IVFFlat for better performance on large datasets)
+CREATE INDEX IF NOT EXISTS idx_rag_documents_embedding ON rag_documents
+USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);

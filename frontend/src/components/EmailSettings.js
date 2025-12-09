@@ -117,14 +117,21 @@ function EmailSettings() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <EmailIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
-          <Typography variant="h5">이메일 서버 설정</Typography>
-        </Box>
-
-        <Divider sx={{ mb: 3 }} />
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          이메일 서버 설정
+        </Typography>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
         <Alert severity="info" sx={{ mb: 3 }}>
           이메일 알림 기능을 사용하려면 SMTP 서버 정보를 입력하세요. Gmail을 사용하는 경우, 앱 비밀번호를 생성하여 사용해야 합니다.
@@ -261,23 +268,23 @@ function EmailSettings() {
             </Box>
           </Grid>
         </Grid>
-      </Paper>
 
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          이메일 알림이 발송되는 경우
-        </Typography>
-        <Typography variant="body2" color="text.secondary" component="div">
-          <ul>
-            <li>서비스 요청 생성 시 → 배정된 매니저에게 알림</li>
-            <li>서비스 요청 상태 변경 시 → 고객에게 알림</li>
-            <li>서비스 요청 해결 완료 시 → 고객에게 알림</li>
-            <li>매니저 배정/변경 시 → 새 매니저에게 알림</li>
-            <li>사용자 가입 승인/거부 시 → 사용자에게 알림</li>
-            <li>프로젝트 요청 승인/거부 시 → 요청자에게 알림</li>
-          </ul>
-        </Typography>
-      </Paper>
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            이메일 알림이 발송되는 경우
+          </Typography>
+          <Typography variant="body2" color="text.secondary" component="div">
+            <ul>
+              <li>서비스 요청 생성 시 → 배정된 매니저에게 알림</li>
+              <li>서비스 요청 상태 변경 시 → 고객에게 알림</li>
+              <li>서비스 요청 해결 완료 시 → 고객에게 알림</li>
+              <li>매니저 배정/변경 시 → 새 매니저에게 알림</li>
+              <li>사용자 가입 승인/거부 시 → 사용자에게 알림</li>
+              <li>프로젝트 요청 승인/거부 시 → 요청자에게 알림</li>
+            </ul>
+          </Typography>
+        </Box>
+      </Box>
 
       <Dialog open={testEmailDialog} onClose={() => setTestEmailDialog(false)}>
         <DialogTitle>테스트 이메일 전송</DialogTitle>

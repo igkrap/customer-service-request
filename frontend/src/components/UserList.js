@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  Alert,
+  IconButton,
+  Button,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
+} from '@mui/material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -448,13 +465,11 @@ function UserList() {
   }
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Typography
           variant="h5"
-          component="h2"
           sx={{
-            mb: 3,
             fontWeight: 600,
             background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
             WebkitBackgroundClip: 'text',
@@ -463,77 +478,79 @@ function UserList() {
         >
           사용자 관리
         </Typography>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {showEditForm && editingUser && (
-          <div className="modal-overlay" onClick={handleCancel}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h3>사용자 수정: {editingUser.username}</h3>
-              <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label>이메일 *</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>새 비밀번호 (현재 비밀번호를 유지하려면 비워두세요)</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="새 비밀번호를 입력하거나 비워두세요"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>역할 *</label>
-                  <select
+        <Dialog open={showEditForm && editingUser !== null} onClose={handleCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>사용자 수정: {editingUser?.username}</DialogTitle>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                <TextField
+                  fullWidth
+                  required
+                  type="email"
+                  label="이메일"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+
+                <TextField
+                  fullWidth
+                  type="password"
+                  label="새 비밀번호"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="새 비밀번호를 입력하거나 비워두세요"
+                  helperText="현재 비밀번호를 유지하려면 비워두세요"
+                />
+
+                <FormControl fullWidth required>
+                  <InputLabel>역할</InputLabel>
+                  <Select
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    required
+                    label="역할"
                   >
-                    <option value="ROLE_CUSTOMER">유저</option>
-                    <option value="ROLE_MANAGER">매니저</option>
-                    <option value="ROLE_ADMIN">관리자</option>
-                  </select>
-                </div>
+                    <MenuItem value="ROLE_CUSTOMER">유저</MenuItem>
+                    <MenuItem value="ROLE_MANAGER">매니저</MenuItem>
+                    <MenuItem value="ROLE_ADMIN">관리자</MenuItem>
+                  </Select>
+                </FormControl>
+
                 {formData.role === 'ROLE_CUSTOMER' && (
-                  <div className="form-group">
-                    <label>회사 *</label>
-                    <select
+                  <FormControl fullWidth required>
+                    <InputLabel>회사</InputLabel>
+                    <Select
                       name="companyId"
                       value={formData.companyId}
                       onChange={handleInputChange}
-                      required
+                      label="회사"
                     >
-                      <option value="">회사 선택</option>
+                      <MenuItem value="">회사 선택</MenuItem>
                       {companies.map(company => (
-                        <option key={company.id} value={company.id}>
+                        <MenuItem key={company.id} value={company.id}>
                           {company.companyName}
-                        </option>
+                        </MenuItem>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormControl>
                 )}
-                <div className="btn-group">
-                  <button type="submit" className="btn btn-success">
-                    변경사항 저장
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                    취소
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancel}>취소</Button>
+              <Button type="submit" variant="contained" color="primary">
+                변경사항 저장
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
 
         <Box sx={{ flex: 1 }}>
           <DataGrid
@@ -550,7 +567,7 @@ function UserList() {
             sx={{ height: '100%' }}
           />
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

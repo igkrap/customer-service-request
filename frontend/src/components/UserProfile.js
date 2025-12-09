@@ -107,27 +107,28 @@ function UserProfile({ onBack }) {
   };
 
   return (
-    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
-      {/* 헤더 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        {onBack && (
-          <IconButton onClick={onBack} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-        )}
-        <Typography
-          variant="h5"
-          component="h2"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          프로필 정보 변경
-        </Typography>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {onBack && (
+            <IconButton onClick={onBack} sx={{ mr: 2 }}>
+              <ArrowBackIcon />
+            </IconButton>
+          )}
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            프로필 정보 변경
+          </Typography>
+        </Box>
       </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
@@ -244,6 +245,7 @@ function UserProfile({ onBack }) {
           </Card>
         </Grid>
       </Grid>
+      </Box>
     </Box>
   );
 }

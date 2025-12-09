@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, CircularProgress, Typography, Alert, IconButton, Button, Chip } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  Alert,
+  IconButton,
+  Button,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
+} from '@mui/material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -304,12 +321,11 @@ function ProjectList() {
   }
 
   return (
-    <Box sx={{ p: 1, height: '100%' }}>
-      <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography
             variant="h5"
-            component="h2"
             sx={{
               fontWeight: 600,
               background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
@@ -329,6 +345,8 @@ function ProjectList() {
             </Button>
           )}
         </Box>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -338,89 +356,93 @@ function ProjectList() {
           </Alert>
         )}
 
-        {showForm && user?.role === 'ROLE_ADMIN' && (
-          <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
-            <div className="form-group">
-              <label>회사 *</label>
-              <select
-                name="companyId"
-                value={formData.companyId}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">회사 선택</option>
-                {companies.map(company => (
-                  <option key={company.id} value={company.id}>
-                    {company.companyName} ({company.companyCode})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>프로젝트명 *</label>
-              <input
-                type="text"
-                name="projectName"
-                value={formData.projectName}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>서비스 유형 *</label>
-              <select
-                name="serviceType"
-                value={formData.serviceType}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="MAINTENANCE">유지보수</option>
-                <option value="DEFECT_REPAIR">하자보수</option>
-                <option value="ETC">기타</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>계약 시작일 *</label>
-              <input
-                type="date"
-                name="contractStartDate"
-                value={formData.contractStartDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>계약 종료일 *</label>
-              <input
-                type="date"
-                name="contractEndDate"
-                value={formData.contractEndDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>계약 m/d *</label>
-              <input
-                type="number"
-                name="contractManDays"
-                value={formData.contractManDays}
-                onChange={handleInputChange}
-                step="0.1"
-                min="0"
-                required
-              />
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-success">
+        <Dialog open={showForm && user?.role === 'ROLE_ADMIN'} onClose={handleCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>{editingProject ? '프로젝트 수정' : '새 프로젝트 등록'}</DialogTitle>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                <FormControl fullWidth required>
+                  <InputLabel>회사</InputLabel>
+                  <Select
+                    name="companyId"
+                    value={formData.companyId}
+                    onChange={handleInputChange}
+                    label="회사"
+                  >
+                    <MenuItem value="">회사 선택</MenuItem>
+                    {companies.map(company => (
+                      <MenuItem key={company.id} value={company.id}>
+                        {company.companyName} ({company.companyCode})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  fullWidth
+                  required
+                  label="프로젝트명"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleInputChange}
+                />
+
+                <FormControl fullWidth required>
+                  <InputLabel>서비스 유형</InputLabel>
+                  <Select
+                    name="serviceType"
+                    value={formData.serviceType}
+                    onChange={handleInputChange}
+                    label="서비스 유형"
+                  >
+                    <MenuItem value="MAINTENANCE">유지보수</MenuItem>
+                    <MenuItem value="DEFECT_REPAIR">하자보수</MenuItem>
+                    <MenuItem value="ETC">기타</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  fullWidth
+                  required
+                  type="date"
+                  label="계약 시작일"
+                  name="contractStartDate"
+                  value={formData.contractStartDate}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  type="date"
+                  label="계약 종료일"
+                  name="contractEndDate"
+                  value={formData.contractEndDate}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  type="number"
+                  label="계약 m/d"
+                  name="contractManDays"
+                  value={formData.contractManDays}
+                  onChange={handleInputChange}
+                  inputProps={{ step: 0.1, min: 0 }}
+                />
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancel}>취소</Button>
+              <Button type="submit" variant="contained" color="primary">
                 {editingProject ? '수정' : '등록'}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                취소
-              </button>
-            </div>
+              </Button>
+            </DialogActions>
           </form>
-        )}
+        </Dialog>
 
         <Box sx={{ flex: 1 }}>
           <DataGrid
@@ -437,7 +459,7 @@ function ProjectList() {
             sx={{ height: '100%' }}
           />
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }
