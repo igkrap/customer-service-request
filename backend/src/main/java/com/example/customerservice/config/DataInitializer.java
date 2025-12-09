@@ -114,8 +114,12 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize sample FAQ documents
         log.info("Initializing sample FAQ documents for RAG...");
-        initializeSampleFAQDocuments();
-        log.info("Sample FAQ documents initialization completed.");
+        try {
+            initializeSampleFAQDocuments();
+            log.info("Sample FAQ documents initialization completed.");
+        } catch (Exception e) {
+            log.warn("Failed to initialize sample FAQ documents (pgvector may not be available): " + e.getMessage());
+        }
     }
 
     private void initializeEmailTemplates() {
