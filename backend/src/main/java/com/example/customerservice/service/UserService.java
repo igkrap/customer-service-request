@@ -199,7 +199,7 @@ public class UserService {
 
         // Set profile picture URL if exists
         if (user.getProfilePictureId() != null) {
-            dto.setProfilePictureUrl("/api/users/profile-picture/" + user.getProfilePictureId());
+            dto.setProfilePictureUrl("http://localhost:8080/api/users/profile-picture/" + user.getProfilePictureId());
         }
 
         dto.setCreatedAt(user.getCreatedAt());
