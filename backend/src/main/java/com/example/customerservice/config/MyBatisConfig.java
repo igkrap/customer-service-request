@@ -1,27 +1,25 @@
 package com.example.customerservice.config;
 
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.boot.autoconfigure.ConfigurationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.sql.DataSource;
-
+/**
+ * MyBatis configuration for custom TypeHandlers
+ */
 @Configuration
 public class MyBatisConfig {
 
+    /**
+     * Register VectorTypeHandler for PostgreSQL vector type support
+     * Uses ConfigurationCustomizer to add to Spring Boot's auto-configuration
+     * instead of replacing it
+     */
     @Bean
-    public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
-        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
-        sessionFactory.setDataSource(dataSource);
-
-        // Register custom TypeHandler
-        org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
-        configuration.getTypeHandlerRegistry().register(float[].class, VectorTypeHandler.class);
-        configuration.setMapUnderscoreToCamelCase(true);
-
-        sessionFactory.setConfiguration(configuration);
-
-        return sessionFactory.getObject();
+    public ConfigurationCustomizer mybatisConfigurationCustomizer() {
+        return configuration -> {
+            // Register TypeHandler for float[] <-> PostgreSQL vector conversion
+            configuration.getTypeHandlerRegistry().register(float[].class, VectorTypeHandler.class);
+        };
     }
 }
