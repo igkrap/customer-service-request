@@ -54,6 +54,9 @@ public class SecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
 
+                        // Profile picture endpoint - public access
+                        .requestMatchers("/api/users/profile-picture/*").permitAll()
+
                         // User endpoints - require authentication
                         // Additional @PreAuthorize("hasRole('ADMIN')") on most endpoints in UserController
                         .requestMatchers("/api/users/**").authenticated()

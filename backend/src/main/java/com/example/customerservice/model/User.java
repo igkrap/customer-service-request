@@ -38,6 +38,8 @@ public class User {
 
     private ApprovalStatus approvalStatus;
 
+    private Long profilePictureId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

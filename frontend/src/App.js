@@ -60,6 +60,7 @@ import {
   Description as TemplateIcon,
   MenuBook as KnowledgeIcon
 } from '@mui/icons-material';
+import { Avatar } from '@mui/material';
 import './styles/App.css';
 
 const drawerWidth = 280;
@@ -148,32 +149,59 @@ function Dashboard() {
               justifyContent: 'center',
               alignItems: 'center',
               px: drawerOpen ? 2 : 1,
-              minHeight: 80, // Fixed height
+              minHeight: 80,
               pb: 2
             }}
           >
-            {drawerOpen && (
-              <Box sx={{ minHeight: 56, width: '100%' }}> {/* Fixed height for user info */}
-                <Chip
-                  label={getRoleText()}
-                  color="primary"
-                  size="small"
-                  sx={{ mb: 1, height: 24 }}
-                />
-                <Typography
-                  variant="caption"
-                  display="block"
-                  color="text.secondary"
+            {drawerOpen ? (
+              // Expanded state: Profile picture on the left, role and welcome text on the right
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                <Avatar
+                  src={user?.profilePictureUrl}
                   sx={{
-                    lineHeight: '16px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    width: 56,
+                    height: 56,
+                    border: '2px solid',
+                    borderColor: 'primary.main'
                   }}
                 >
-                  환영합니다, {user?.username}님
-                </Typography>
+                  {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Chip
+                    label={getRoleText()}
+                    color="primary"
+                    size="small"
+                    sx={{ mb: 0.5, height: 24 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    color="text.secondary"
+                    sx={{
+                      lineHeight: '16px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    환영합니다, {user?.username}님
+                  </Typography>
+                </Box>
               </Box>
+            ) : (
+              // Collapsed state: Only show profile picture centered
+              <Avatar
+                src={user?.profilePictureUrl}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  border: '2px solid',
+                  borderColor: 'primary.main'
+                }}
+              >
+                {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
+              </Avatar>
             )}
           </Box>
           <Divider />

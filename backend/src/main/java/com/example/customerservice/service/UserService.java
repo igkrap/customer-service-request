@@ -104,6 +104,17 @@ public class UserService {
         return convertToDTO(user);
     }
 
+    public UserDTO updateUserProfilePicture(Long id, Long profilePictureId) {
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        user.setProfilePictureId(profilePictureId);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.update(user);
+        return convertToDTO(user);
+    }
+
     public void deleteUser(Long id) {
         if (!userMapper.existsById(id)) {
             throw new RuntimeException("User not found with id: " + id);
@@ -184,6 +195,11 @@ public class UserService {
                 dto.setCompanyName(company.getCompanyName());
                 dto.setCompanyCode(company.getCompanyCode());
             });
+        }
+
+        // Set profile picture URL if exists
+        if (user.getProfilePictureId() != null) {
+            dto.setProfilePictureUrl("/api/users/profile-picture/" + user.getProfilePictureId());
         }
 
         dto.setCreatedAt(user.getCreatedAt());

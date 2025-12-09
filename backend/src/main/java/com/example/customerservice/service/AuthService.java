@@ -84,6 +84,12 @@ public class AuthService {
         // Generate JWT token
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name());
+        // Get profile picture URL if exists
+        String profilePictureUrl = null;
+        if (user.getProfilePictureId() != null) {
+            profilePictureUrl = "/api/users/profile-picture/" + user.getProfilePictureId();
+        }
+
+        return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name(), profilePictureUrl);
     }
 }

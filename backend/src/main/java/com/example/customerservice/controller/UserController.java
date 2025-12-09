@@ -1,20 +1,26 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ApproveUserRequest;
+import com.example.customerservice.dto.AttachmentDTO;
 import com.example.customerservice.dto.UpdateUserEmailRequest;
 import com.example.customerservice.dto.UpdateUserPasswordRequest;
 import com.example.customerservice.dto.UpdateUserRoleRequest;
 import com.example.customerservice.dto.UserDTO;
 import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.User;
+import com.example.customerservice.service.AttachmentService;
 import com.example.customerservice.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +35,9 @@ public class UserController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private AttachmentService attachmentService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -214,6 +223,56 @@ public class UserController {
             return ResponseEntity.ok(projectIds);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{id}/profile-picture")
+    public ResponseEntity<?> updateProfilePicture(@PathVariable Long id,
+                                                   @RequestParam("file") MultipartFile file,
+                                                   Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            User currentUser = userMapper.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Check if user is admin or updating their own profile picture
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You can only update your own profile picture");
+            }
+
+            // Upload the file
+            AttachmentDTO attachment = attachmentService.uploadFile(file, currentUser.getId());
+
+            // Update user's profile picture ID
+            UserDTO updatedUser = userService.updateUserProfilePicture(id, attachment.getId());
+
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/profile-picture/{attachmentId}")
+    public ResponseEntity<Resource> getProfilePicture(@PathVariable Long attachmentId) {
+        try {
+            Resource resource = attachmentService.loadFileAsResource(attachmentId);
+            AttachmentDTO attachment = attachmentService.getAttachmentById(attachmentId);
+
+            String contentType = attachment.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                contentType = "image/jpeg";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + attachment.getOriginalFileName() + "\"")
+                    .body(resource);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }
