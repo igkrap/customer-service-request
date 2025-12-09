@@ -173,12 +173,14 @@ function RagManagement() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <StorageIcon sx={{ mr: 1, fontSize: 30, color: 'primary.main' }} />
-          <Typography variant="h5">RAG 지식베이스 관리</Typography>
+          <Typography variant="h5" fontWeight="bold">RAG 지식베이스 관리</Typography>
         </Box>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
         <Alert severity="info" sx={{ mb: 3 }}>
           챗봇이 참조할 문서를 추가하고 관리합니다. 문서를 저장하면 자동으로 벡터 임베딩이 생성됩니다.
@@ -340,7 +342,7 @@ function RagManagement() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Box>
 
       {/* View Dialog */}
       <Dialog

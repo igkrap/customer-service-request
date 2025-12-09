@@ -158,12 +158,14 @@ function LlmSettings() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <AiIcon sx={{ mr: 1, fontSize: 30, color: 'primary.main' }} />
-          <Typography variant="h5">LLM 설정 관리</Typography>
+          <Typography variant="h5" fontWeight="bold">LLM 설정 관리</Typography>
         </Box>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
         <Alert severity="info" sx={{ mb: 3 }}>
           로컬 LLM API 또는 OpenAI 호환 API의 엔드포인트와 모델 정보를 설정합니다.
@@ -370,7 +372,7 @@ function LlmSettings() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Box>
 
       <Snackbar
         open={snackbar.open}

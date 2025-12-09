@@ -117,12 +117,14 @@ function EmailTemplates() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <EmailIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
-          <Typography variant="h5">이메일 템플릿 관리</Typography>
+          <Typography variant="h5" fontWeight="bold">이메일 템플릿 관리</Typography>
         </Box>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
 
         <Alert severity="info" sx={{ mb: 3 }}>
           각 이메일 템플릿을 편집할 수 있습니다. 변수는 {'{{'} 와 {'}}'}로 감싸서 사용합니다. (예: {'{{'} username {'}}'})
@@ -170,7 +172,7 @@ function EmailTemplates() {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
+      </Box>
 
       {/* Edit Dialog */}
       <Dialog open={editDialog} onClose={handleCloseEdit} maxWidth="md" fullWidth>
