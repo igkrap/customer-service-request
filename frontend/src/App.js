@@ -134,9 +134,19 @@ function Dashboard() {
         anchor="left"
       >
         <Box sx={{ overflow: 'auto', mt: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: drawerOpen ? 'space-between' : 'center', alignItems: 'center', px: drawerOpen ? 2 : 1, pb: 2 }}>
+          {/* User Info Section with Fixed Height */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: drawerOpen ? 'space-between' : 'center',
+              alignItems: 'center',
+              px: drawerOpen ? 2 : 1,
+              minHeight: 80, // Fixed height
+              pb: 2
+            }}
+          >
             {drawerOpen && (
-              <Box>
+              <Box sx={{ minHeight: 56 }}> {/* Fixed height for user info */}
                 <Chip
                   label={getRoleText()}
                   color="primary"
@@ -149,7 +159,11 @@ function Dashboard() {
               </Box>
             )}
             <Tooltip title={drawerOpen ? "사이드바 접기" : "사이드바 펼치기"} placement="right">
-              <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
+              <IconButton
+                onClick={() => setDrawerOpen(!drawerOpen)}
+                size="small"
+                sx={{ minHeight: 40, minWidth: 40 }} // Fixed button size
+              >
                 {drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
               </IconButton>
             </Tooltip>
@@ -163,9 +177,10 @@ function Dashboard() {
                     selected={activeTab === item.key}
                     onClick={() => setActiveTab(item.key)}
                     sx={{
-                      minHeight: 48,
-                      justifyContent: drawerOpen ? 'initial' : 'center',
-                      px: drawerOpen ? 2.5 : 1.5,
+                      height: 48, // Fixed height
+                      px: 2.5,
+                      display: 'flex',
+                      alignItems: 'center',
                       '&.Mui-selected': {
                         backgroundColor: 'primary.light',
                         color: 'primary.contrastText',
@@ -180,14 +195,15 @@ function Dashboard() {
                   >
                     <ListItemIcon
                       sx={{
-                        minWidth: 0,
-                        mr: drawerOpen ? 3 : 'auto',
+                        minWidth: 40, // Fixed width
+                        display: 'flex',
                         justifyContent: 'center',
+                        alignItems: 'center',
                       }}
                     >
                       {item.icon}
                     </ListItemIcon>
-                    {drawerOpen && <ListItemText primary={item.label} />}
+                    {drawerOpen && <ListItemText primary={item.label} sx={{ ml: 1 }} />}
                   </ListItemButton>
                 </Tooltip>
               </ListItem>
@@ -200,21 +216,23 @@ function Dashboard() {
                 <ListItemButton
                   onClick={logout}
                   sx={{
-                    minHeight: 48,
-                    justifyContent: drawerOpen ? 'initial' : 'center',
-                    px: drawerOpen ? 2.5 : 1.5,
+                    height: 48, // Fixed height
+                    px: 2.5,
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: 0,
-                      mr: drawerOpen ? 3 : 'auto',
+                      minWidth: 40, // Fixed width
+                      display: 'flex',
                       justifyContent: 'center',
+                      alignItems: 'center',
                     }}
                   >
                     <LogoutIcon />
                   </ListItemIcon>
-                  {drawerOpen && <ListItemText primary="로그아웃" />}
+                  {drawerOpen && <ListItemText primary="로그아웃" sx={{ ml: 1 }} />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
