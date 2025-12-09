@@ -55,7 +55,10 @@ import {
   Chat as ChatIcon,
   SmartToy as AiIcon,
   Storage as StorageIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Email as EmailIcon,
+  Description as TemplateIcon,
+  MenuBook as KnowledgeIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -90,10 +93,10 @@ function Dashboard() {
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
     { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
-    { key: 'emailsettings', label: '이메일 서버 설정', icon: <SettingsIcon />, show: isAdmin },
-    { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <SettingsIcon />, show: isAdmin },
-    { key: 'llmsettings', label: 'LLM 설정', icon: <AiIcon />, show: isAdmin },
-    { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <StorageIcon />, show: isAdmin },
+    { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
+    { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
+    { key: 'llmsettings', label: 'LLM 설정', icon: <SettingsIcon />, show: isAdmin },
+    { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <KnowledgeIcon />, show: isAdmin },
   ];
 
   const renderContent = () => {
