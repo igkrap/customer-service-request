@@ -11,15 +11,26 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
+    console.log('AuthContext useEffect - Loading user from localStorage');
+    console.log('Raw userData from localStorage:', userData);
+
     if (token && userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      console.log('Parsed user data:', parsedUser);
+      console.log('ProfilePictureId from parsed user:', parsedUser.profilePictureId);
+      setUser(parsedUser);
     }
     setLoading(false);
   }, []);
 
   const login = (userData, token) => {
+    console.log('AuthContext login - userData:', userData);
+    console.log('AuthContext login - profilePictureId:', userData.profilePictureId);
+
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    const userString = JSON.stringify(userData);
+    console.log('AuthContext login - Stringified user:', userString);
+    localStorage.setItem('user', userString);
     setUser(userData);
   };
 
