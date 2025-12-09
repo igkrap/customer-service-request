@@ -32,7 +32,11 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Fade
+  Fade,
+  Fab,
+  Dialog,
+  DialogContent,
+  DialogTitle
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -52,7 +56,8 @@ import {
   Assessment as AssessmentIcon,
   Chat as ChatIcon,
   SmartToy as AiIcon,
-  Storage as StorageIcon
+  Storage as StorageIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import './styles/App.css';
 
@@ -67,6 +72,7 @@ function Dashboard() {
   const isCustomerOrManager = isCustomer || isManager;
   const [activeTab, setActiveTab] = useState('home');
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const getRoleText = () => {
     if (isAdmin) return '관리자';
@@ -77,7 +83,6 @@ function Dashboard() {
 
   const menuItems = [
     { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
-    { key: 'chatbot', label: 'AI 챗봇', icon: <ChatIcon />, show: true },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
@@ -95,7 +100,6 @@ function Dashboard() {
 
   const renderContent = () => {
     if (activeTab === 'home') return <DashboardHome />;
-    if (activeTab === 'chatbot') return <ChatBot />;
     if (activeTab === 'requests') return <ServiceRequestList />;
     if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
     if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
@@ -235,6 +239,65 @@ function Dashboard() {
           </List>
         </Box>
       </Drawer>
+
+      {/* Floating Chatbot Button */}
+      <Fab
+        color="primary"
+        aria-label="chatbot"
+        onClick={() => setChatbotOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          left: 24,
+          zIndex: 1000,
+        }}
+      >
+        <ChatIcon />
+      </Fab>
+
+      {/* Chatbot Dialog */}
+      <Dialog
+        open={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            position: 'fixed',
+            bottom: 24,
+            left: 24,
+            m: 0,
+            maxHeight: '70vh',
+            height: '600px',
+          }
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: 'primary.main',
+            color: 'white',
+            py: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AiIcon />
+            <Typography variant="h6">AI 챗봇</Typography>
+          </Box>
+          <IconButton
+            onClick={() => setChatbotOpen(false)}
+            size="small"
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <ChatBot />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

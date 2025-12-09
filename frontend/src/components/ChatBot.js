@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   IconButton,
@@ -14,6 +13,7 @@ import {
   ListItemText,
   Divider,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -122,9 +122,8 @@ function ChatBot() {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-      <Paper
-        elevation={3}
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box
         sx={{
           flex: 1,
           display: 'flex',
@@ -132,24 +131,21 @@ function ChatBot() {
           overflow: 'hidden',
         }}
       >
-        {/* Header */}
+        {/* Header - Clear Button */}
         <Box
           sx={{
-            p: 2,
-            bgcolor: 'primary.main',
-            color: 'white',
+            p: 1,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            justifyContent: 'flex-end',
+            borderBottom: 1,
+            borderColor: 'divider',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BotIcon />
-            <Typography variant="h6">AI 챗봇</Typography>
-          </Box>
-          <IconButton color="inherit" onClick={handleClearChat} size="small">
-            <DeleteIcon />
-          </IconButton>
+          <Tooltip title="대화 내용 지우기">
+            <IconButton onClick={handleClearChat} size="small">
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Error Alert */}
@@ -302,7 +298,7 @@ function ChatBot() {
             </IconButton>
           </Box>
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }
