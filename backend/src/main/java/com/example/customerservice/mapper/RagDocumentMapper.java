@@ -10,7 +10,7 @@ import java.util.List;
 public interface RagDocumentMapper {
 
     @Insert("INSERT INTO rag_documents (title, content, embedding, embedding_dimension, metadata, category, enabled, uploaded_by_user_id, created_at, updated_at) " +
-            "VALUES (#{title}, #{content}, #{embedding, typeHandler=com.example.customerservice.config.VectorTypeHandler}::vector, #{embeddingDimension}, #{metadata}::jsonb, #{category}, #{enabled}, #{uploadedByUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+            "VALUES (#{title}, #{content}, #{embedding}::vector, #{embeddingDimension}, #{metadata}::jsonb, #{category}, #{enabled}, #{uploadedByUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertRagDocument(RagDocument ragDocument);
 
@@ -45,7 +45,7 @@ public interface RagDocumentMapper {
     @Update("UPDATE rag_documents SET " +
             "title = #{title}, " +
             "content = #{content}, " +
-            "embedding = #{embedding, typeHandler=com.example.customerservice.config.VectorTypeHandler}::vector, " +
+            "embedding = #{embedding}::vector, " +
             "embedding_dimension = #{embeddingDimension}, " +
             "metadata = #{metadata}::jsonb, " +
             "category = #{category}, " +
