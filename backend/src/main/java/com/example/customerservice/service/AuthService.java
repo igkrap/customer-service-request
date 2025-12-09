@@ -66,6 +66,11 @@ public class AuthService {
         User user = userMapper.findByUserId(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        System.out.println("=== AuthService.login DEBUG ===");
+        System.out.println("User ID: " + user.getId());
+        System.out.println("User profilePictureId: " + user.getProfilePictureId());
+        System.out.println("User object: " + user);
+
         // Check approval status
         if (user.getApprovalStatus() == User.ApprovalStatus.PENDING) {
             throw new RuntimeException("관리자의 승인이 필요합니다.");
@@ -84,6 +89,9 @@ public class AuthService {
         // Generate JWT token
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name(), user.getProfilePictureId());
+        Long profilePictureId = user.getProfilePictureId();
+        System.out.println("ProfilePictureId being sent in response: " + profilePictureId);
+
+        return new AuthResponse(token, user.getId(), user.getUserId(), user.getUsername(), user.getEmail(), user.getRole().name(), profilePictureId);
     }
 }
