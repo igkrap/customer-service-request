@@ -2,7 +2,6 @@ package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ChatRequest;
 import com.example.customerservice.dto.ChatResponse;
-import com.example.customerservice.security.UserDetailsImpl;
 import com.example.customerservice.service.ChatbotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +20,8 @@ public class ChatbotController {
     @PostMapping("/chat")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<ChatResponse> chat(@RequestBody ChatRequest request, Authentication authentication) {
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        ChatResponse response = chatbotService.chat(request, userDetails.getUserId());
+        String userId = authentication.getName();
+        ChatResponse response = chatbotService.chat(request, userId);
         return ResponseEntity.ok(response);
     }
 }

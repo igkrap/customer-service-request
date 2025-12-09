@@ -1,8 +1,9 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.RagDocumentDTO;
+import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.RagDocument;
-import com.example.customerservice.security.UserDetailsImpl;
+import com.example.customerservice.model.User;
 import com.example.customerservice.service.RagDocumentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +22,16 @@ import java.util.List;
 public class RagDocumentController {
 
     private final RagDocumentService ragDocumentService;
+    private final UserMapper userMapper;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RagDocument> createRagDocument(@Valid @RequestBody RagDocumentDTO dto,
                                                           Authentication authentication) {
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        RagDocument created = ragDocumentService.createRagDocument(dto, userDetails.getId());
+        String userId = authentication.getName();
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        RagDocument created = ragDocumentService.createRagDocument(dto, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
