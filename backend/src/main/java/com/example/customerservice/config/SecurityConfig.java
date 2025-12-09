@@ -54,6 +54,9 @@ public class SecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
 
+                        // Attachment download endpoint - public for profile pictures
+                        .requestMatchers("/api/attachments/*/download").permitAll()
+
                         // User endpoints - require authentication
                         // Additional @PreAuthorize("hasRole('ADMIN')") on most endpoints in UserController
                         .requestMatchers("/api/users/**").authenticated()
@@ -61,7 +64,7 @@ public class SecurityConfig {
                         // Service Request endpoints - require CUSTOMER, MANAGER, or ADMIN role
                         .requestMatchers("/api/service-requests/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
 
-                        // Attachment endpoints - require CUSTOMER, MANAGER, or ADMIN role
+                        // Other Attachment endpoints - require CUSTOMER, MANAGER, or ADMIN role
                         .requestMatchers("/api/attachments/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
 
                         // Company endpoints - require authentication
