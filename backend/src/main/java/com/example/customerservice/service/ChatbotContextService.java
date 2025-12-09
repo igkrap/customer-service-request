@@ -116,18 +116,21 @@ public class ChatbotContextService {
         StringBuilder sb = new StringBuilder("\n\n## 내 프로젝트 목록\n\n");
 
         try {
-            List<Project> projects = projectMapper.findByUserId(user.getId());
+            List<Long> projectIds = userMapper.getProjectIdsByUserId(user.getId());
 
-            if (projects.isEmpty()) {
+            if (projectIds.isEmpty()) {
                 sb.append("배정된 프로젝트가 없습니다.\n");
             } else {
-                sb.append("총 ").append(projects.size()).append("개의 프로젝트에 배정되어 있습니다:\n\n");
-                for (Project project : projects) {
-                    sb.append(String.format("- **%s**\n", project.getProjectName()));
-                    sb.append("  서비스 타입: ").append(project.getServiceType()).append("\n");
-                    sb.append("  계약 기간: ").append(project.getContractStartDate())
-                      .append(" ~ ").append(project.getContractEndDate()).append("\n");
-                    sb.append("  계약 M/M: ").append(project.getContractManDays()).append("\n\n");
+                sb.append("총 ").append(projectIds.size()).append("개의 프로젝트에 배정되어 있습니다:\n\n");
+                for (Long projectId : projectIds) {
+                    Project project = projectMapper.findById(projectId).orElse(null);
+                    if (project != null) {
+                        sb.append(String.format("- **%s**\n", project.getProjectName()));
+                        sb.append("  서비스 타입: ").append(project.getServiceType()).append("\n");
+                        sb.append("  계약 기간: ").append(project.getContractStartDate())
+                          .append(" ~ ").append(project.getContractEndDate()).append("\n");
+                        sb.append("  계약 M/M: ").append(project.getContractManDays()).append("\n\n");
+                    }
                 }
             }
         } catch (Exception e) {
@@ -179,9 +182,9 @@ public class ChatbotContextService {
 
         try {
             List<ServiceRequest> allRequests = serviceRequestMapper.findAll();
-            List<Project> userProjects = projectMapper.findByUserId(user.getId());
+            List<Long> userProjectIds = userMapper.getProjectIdsByUserId(user.getId());
 
-            sb.append(String.format("- 내 프로젝트: %d개\n", userProjects.size()));
+            sb.append(String.format("- 내 프로젝트: %d개\n", userProjectIds.size()));
 
             if (user.getRole() == User.Role.ROLE_CUSTOMER) {
                 List<ServiceRequest> myRequests = serviceRequestMapper.findByCustomerId(user.getId());

@@ -165,9 +165,15 @@ public class ChatbotService {
     }
 
     private String arrayToVectorString(float[] array) {
-        return "[" + Arrays.stream(array)
-                .mapToObj(String::valueOf)
-                .collect(Collectors.joining(",")) + "]";
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < array.length; i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(array[i]);
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     // Pad embedding to target dimension with zeros
