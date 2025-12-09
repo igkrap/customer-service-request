@@ -177,6 +177,7 @@ function Dashboard() {
                     selected={activeTab === item.key}
                     onClick={() => setActiveTab(item.key)}
                     sx={{
+                      minHeight: 48,
                       justifyContent: drawerOpen ? 'initial' : 'center',
                       px: drawerOpen ? 2.5 : 1.5,
                       '&.Mui-selected': {
@@ -213,6 +214,7 @@ function Dashboard() {
                 <ListItemButton
                   onClick={logout}
                   sx={{
+                    minHeight: 48,
                     justifyContent: drawerOpen ? 'initial' : 'center',
                     px: drawerOpen ? 2.5 : 1.5,
                   }}
