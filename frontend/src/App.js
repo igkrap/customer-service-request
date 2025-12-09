@@ -119,8 +119,6 @@ function Dashboard() {
     <Box sx={{ display: 'flex', height: '100vh' }}>
       <Drawer
         sx={{
-          width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
-          flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
@@ -129,9 +127,12 @@ function Dashboard() {
             position: 'fixed',
             height: '100vh',
             zIndex: 1200,
+            left: 0,
+            top: 0,
           },
         }}
-        variant="permanent"
+        variant="persistent"
+        open={true}
         anchor="left"
         onMouseEnter={() => setDrawerOpen(true)}
         onMouseLeave={() => setDrawerOpen(false)}
@@ -275,8 +276,8 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           p: 1,
-          ml: `${collapsedDrawerWidth}px`,
-          width: `calc(100% - ${collapsedDrawerWidth}px)`,
+          pl: `${collapsedDrawerWidth + 8}px`,
+          width: '100%',
           height: '100%',
           overflow: 'auto'
         }}
