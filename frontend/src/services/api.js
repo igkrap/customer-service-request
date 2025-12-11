@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,6 +9,12 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Helper function to get profile picture URL from ID
+export const getProfilePictureUrl = (profilePictureId) => {
+  if (!profilePictureId) return null;
+  return `${SERVER_URL}/api/users/profile-picture/${profilePictureId}`;
+};
 
 // Add JWT token to requests
 api.interceptors.request.use(

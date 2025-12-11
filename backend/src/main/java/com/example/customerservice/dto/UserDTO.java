@@ -22,7 +22,7 @@ public class UserDTO {
     private String companyName;
     private String companyCode;
     private User.ApprovalStatus approvalStatus;
-    private String profilePictureUrl;
+    private Long profilePictureId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

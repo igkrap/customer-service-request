@@ -16,7 +16,7 @@ public class AuthResponse {
     private String username;
     private String email;
     private String role;
-    private String profilePictureUrl;
+    private Long profilePictureId;
 
     public AuthResponse(String token, Long id, String userId, String username, String email, String role) {
         this.token = token;
@@ -27,13 +27,13 @@ public class AuthResponse {
         this.role = role;
     }
 
-    public AuthResponse(String token, Long id, String userId, String username, String email, String role, String profilePictureUrl) {
+    public AuthResponse(String token, Long id, String userId, String username, String email, String role, Long profilePictureId) {
         this.token = token;
         this.id = id;
         this.userId = userId;
         this.username = username;
         this.email = email;
         this.role = role;
-        this.profilePictureUrl = profilePictureUrl;
+        this.profilePictureId = profilePictureId;
     }
 }

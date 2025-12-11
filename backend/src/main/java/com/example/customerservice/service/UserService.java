@@ -197,10 +197,8 @@ public class UserService {
             });
         }
 
-        // Set profile picture URL if exists
-        if (user.getProfilePictureId() != null) {
-            dto.setProfilePictureUrl("/api/users/profile-picture/" + user.getProfilePictureId());
-        }
+        // Set profile picture ID if exists
+        dto.setProfilePictureId(user.getProfilePictureId());
 
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());

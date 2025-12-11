@@ -35,6 +35,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import UserProfile from './UserProfile';
 import axios from 'axios';
+import { getProfilePictureUrl } from '../services/api';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
@@ -607,7 +608,7 @@ function DashboardHome() {
             </IconButton>
           </Tooltip>
           <Avatar
-            src={user?.profilePictureUrl}
+            src={getProfilePictureUrl(user?.profilePictureId)}
             sx={{
               width: 80,
               height: 80,
@@ -619,7 +620,7 @@ function DashboardHome() {
               borderColor: 'primary.main',
             }}
           >
-            {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
+            {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
           </Avatar>
           <Typography variant="h5" gutterBottom>
             {user?.username}

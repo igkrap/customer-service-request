@@ -61,6 +61,7 @@ import {
   MenuBook as KnowledgeIcon
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
+import { getProfilePictureUrl } from './services/api';
 import './styles/App.css';
 
 const drawerWidth = 280;
@@ -120,7 +121,7 @@ function Dashboard() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Drawer
         sx={{
           '& .MuiDrawer-paper': {
@@ -141,7 +142,7 @@ function Dashboard() {
         onMouseEnter={() => setDrawerOpen(true)}
         onMouseLeave={() => setDrawerOpen(false)}
       >
-        <Box sx={{ overflow: 'auto', mt: 4 }}>
+        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', mt: 4 }}>
           {/* User Info Section with Fixed Height */}
           <Box
             sx={{
@@ -153,21 +154,34 @@ function Dashboard() {
               pb: 2
             }}
           >
-            {drawerOpen ? (
-              // Expanded state: Profile picture on the left, role and welcome text on the right
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
-                <Avatar
-                  src={user?.profilePictureUrl}
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    border: '2px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              gap: drawerOpen ? 2 : 0,
+              justifyContent: drawerOpen ? 'flex-start' : 'center',
+              transition: 'gap 0.3s ease, justify-content 0.3s ease'
+            }}>
+              <Avatar
+                src={getProfilePictureUrl(user?.profilePictureId)}
+                sx={{
+                  width: drawerOpen ? 56 : 40,
+                  height: drawerOpen ? 56 : 40,
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  transition: 'width 0.3s ease, height 0.3s ease',
+                  flexShrink: 0
+                }}
+              >
+                {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
+              </Avatar>
+              {drawerOpen && (
+                <Box sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  opacity: drawerOpen ? 1 : 0,
+                  transition: 'opacity 0.3s ease'
+                }}>
                   <Chip
                     label={getRoleText()}
                     color="primary"
@@ -188,21 +202,8 @@ function Dashboard() {
                     환영합니다, {user?.username}님
                   </Typography>
                 </Box>
-              </Box>
-            ) : (
-              // Collapsed state: Only show profile picture centered
-              <Avatar
-                src={user?.profilePictureUrl}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  border: '2px solid',
-                  borderColor: 'primary.main'
-                }}
-              >
-                {!user?.profilePictureUrl && user?.username?.charAt(0).toUpperCase()}
-              </Avatar>
-            )}
+              )}
+            </Box>
           </Box>
           <Divider />
           <List>
@@ -307,7 +308,6 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           pl: `${collapsedDrawerWidth}px`,
-          width: '100%',
           height: '100%',
           overflow: 'auto',
           bgcolor: '#fff'
