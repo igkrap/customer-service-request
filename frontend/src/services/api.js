@@ -30,14 +30,30 @@ api.interceptors.request.use(
   }
 );
 
-// Handle 401 errors
+// Handle 401/403 errors (token expiry or unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    if (error.response) {
+      const { status } = error.response;
+
+      // Handle unauthorized (invalid/expired token) or forbidden
+      if (status === 401 || status === 403) {
+        // Clear auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        // Dispatch custom event for auth context to handle
+        window.dispatchEvent(new CustomEvent('auth-expired', {
+          detail: {
+            status,
+            message: status === 401 ? '세션이 만료되었습니다. 다시 로그인해주세요.' : '접근 권한이 없습니다.'
+          }
+        }));
+
+        // Redirect to login
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
