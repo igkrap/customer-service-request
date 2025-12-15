@@ -556,12 +556,12 @@ function ServiceRequestList() {
     },
     {
       field: 'hoursSpent',
-      headerName: '소요시간(h)',
+      headerName: '소요시간(m/d)',
       flex: 0.8,
       minWidth: 100,
       valueFormatter: (value) => {
         if (!value) return '';
-        return `${value}h`;
+        return `${value}`;
       }
     },
     {
@@ -668,7 +668,7 @@ function ServiceRequestList() {
   ];
 
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(h)'];
+    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(m/d)'];
 
     const statusMap = {
       'PENDING': '대기',
@@ -1040,7 +1040,7 @@ function ServiceRequestList() {
                     </Typography>
                     {selectedRequest.hoursSpent && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        소요 시간: {selectedRequest.hoursSpent}시간
+                        소요 시간: {selectedRequest.hoursSpent}m/d
                       </Typography>
                     )}
                   </Box>
@@ -1132,11 +1132,11 @@ function ServiceRequestList() {
                 fullWidth
                 required
                 type="number"
-                label="소요시간 (시간)"
+                label="소요시간 (m/d)"
                 value={resolutionData.hoursSpent}
                 onChange={(e) => setResolutionData({ ...resolutionData, hoursSpent: e.target.value })}
                 inputProps={{ step: "0.5", min: "0" }}
-                helperText="예: 2.5시간"
+                helperText="예: 2.5m/d"
               />
               <TextField
                 fullWidth
