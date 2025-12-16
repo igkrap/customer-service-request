@@ -15,6 +15,21 @@ export const AuthProvider = ({ children }) => {
       setUser(JSON.parse(userData));
     }
     setLoading(false);
+
+    // Listen for auth expiry events from API interceptor
+    const handleAuthExpired = (event) => {
+      setUser(null);
+      // Optional: show alert message
+      if (event.detail?.message) {
+        alert(event.detail.message);
+      }
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+
+    return () => {
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []);
 
   const login = (userData, token) => {
