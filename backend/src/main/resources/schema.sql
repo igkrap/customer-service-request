@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS service_request_attachments (
     id BIGSERIAL PRIMARY KEY,
     service_request_id BIGINT NOT NULL,
     attachment_id BIGINT NOT NULL,
+    attachment_type VARCHAR(20) NOT NULL DEFAULT 'REQUEST',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,

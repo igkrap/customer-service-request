@@ -115,7 +115,11 @@ public class AttachmentService {
     }
 
     public void linkToServiceRequest(Long serviceRequestId, Long attachmentId) {
-        attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId);
+        linkToServiceRequest(serviceRequestId, attachmentId, "REQUEST");
+    }
+
+    public void linkToServiceRequest(Long serviceRequestId, Long attachmentId, String attachmentType) {
+        attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId, attachmentType);
     }
 
     public void deleteAttachment(Long id) {

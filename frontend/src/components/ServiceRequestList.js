@@ -36,6 +36,7 @@ import {
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
 import FileUpload from './FileUpload';
+import RichTextEditor from './RichTextEditor';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -99,6 +100,7 @@ function ServiceRequestList() {
     hoursSpent: '',
     resolutionNotes: ''
   });
+  const [resolutionAttachments, setResolutionAttachments] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -371,11 +373,13 @@ function ServiceRequestList() {
         resolvingRequest,
         'RESOLVED',
         parseFloat(resolutionData.hoursSpent),
-        resolutionData.resolutionNotes
+        resolutionData.resolutionNotes,
+        resolutionAttachments
       );
       setShowResolutionDialog(false);
       setResolvingRequest(null);
       setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+      setResolutionAttachments([]);
       fetchData();
       setError(null);
     } catch (err) {
@@ -387,6 +391,7 @@ function ServiceRequestList() {
     setShowResolutionDialog(false);
     setResolvingRequest(null);
     setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+    setResolutionAttachments([]);
   };
 
   const handleUnassign = async (requestId) => {
@@ -827,15 +832,17 @@ function ServiceRequestList() {
                   onChange={handleInputChange}
                 />
 
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="설명"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    설명
+                  </Typography>
+                  <RichTextEditor
+                    value={formData.description}
+                    onChange={(value) => setFormData({ ...formData, description: value })}
+                    placeholder="서비스 요청 내용을 상세히 입력하세요..."
+                    minHeight={200}
+                  />
+                </Box>
 
                 <FormControl fullWidth required>
                   <InputLabel>우선순위</InputLabel>
@@ -1026,18 +1033,30 @@ function ServiceRequestList() {
                 {selectedRequest.description && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">설명</Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-                      {selectedRequest.description}
-                    </Typography>
+                    <Box
+                      sx={{
+                        mt: 1,
+                        '& .ql-editor': { padding: 0 },
+                        '& p': { margin: '0.5em 0' },
+                        '& img': { maxWidth: '100%' }
+                      }}
+                      dangerouslySetInnerHTML={{ __html: selectedRequest.description }}
+                    />
                   </Box>
                 )}
 
                 {selectedRequest.resolutionNotes && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">처리 내용</Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-                      {selectedRequest.resolutionNotes}
-                    </Typography>
+                    <Box
+                      sx={{
+                        mt: 1,
+                        '& .ql-editor': { padding: 0 },
+                        '& p': { margin: '0.5em 0' },
+                        '& img': { maxWidth: '100%' }
+                      }}
+                      dangerouslySetInnerHTML={{ __html: selectedRequest.resolutionNotes }}
+                    />
                     {selectedRequest.hoursSpent && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                         소요 시간: {selectedRequest.hoursSpent}m/d
@@ -1138,15 +1157,24 @@ function ServiceRequestList() {
                 inputProps={{ step: "0.5", min: "0" }}
                 helperText="예: 2.5m/d"
               />
-              <TextField
-                fullWidth
-                required
-                multiline
-                rows={4}
-                label="처리 내용"
-                value={resolutionData.resolutionNotes}
-                onChange={(e) => setResolutionData({ ...resolutionData, resolutionNotes: e.target.value })}
-                placeholder="수행한 작업 내용을 상세히 입력해주세요."
+
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  처리 내용 *
+                </Typography>
+                <RichTextEditor
+                  value={resolutionData.resolutionNotes}
+                  onChange={(value) => setResolutionData({ ...resolutionData, resolutionNotes: value })}
+                  placeholder="수행한 작업 내용을 상세히 입력해주세요..."
+                  minHeight={150}
+                />
+              </Box>
+
+              <Divider sx={{ my: 1 }} />
+
+              <FileUpload
+                attachments={resolutionAttachments}
+                onAttachmentsChange={setResolutionAttachments}
               />
             </Box>
           </DialogContent>

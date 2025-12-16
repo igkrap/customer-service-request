@@ -24,9 +24,9 @@ public interface AttachmentMapper {
     @Delete("DELETE FROM attachments WHERE id = #{id}")
     int delete(Long id);
 
-    @Insert("INSERT INTO service_request_attachments (service_request_id, attachment_id, created_at) " +
-            "VALUES (#{serviceRequestId}, #{attachmentId}, CURRENT_TIMESTAMP)")
-    int linkToServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId);
+    @Insert("INSERT INTO service_request_attachments (service_request_id, attachment_id, attachment_type, created_at) " +
+            "VALUES (#{serviceRequestId}, #{attachmentId}, #{attachmentType}, CURRENT_TIMESTAMP)")
+    int linkToServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId, @Param("attachmentType") String attachmentType);
 
     @Delete("DELETE FROM service_request_attachments WHERE service_request_id = #{serviceRequestId} AND attachment_id = #{attachmentId}")
     int unlinkFromServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId);

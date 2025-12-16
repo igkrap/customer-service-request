@@ -296,11 +296,17 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
-        return updateServiceRequestStatus(id, status, null, null);
+        return updateServiceRequestStatus(id, status, null, null, null);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
                                                         Double hoursSpent, String resolutionNotes) {
+        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null);
+    }
+
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
+                                                        Double hoursSpent, String resolutionNotes,
+                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -325,6 +331,15 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Link resolution attachments if provided
+        if (attachments != null && !attachments.isEmpty()) {
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : attachments) {
+                if (attachmentDTO.getId() != null) {
+                    attachmentService.linkToServiceRequest(id, attachmentDTO.getId(), "RESOLUTION");
+                }
+            }
+        }
 
         // Send email notification to customer if status changed
         if (status != oldStatus) {
