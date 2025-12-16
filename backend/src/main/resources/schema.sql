@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     profile_picture_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
-    FOREIGN KEY (profile_picture_id) REFERENCES attachments(id) ON DELETE SET NULL
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
 );
 
 -- Create projects table
@@ -129,6 +128,34 @@ CREATE TABLE IF NOT EXISTS service_request_attachments (
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
     UNIQUE(service_request_id, attachment_id)
 );
+
+-- Create service_request_comments table for comments on service requests
+CREATE TABLE IF NOT EXISTS service_request_comments (
+    id BIGSERIAL PRIMARY KEY,
+    service_request_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create comment_attachments table (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS comment_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    comment_id BIGINT NOT NULL,
+    attachment_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (comment_id) REFERENCES service_request_comments(id) ON DELETE CASCADE,
+    FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
+    UNIQUE(comment_id, attachment_id)
+);
+
+-- Add foreign key constraint for users.profile_picture_id after attachments table is created
+ALTER TABLE users
+ADD CONSTRAINT fk_users_profile_picture
+FOREIGN KEY (profile_picture_id) REFERENCES attachments(id) ON DELETE SET NULL;
 
 -- Create email_settings table for SMTP configuration
 CREATE TABLE IF NOT EXISTS email_settings (
