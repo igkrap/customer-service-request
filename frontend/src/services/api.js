@@ -13,7 +13,7 @@ const api = axios.create({
 // Helper function to get profile picture URL from ID
 export const getProfilePictureUrl = (profilePictureId) => {
   if (!profilePictureId) return null;
-  return `${SERVER_URL}/api/users/profile-picture/${profilePictureId}`;
+  return `${API_BASE_URL}/users/profile-picture/${profilePictureId}`;
 };
 
 // Add JWT token to requests
