@@ -120,6 +120,8 @@ function Dashboard() {
     return null;
   };
 
+  const floatingOffset = drawerOpen ? drawerWidth : collapsedDrawerWidth;
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Drawer
@@ -328,8 +330,10 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          right: 24,
+          left: floatingOffset + 16,
+          right: 'auto',
           zIndex: 1000,
+          transition: 'left 0.3s ease',
         }}
       >
         <ChatIcon />
@@ -345,10 +349,12 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 24,
-            right: 24,
+            left: floatingOffset + 16,
+            right: 'auto',
             m: 0,
             maxHeight: '70vh',
             height: '600px',
+            transition: 'left 0.3s ease',
           }
         }}
       >

@@ -473,6 +473,24 @@ function ServiceRequestList() {
     return false;
   };
 
+  const statusLabelMap = {
+    'OPEN': '대기',
+    'IN_PROGRESS': '진행중',
+    'RESOLVED': '완료',
+    'HOLD': '보류',
+    'CANCELLED': '취소'
+  };
+
+  const priorityLabelMap = {
+    'LOW': '낮음',
+    'MEDIUM': '보통',
+    'HIGH': '높음',
+    'URGENT': '긴급'
+  };
+
+  const getStatusLabel = (status) => status ? (statusLabelMap[status] || status) : '';
+  const getPriorityLabel = (priority) => priority ? (priorityLabelMap[priority] || priority) : '';
+
   const getStatusChip = (status) => {
     const colorMap = {
       'OPEN': 'primary',
@@ -481,14 +499,7 @@ function ServiceRequestList() {
       'HOLD': 'warning',
       'CANCELLED': 'error'
     };
-    const labelMap = {
-      'OPEN': '대기',
-      'IN_PROGRESS': '진행중',
-      'RESOLVED': '완료',
-      'HOLD': '보류',
-      'CANCELLED': '취소'
-    };
-    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
+    return <Chip label={getStatusLabel(status)} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const getPriorityChip = (priority) => {
@@ -498,13 +509,7 @@ function ServiceRequestList() {
       'HIGH': 'warning',
       'URGENT': 'error'
     };
-    const labelMap = {
-      'LOW': '낮음',
-      'MEDIUM': '보통',
-      'HIGH': '높음',
-      'URGENT': '긴급'
-    };
-    return <Chip label={labelMap[priority] || priority} color={colorMap[priority] || 'default'} size="small" />;
+    return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
   const columns = [
@@ -516,21 +521,23 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (value) => value || '없음'
+      valueGetter: (params) => params.value || '없음'
     },
     {
       field: 'status',
       headerName: '상태',
       flex: 1,
       minWidth: 120,
-      renderCell: (params) => params.value ? getStatusChip(params.value) : null
+      valueGetter: (params) => getStatusLabel(params.value),
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
     },
     {
       field: 'priority',
       headerName: '우선순위',
       flex: 0.8,
       minWidth: 100,
-      renderCell: (params) => params.value ? getPriorityChip(params.value) : null
+      valueGetter: (params) => getPriorityLabel(params.value),
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
     },
     {
       field: 'dueDate',
@@ -792,7 +799,17 @@ function ServiceRequestList() {
           )}
         </Box>
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'hidden',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          minHeight: 0
+        }}
+      >
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -1192,7 +1209,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
             rows={requests}
             columns={columns}
@@ -1212,6 +1229,7 @@ function ServiceRequestList() {
             sx={{
               height: '100%',
               minHeight: 500,
+              flex: 1,
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'
