@@ -72,6 +72,7 @@ function Dashboard() {
   const isAdmin = user?.role === 'ROLE_ADMIN';
   const isCustomer = user?.role === 'ROLE_CUSTOMER';
   const isManager = user?.role === 'ROLE_MANAGER';
+  const hasKnownRole = isAdmin || isCustomer || isManager;
   const isCustomerOrManager = isCustomer || isManager;
   const [activeTab, setActiveTab] = useState('home');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -84,12 +85,34 @@ function Dashboard() {
     return '사용자';
   };
 
+  const renderUnauthorized = () => (
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 2,
+        p: 3,
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="h5" fontWeight={700} color="text.primary">
+        역할이 아직 부여되지 않았습니다.
+      </Typography>
+      <Typography variant="body1" color="text.secondary">
+        관리자의 승인을 받은 후 다시 접속해 주세요. 필요한 경우 프로필 화면에서 정보를 확인할 수 있습니다.
+      </Typography>
+    </Box>
+  );
+
   const menuItems = [
     { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
     { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: true },
+    { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: hasKnownRole },
     { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
     { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
@@ -102,6 +125,8 @@ function Dashboard() {
   ];
 
   const renderContent = () => {
+    if (!hasKnownRole && activeTab !== 'profile') return renderUnauthorized();
+
     if (activeTab === 'home') return <DashboardHome />;
     if (activeTab === 'requests') return <ServiceRequestList />;
     if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
@@ -119,6 +144,8 @@ function Dashboard() {
     if (activeTab === 'profile') return <UserProfile />;
     return null;
   };
+
+  const floatingOffset = drawerOpen ? drawerWidth : collapsedDrawerWidth;
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -328,8 +355,10 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          right: 24,
+          left: floatingOffset + 16,
+          right: 'auto',
           zIndex: 1000,
+          transition: 'left 0.3s ease',
         }}
       >
         <ChatIcon />
@@ -345,10 +374,12 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 24,
-            right: 24,
+            left: floatingOffset + 16,
+            right: 'auto',
             m: 0,
             maxHeight: '70vh',
             height: '600px',
+            transition: 'left 0.3s ease',
           }
         }}
       >

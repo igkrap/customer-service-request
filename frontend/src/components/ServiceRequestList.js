@@ -96,6 +96,7 @@ function ServiceRequestList() {
   const [selectedFollowUps, setSelectedFollowUps] = useState([]);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
+  const [isEditingResolution, setIsEditingResolution] = useState(false);
   const [resolutionData, setResolutionData] = useState({
     hoursSpent: '',
     resolutionNotes: ''
@@ -345,11 +346,28 @@ function ServiceRequestList() {
     });
   };
 
-  const handleStatusChange = async (requestId, newStatus) => {
+  const openResolutionDialog = (request) => {
+    const requestId = typeof request === 'object' ? request?.id : request;
+    const targetRequest = typeof request === 'object'
+      ? request
+      : requests.find((req) => req.id === requestId);
+
+    setResolvingRequest(requestId);
+    setIsEditingResolution((targetRequest?.status || '') === 'RESOLVED');
+    setResolutionData({
+      hoursSpent: targetRequest?.hoursSpent ? String(targetRequest.hoursSpent) : '',
+      resolutionNotes: targetRequest?.resolutionNotes || ''
+    });
+    setResolutionAttachments([]);
+    setShowResolutionDialog(true);
+  };
+
+  const handleStatusChange = async (request, newStatus) => {
+    const requestId = typeof request === 'object' ? request.id : request;
+
     // If changing to RESOLVED, show dialog to collect hours and notes
     if (newStatus === 'RESOLVED') {
-      setResolvingRequest(requestId);
-      setShowResolutionDialog(true);
+      openResolutionDialog(request);
       return;
     }
 
@@ -379,6 +397,7 @@ function ServiceRequestList() {
       setShowResolutionDialog(false);
       setResolvingRequest(null);
       setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+      setIsEditingResolution(false);
       setResolutionAttachments([]);
       fetchData();
       setError(null);
@@ -391,6 +410,7 @@ function ServiceRequestList() {
     setShowResolutionDialog(false);
     setResolvingRequest(null);
     setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+    setIsEditingResolution(false);
     setResolutionAttachments([]);
   };
 
@@ -473,6 +493,24 @@ function ServiceRequestList() {
     return false;
   };
 
+  const statusLabelMap = {
+    'OPEN': '대기',
+    'IN_PROGRESS': '진행중',
+    'RESOLVED': '완료',
+    'HOLD': '보류',
+    'CANCELLED': '취소'
+  };
+
+  const priorityLabelMap = {
+    'LOW': '낮음',
+    'MEDIUM': '보통',
+    'HIGH': '높음',
+    'URGENT': '긴급'
+  };
+
+  const getStatusLabel = (status) => status ? (statusLabelMap[status] || status) : '';
+  const getPriorityLabel = (priority) => priority ? (priorityLabelMap[priority] || priority) : '';
+
   const getStatusChip = (status) => {
     const colorMap = {
       'OPEN': 'primary',
@@ -481,14 +519,7 @@ function ServiceRequestList() {
       'HOLD': 'warning',
       'CANCELLED': 'error'
     };
-    const labelMap = {
-      'OPEN': '대기',
-      'IN_PROGRESS': '진행중',
-      'RESOLVED': '완료',
-      'HOLD': '보류',
-      'CANCELLED': '취소'
-    };
-    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
+    return <Chip label={getStatusLabel(status)} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const getPriorityChip = (priority) => {
@@ -498,13 +529,7 @@ function ServiceRequestList() {
       'HIGH': 'warning',
       'URGENT': 'error'
     };
-    const labelMap = {
-      'LOW': '낮음',
-      'MEDIUM': '보통',
-      'HIGH': '높음',
-      'URGENT': '긴급'
-    };
-    return <Chip label={labelMap[priority] || priority} color={colorMap[priority] || 'default'} size="small" />;
+    return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
   const columns = [
@@ -516,21 +541,23 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (value) => value || '없음'
+      valueGetter: (params) => params.value || '없음'
     },
     {
       field: 'status',
       headerName: '상태',
       flex: 1,
       minWidth: 120,
-      renderCell: (params) => params.value ? getStatusChip(params.value) : null
+      valueGetter: (params) => getStatusLabel(params.value),
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
     },
     {
       field: 'priority',
       headerName: '우선순위',
       flex: 0.8,
       minWidth: 100,
-      renderCell: (params) => params.value ? getPriorityChip(params.value) : null
+      valueGetter: (params) => getPriorityLabel(params.value),
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
     },
     {
       field: 'dueDate',
@@ -609,17 +636,30 @@ function ServiceRequestList() {
             {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
               <>
                 {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
-                {params.row.status !== 'IN_PROGRESS' && (
+                {params.row.status !== 'IN_PROGRESS' && params.row.status !== 'RESOLVED' && (
                   <IconButton
                     size="small"
                     color="success"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleStatusChange(params.row.id, 'IN_PROGRESS');
+                      handleStatusChange(params.row, 'IN_PROGRESS');
                     }}
                     title="시작"
                   >
                     <StartIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {params.row.status === 'RESOLVED' && (
+                  <IconButton
+                    size="small"
+                    color="info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(params.row, 'RESOLVED');
+                    }}
+                    title="완료 내용 수정"
+                  >
+                    <EditIcon fontSize="small" />
                   </IconButton>
                 )}
                 {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
@@ -631,7 +671,7 @@ function ServiceRequestList() {
                         color="info"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'RESOLVED');
+                          handleStatusChange(params.row, 'RESOLVED');
                         }}
                         title="완료"
                       >
@@ -644,7 +684,7 @@ function ServiceRequestList() {
                         color="warning"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'HOLD');
+                          handleStatusChange(params.row, 'HOLD');
                         }}
                         title="보류"
                       >
@@ -792,7 +832,17 @@ function ServiceRequestList() {
           )}
         </Box>
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'hidden',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          minHeight: 0
+        }}
+      >
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -1140,12 +1190,14 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <DialogTitle>서비스 요청 완료</DialogTitle>
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+          <DialogTitle>{isEditingResolution ? '완료 내용 수정' : '서비스 요청 완료'}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Alert severity="info">
-                서비스 요청을 완료하려면 소요시간과 처리 내용을 입력해주세요.
+                {isEditingResolution
+                  ? '등록된 완료 내용을 수정할 수 있습니다. 필요 시 소요시간과 처리 내용을 업데이트하세요.'
+                  : '서비스 요청을 완료하려면 소요시간과 처리 내용을 입력해주세요.'}
               </Alert>
               <TextField
                 fullWidth
@@ -1192,7 +1244,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
             rows={requests}
             columns={columns}
@@ -1212,6 +1264,7 @@ function ServiceRequestList() {
             sx={{
               height: '100%',
               minHeight: 500,
+              flex: 1,
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'

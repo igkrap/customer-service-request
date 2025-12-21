@@ -61,10 +61,14 @@ function ProjectList() {
           const allProjectsResponse = await projectAPI.getAll();
           projectsData = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
         }
-      } else {
+      } else if (user?.role === 'ROLE_ADMIN') {
         // Admin: show all projects
         const projectsResponse = await projectAPI.getAll();
         projectsData = projectsResponse.data;
+      } else {
+        setProjects([]);
+        setError('프로젝트를 조회할 수 있는 권한이 없습니다. 관리자에게 문의하세요.');
+        return;
       }
 
       const companiesResponse = await companyAPI.getAll();
