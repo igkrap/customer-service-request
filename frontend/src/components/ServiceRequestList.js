@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Stack,
   TextField,
   Select,
   MenuItem,
@@ -130,6 +131,9 @@ function ServiceRequestList() {
     }
     return filtered;
   };
+
+  const selectedRequestAttachments = filterAttachmentsByType(selectedAttachments, 'REQUEST');
+  const selectedResolutionAttachments = filterAttachmentsByType(selectedAttachments, 'RESOLUTION');
 
   useEffect(() => {
     fetchData();
@@ -1028,30 +1032,38 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Detail View Dialog */}
-        <Dialog open={showDetailDialog} onClose={handleCloseDetail} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <DialogTitle>
+        <Dialog
+          open={showDetailDialog}
+          onClose={handleCloseDetail}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 2 } }}
+        >
+          <DialogTitle sx={{ pr: 6 }}>
             서비스 요청 상세정보
             <IconButton
               onClick={handleCloseDetail}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
+              sx={{ position: 'absolute', right: 12, top: 12 }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent>
+          <DialogContent dividers>
             {selectedRequest && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" gutterBottom>기본 정보</Typography>
+              <Stack spacing={2}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    기본 정보
+                  </Typography>
                   <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">제목</Typography>
-                      <Typography variant="body1">{selectedRequest.title}</Typography>
+                      <Typography variant="body1" fontWeight="medium" sx={{ mt: 0.5 }}>{selectedRequest.title}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">상태</Typography>
-                      <Box>
+                      <Box sx={{ mt: 0.5 }}>
                         <Chip
                           label={selectedRequest.status === 'OPEN' ? '열림' :
                                  selectedRequest.status === 'IN_PROGRESS' ? '진행중' :
@@ -1065,9 +1077,9 @@ function ServiceRequestList() {
                         />
                       </Box>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">우선순위</Typography>
-                      <Box>
+                      <Box sx={{ mt: 0.5 }}>
                         <Chip
                           label={selectedRequest.priority === 'LOW' ? '낮음' :
                                  selectedRequest.priority === 'MEDIUM' ? '보통' :
@@ -1078,52 +1090,56 @@ function ServiceRequestList() {
                         />
                       </Box>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">고객</Typography>
-                      <Typography variant="body1">{selectedRequest.customerName || '-'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.customerName || '-'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">담당자</Typography>
-                      <Typography variant="body1">{selectedRequest.managerName || '미할당'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.managerName || '미할당'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">프로젝트</Typography>
-                      <Typography variant="body1">{selectedRequest.projectName || '-'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.projectName || '-'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">마감일</Typography>
-                      <Typography variant="body1">
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
                         {selectedRequest.dueDate ? formatDateForDisplay(selectedRequest.dueDate) : '-'}
                       </Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">생성일</Typography>
-                      <Typography variant="body1">{formatDateTime(selectedRequest.createdAt)}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{formatDateTime(selectedRequest.createdAt)}</Typography>
                     </Box>
                   </Box>
-                </Box>
+                </Paper>
 
                 {selectedRequest.description && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">설명</Typography>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      설명
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
                     <Box
                       sx={{
-                        mt: 1,
                         '& .ql-editor': { padding: 0 },
                         '& p': { margin: '0.5em 0' },
                         '& img': { maxWidth: '100%' }
                       }}
                       dangerouslySetInnerHTML={{ __html: selectedRequest.description }}
                     />
-                  </Box>
+                  </Paper>
                 )}
 
                 {selectedRequest.resolutionNotes && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">처리 내용</Typography>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      처리 내용
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
                     <Box
                       sx={{
-                        mt: 1,
                         '& .ql-editor': { padding: 0 },
                         '& p': { margin: '0.5em 0' },
                         '& img': { maxWidth: '100%' }
@@ -1135,76 +1151,135 @@ function ServiceRequestList() {
                         소요 시간: {selectedRequest.hoursSpent}m/d
                       </Typography>
                     )}
-                  </Box>
+                  </Paper>
                 )}
 
-                {selectedAttachments.length > 0 && (
-                  <Box>
-                    <Typography variant="h6" gutterBottom>첨부파일</Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    {selectedAttachments.map((attachment) => (
-                      <Box
-                        key={attachment.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          p: 1,
-                          borderRadius: 1,
-                          '&:hover': { backgroundColor: 'action.hover' }
-                        }}
-                      >
-                        <Typography variant="body2">{attachment.originalFileName}</Typography>
-                        <Button
-                          size="small"
-                          startIcon={<DownloadIcon />}
-                          onClick={() => handleDownloadAttachment(attachment)}
-                        >
-                          다운로드
-                        </Button>
-                      </Box>
-                    ))}
-                  </Box>
+                {(selectedRequestAttachments.length > 0 || selectedResolutionAttachments.length > 0) && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      첨부파일
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={1.5}>
+                      {selectedRequestAttachments.length > 0 && (
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip label="요청 첨부" color="default" size="small" variant="outlined" />
+                            <Typography variant="body2" color="text.secondary">
+                              요청 단계에 등록된 파일
+                            </Typography>
+                          </Box>
+                          <Stack spacing={0.75}>
+                            {selectedRequestAttachments.map((attachment) => (
+                              <Box
+                                key={`${attachment.id}-request`}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: 'grey.50'
+                                }}
+                              >
+                                <Typography variant="body2">{attachment.originalFileName}</Typography>
+                                <Button
+                                  size="small"
+                                  startIcon={<DownloadIcon />}
+                                  onClick={() => handleDownloadAttachment(attachment)}
+                                >
+                                  다운로드
+                                </Button>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {selectedResolutionAttachments.length > 0 && (
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip label="완료 첨부" color="success" size="small" variant="outlined" />
+                            <Typography variant="body2" color="text.secondary">
+                              완료 단계에 추가된 파일
+                            </Typography>
+                          </Box>
+                          <Stack spacing={0.75}>
+                            {selectedResolutionAttachments.map((attachment) => (
+                              <Box
+                                key={`${attachment.id}-resolution`}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: 'grey.50'
+                                }}
+                              >
+                                <Typography variant="body2">{attachment.originalFileName}</Typography>
+                                <Button
+                                  size="small"
+                                  startIcon={<DownloadIcon />}
+                                  onClick={() => handleDownloadAttachment(attachment)}
+                                >
+                                  다운로드
+                                </Button>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Paper>
                 )}
 
                 {selectedFollowUps.length > 0 && (
-                  <Box>
-                    <Typography variant="h6" gutterBottom>후속 요청</Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    {selectedFollowUps.map((followUp) => (
-                      <Box
-                        key={followUp.id}
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          mb: 1
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body2" fontWeight="bold">
-                            #{followUp.id} - {followUp.title}
-                          </Typography>
-                          <Chip
-                            label={followUp.status === 'OPEN' ? '열림' :
-                                   followUp.status === 'IN_PROGRESS' ? '진행중' :
-                                   followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
-                            size="small"
-                            color={followUp.status === 'RESOLVED' ? 'success' :
-                                   followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
-                          />
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      후속 요청
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={1}>
+                      {selectedFollowUps.map((followUp) => (
+                        <Box
+                          key={followUp.id}
+                          sx={{
+                            p: 1,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'grey.50'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" fontWeight="bold">
+                              #{followUp.id} - {followUp.title}
+                            </Typography>
+                            <Chip
+                              label={followUp.status === 'OPEN' ? '열림' :
+                                     followUp.status === 'IN_PROGRESS' ? '진행중' :
+                                     followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
+                              size="small"
+                              color={followUp.status === 'RESOLVED' ? 'success' :
+                                     followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
+                            />
+                          </Box>
+                          {followUp.description && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {followUp.description}
+                            </Typography>
+                          )}
                         </Box>
-                        {followUp.description && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                            {followUp.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
+                      ))}
+                    </Stack>
+                  </Paper>
                 )}
-              </Box>
+              </Stack>
             )}
           </DialogContent>
           <DialogActions>
