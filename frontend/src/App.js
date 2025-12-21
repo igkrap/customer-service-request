@@ -334,14 +334,18 @@ function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          pl: `${collapsedDrawerWidth}px`,
-          height: '100%',
-          overflow: 'auto',
-          bgcolor: '#fff'
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          bgcolor: 'background.default',
+          ml: `${drawerOpen ? drawerWidth : collapsedDrawerWidth}px`,
+          transition: 'margin-left 0.3s ease',
+          minWidth: 0
         }}
       >
         <Fade in={true} timeout={300} key={activeTab}>
-          <Box sx={{ height: '100%' }}>
+          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
             {renderContent()}
           </Box>
         </Fade>
