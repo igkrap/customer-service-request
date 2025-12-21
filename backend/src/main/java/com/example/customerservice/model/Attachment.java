@@ -16,5 +16,6 @@ public class Attachment {
     private Long fileSize;
     private String contentType;
     private Long uploadedByUserId;
+    private String attachmentType;
     private LocalDateTime createdAt;
 }

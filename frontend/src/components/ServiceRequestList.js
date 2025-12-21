@@ -115,6 +115,22 @@ function ServiceRequestList() {
   });
   const [attachments, setAttachments] = useState([]);
 
+  const filterAttachmentsByType = (items, type) => {
+    if (!Array.isArray(items)) return [];
+    if (!type) return items;
+
+    const normalized = items.map((item) => ({
+      ...item,
+      attachmentType: item.attachmentType || 'REQUEST'
+    }));
+
+    const filtered = normalized.filter((item) => item.attachmentType === type);
+    if (type === 'REQUEST' && filtered.length === 0) {
+      return normalized.filter((item) => !item.attachmentType || item.attachmentType === 'REQUEST');
+    }
+    return filtered;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -310,7 +326,7 @@ function ServiceRequestList() {
     // Load existing attachments
     try {
       const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
-      setAttachments(attachmentsResponse.data || []);
+      setAttachments(filterAttachmentsByType(attachmentsResponse.data, 'REQUEST'));
     } catch (err) {
       console.error('Failed to load attachments:', err);
       setAttachments([]);
@@ -346,19 +362,26 @@ function ServiceRequestList() {
     });
   };
 
-  const openResolutionDialog = (request) => {
+  const openResolutionDialog = async (request) => {
     const requestId = typeof request === 'object' ? request?.id : request;
     const targetRequest = typeof request === 'object'
       ? request
       : requests.find((req) => req.id === requestId);
 
     setResolvingRequest(requestId);
-    setIsEditingResolution((targetRequest?.status || '') === 'RESOLVED');
+    const editingCompleted = (targetRequest?.status || '') === 'RESOLVED';
+    setIsEditingResolution(editingCompleted);
     setResolutionData({
       hoursSpent: targetRequest?.hoursSpent ? String(targetRequest.hoursSpent) : '',
       resolutionNotes: targetRequest?.resolutionNotes || ''
     });
-    setResolutionAttachments([]);
+    try {
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(requestId);
+      const resolutionOnly = filterAttachmentsByType(attachmentsResponse.data, 'RESOLUTION');
+      setResolutionAttachments(editingCompleted ? resolutionOnly : []);
+    } catch (err) {
+      setResolutionAttachments([]);
+    }
     setShowResolutionDialog(true);
   };
 
@@ -367,7 +390,7 @@ function ServiceRequestList() {
 
     // If changing to RESOLVED, show dialog to collect hours and notes
     if (newStatus === 'RESOLVED') {
-      openResolutionDialog(request);
+      await openResolutionDialog(request);
       return;
     }
 

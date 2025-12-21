@@ -144,6 +144,7 @@ public class AttachmentService {
         dto.setFileSize(attachment.getFileSize());
         dto.setContentType(attachment.getContentType());
         dto.setUploadedByUserId(attachment.getUploadedByUserId());
+        dto.setAttachmentType(attachment.getAttachmentType());
         dto.setCreatedAt(attachment.getCreatedAt());
 
         if (attachment.getUploadedByUserId() != null) {

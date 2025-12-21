@@ -16,7 +16,7 @@ public interface AttachmentMapper {
     @Select("SELECT * FROM attachments WHERE id = #{id}")
     Attachment findById(Long id);
 
-    @Select("SELECT a.* FROM attachments a " +
+    @Select("SELECT a.*, sra.attachment_type AS attachment_type FROM attachments a " +
             "JOIN service_request_attachments sra ON a.id = sra.attachment_id " +
             "WHERE sra.service_request_id = #{serviceRequestId}")
     List<Attachment> findByServiceRequestId(Long serviceRequestId);

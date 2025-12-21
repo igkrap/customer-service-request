@@ -339,7 +339,7 @@ function Dashboard() {
           flexDirection: 'column',
           overflow: 'hidden',
           bgcolor: 'background.default',
-          ml: `${drawerOpen ? drawerWidth : collapsedDrawerWidth}px`,
+          ml: `${collapsedDrawerWidth}px`,
           transition: 'margin-left 0.3s ease',
           minWidth: 0
         }}
