@@ -93,17 +93,26 @@ function Dashboard() {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
-        gap: 2,
-        p: 3,
+        gap: 2.5,
+        p: { xs: 3, md: 5 },
         textAlign: 'center',
       }}
     >
-      <Typography variant="h5" fontWeight={700} color="text.primary">
-        역할이 아직 부여되지 않았습니다.
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
-        관리자의 승인을 받은 후 다시 접속해 주세요. 필요한 경우 프로필 화면에서 정보를 확인할 수 있습니다.
-      </Typography>
+      <Box
+        className="glass-surface"
+        sx={{
+          p: { xs: 3, md: 4 },
+          borderRadius: 4,
+          maxWidth: 520,
+        }}
+      >
+        <Typography variant="h5" fontWeight={800} color="text.primary" gutterBottom>
+          역할이 아직 부여되지 않았습니다.
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          관리자의 승인을 받은 후 다시 접속해 주세요. 필요한 경우 프로필 화면에서 정보를 확인할 수 있습니다.
+        </Typography>
+      </Box>
     </Box>
   );
 
@@ -146,9 +155,17 @@ function Dashboard() {
   };
 
   const floatingOffset = drawerOpen ? drawerWidth : collapsedDrawerWidth;
+  const currentMenu = menuItems.find((item) => item.key === activeTab);
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100vh',
+        overflow: 'hidden',
+        background: 'transparent',
+      }}
+    >
       <Drawer
         sx={{
           '& .MuiDrawer-paper': {
@@ -161,6 +178,11 @@ function Dashboard() {
             zIndex: 1200,
             left: 0,
             top: 0,
+            background: drawerOpen
+              ? 'linear-gradient(180deg, rgba(11,16,33,0.92), rgba(11,16,33,0.82))'
+              : 'linear-gradient(180deg, rgba(11,16,33,0.94), rgba(11,16,33,0.88))',
+            color: '#e6e9f5',
+            borderRight: '1px solid rgba(255,255,255,0.05)',
           },
         }}
         variant="persistent"
@@ -178,7 +200,7 @@ function Dashboard() {
               alignItems: 'center',
               px: drawerOpen ? 2 : 1,
               minHeight: 80,
-              pb: 2
+              pb: 2,
             }}
           >
             <Box sx={{
@@ -345,8 +367,55 @@ function Dashboard() {
         }}
       >
         <Fade in={true} timeout={300} key={activeTab}>
-          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-            {renderContent()}
+          <Box
+            sx={{
+              flex: 1,
+              overflow: 'auto',
+              minHeight: 0,
+              background: 'radial-gradient(circle at 20% 20%, rgba(90,103,255,0.08), transparent 32%), radial-gradient(circle at 80% 0%, rgba(11,212,183,0.12), transparent 28%)',
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: 1440,
+                mx: 'auto',
+                p: { xs: 2, sm: 3, md: 4 },
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2.5,
+                minHeight: '100%',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1.4 }}>
+                    {isAdmin ? '어드민 콘솔' : isManager ? '매니저 허브' : '서비스 스테이션'}
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} color="text.primary">
+                    {currentMenu?.label ?? '홈'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    최신 디자인 토큰과 유리질 카드 레이아웃으로 통일된 2025년형 UI를 제공합니다.
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Chip label={getRoleText()} color="primary" sx={{ fontWeight: 700, px: 0.5 }} />
+                  <Chip label={user?.username} variant="outlined" sx={{ borderColor: 'rgba(90,103,255,0.4)' }} />
+                </Box>
+              </Box>
+
+              <Box className="glass-surface" sx={{ flex: 1, minHeight: 0, p: { xs: 2.5, md: 3.5 }, borderRadius: 4 }}>
+                {renderContent()}
+              </Box>
+            </Box>
           </Box>
         </Fade>
       </Box>
