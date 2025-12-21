@@ -255,11 +255,10 @@ public class ServiceRequestService {
 
         // Update attachments if provided
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+            List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                attachmentService.getAttachmentsByServiceRequestId(id);
             for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
                 if (attachmentDTO.getId() != null) {
-                    // Check if attachment is already linked
-                    List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
-                        attachmentService.getAttachmentsByServiceRequestId(id);
                     boolean alreadyLinked = existingAttachments.stream()
                         .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
 
@@ -334,9 +333,17 @@ public class ServiceRequestService {
 
         // Link resolution attachments if provided
         if (attachments != null && !attachments.isEmpty()) {
+            List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                attachmentService.getAttachmentsByServiceRequestId(id);
             for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : attachments) {
                 if (attachmentDTO.getId() != null) {
-                    attachmentService.linkToServiceRequest(id, attachmentDTO.getId(), "RESOLUTION");
+                    boolean alreadyLinked = existingAttachments.stream()
+                        .anyMatch(a -> a.getId().equals(attachmentDTO.getId()) &&
+                            "RESOLUTION".equalsIgnoreCase(a.getAttachmentType()));
+
+                    if (!alreadyLinked) {
+                        attachmentService.linkToServiceRequest(id, attachmentDTO.getId(), "RESOLUTION");
+                    }
                 }
             }
         }

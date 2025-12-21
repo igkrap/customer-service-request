@@ -25,7 +25,10 @@ public interface AttachmentMapper {
     int delete(Long id);
 
     @Insert("INSERT INTO service_request_attachments (service_request_id, attachment_id, attachment_type, created_at) " +
-            "VALUES (#{serviceRequestId}, #{attachmentId}, #{attachmentType}, CURRENT_TIMESTAMP)")
+            "VALUES (#{serviceRequestId}, #{attachmentId}, #{attachmentType}, CURRENT_TIMESTAMP) " +
+            "ON CONFLICT (service_request_id, attachment_id) DO UPDATE SET " +
+            "attachment_type = EXCLUDED.attachment_type, " +
+            "created_at = EXCLUDED.created_at")
     int linkToServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId, @Param("attachmentType") String attachmentType);
 
     @Delete("DELETE FROM service_request_attachments WHERE service_request_id = #{serviceRequestId} AND attachment_id = #{attachmentId}")
