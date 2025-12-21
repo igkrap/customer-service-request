@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     profile_picture_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_users_role CHECK (role IN ('ROLE_CUSTOMER', 'ROLE_MANAGER', 'ROLE_ADMIN') OR role IS NULL),
+    CONSTRAINT chk_users_approval_status CHECK (approval_status IN ('PENDING', 'APPROVED', 'REJECTED')),
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
 );
 
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS projects (
     contract_man_days NUMERIC(10, 2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_projects_service_type CHECK (service_type IN ('MAINTENANCE', 'DEFECT_REPAIR', 'ETC')),
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
@@ -67,6 +70,8 @@ CREATE TABLE IF NOT EXISTS service_requests (
     hours_spent DOUBLE PRECISION,
     resolution_notes TEXT,
     due_date TEXT,
+    CONSTRAINT chk_service_requests_status CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'HOLD', 'CANCELLED')),
+    CONSTRAINT chk_service_requests_priority CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')),
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
@@ -100,6 +105,7 @@ CREATE TABLE IF NOT EXISTS project_requests (
     approval_notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_project_requests_status CHECK (request_status IN ('PENDING', 'APPROVED', 'REJECTED')),
     FOREIGN KEY (requested_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -123,33 +129,12 @@ CREATE TABLE IF NOT EXISTS service_request_attachments (
     id BIGSERIAL PRIMARY KEY,
     service_request_id BIGINT NOT NULL,
     attachment_id BIGINT NOT NULL,
+    attachment_type VARCHAR(20) NOT NULL DEFAULT 'REQUEST',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_service_request_attachments_type CHECK (attachment_type IN ('REQUEST', 'RESOLUTION')),
     FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
     UNIQUE(service_request_id, attachment_id)
-);
-
--- Create service_request_comments table for comments on service requests
-CREATE TABLE IF NOT EXISTS service_request_comments (
-    id BIGSERIAL PRIMARY KEY,
-    service_request_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
-    comment TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Create comment_attachments table (many-to-many relationship)
-CREATE TABLE IF NOT EXISTS comment_attachments (
-    id BIGSERIAL PRIMARY KEY,
-    comment_id BIGINT NOT NULL,
-    attachment_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (comment_id) REFERENCES service_request_comments(id) ON DELETE CASCADE,
-    FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
-    UNIQUE(comment_id, attachment_id)
 );
 
 -- Add foreign key constraint for users.profile_picture_id after attachments table is created
@@ -213,12 +198,8 @@ CREATE INDEX IF NOT EXISTS idx_project_requests_company_id ON project_requests(c
 CREATE INDEX IF NOT EXISTS idx_project_requests_request_status ON project_requests(request_status);
 CREATE INDEX IF NOT EXISTS idx_project_requests_approved_by_user_id ON project_requests(approved_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_attachments_uploaded_by_user_id ON attachments(uploaded_by_user_id);
-CREATE INDEX IF NOT EXISTS idx_service_request_comments_service_request_id ON service_request_comments(service_request_id);
-CREATE INDEX IF NOT EXISTS idx_service_request_comments_user_id ON service_request_comments(user_id);
 CREATE INDEX IF NOT EXISTS idx_service_request_attachments_service_request_id ON service_request_attachments(service_request_id);
 CREATE INDEX IF NOT EXISTS idx_service_request_attachments_attachment_id ON service_request_attachments(attachment_id);
-CREATE INDEX IF NOT EXISTS idx_comment_attachments_comment_id ON comment_attachments(comment_id);
-CREATE INDEX IF NOT EXISTS idx_comment_attachments_attachment_id ON comment_attachments(attachment_id);
 
 -- Enable pgvector extension for vector similarity search
 CREATE EXTENSION IF NOT EXISTS vector;

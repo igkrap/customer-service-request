@@ -106,8 +106,8 @@ export const serviceRequestAPI = {
   getFollowUps: (parentId) => api.get(`/service-requests/${parentId}/follow-ups`),
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
-  updateStatus: (id, status, hoursSpent, resolutionNotes) =>
-    api.patch(`/service-requests/${id}/status`, { status, hoursSpent, resolutionNotes }),
+  updateStatus: (id, status, hoursSpent, resolutionNotes, attachments) =>
+    api.patch(`/service-requests/${id}/status`, { status, hoursSpent, resolutionNotes, attachments }),
   unassign: (id) => api.patch(`/service-requests/${id}/unassign`),
   delete: (id) => api.delete(`/service-requests/${id}`),
 };

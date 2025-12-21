@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Stack,
   TextField,
   Select,
   MenuItem,
@@ -36,6 +37,7 @@ import {
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
 import FileUpload from './FileUpload';
+import RichTextEditor from './RichTextEditor';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -95,12 +97,14 @@ function ServiceRequestList() {
   const [selectedFollowUps, setSelectedFollowUps] = useState([]);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
+  const [isEditingResolution, setIsEditingResolution] = useState(false);
   const [resolutionData, setResolutionData] = useState({
     hoursSpent: '',
     resolutionNotes: ''
   });
+  const [resolutionAttachments, setResolutionAttachments] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
-  const [formData, setFormData] = useState({
+  const getInitialFormData = () => ({
     title: '',
     description: '',
     status: 'OPEN',
@@ -110,7 +114,34 @@ function ServiceRequestList() {
     dueDate: '',
     parentId: ''
   });
+
+  const resetFormState = () => {
+    setFormData(getInitialFormData());
+    setAttachments([]);
+    setEditingRequest(null);
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData());
   const [attachments, setAttachments] = useState([]);
+
+  const filterAttachmentsByType = (items, type) => {
+    if (!Array.isArray(items)) return [];
+    if (!type) return items;
+
+    const normalized = items.map((item) => ({
+      ...item,
+      attachmentType: item.attachmentType || 'REQUEST'
+    }));
+
+    const filtered = normalized.filter((item) => item.attachmentType === type);
+    if (type === 'REQUEST' && filtered.length === 0) {
+      return normalized.filter((item) => !item.attachmentType || item.attachmentType === 'REQUEST');
+    }
+    return filtered;
+  };
+
+  const selectedRequestAttachments = filterAttachmentsByType(selectedAttachments, 'REQUEST');
+  const selectedResolutionAttachments = filterAttachmentsByType(selectedAttachments, 'RESOLUTION');
 
   useEffect(() => {
     fetchData();
@@ -272,19 +303,8 @@ function ServiceRequestList() {
         await serviceRequestAPI.create(submitData);
       }
 
-      setFormData({
-        title: '',
-        description: '',
-        status: 'OPEN',
-        priority: 'MEDIUM',
-        customerId: '',
-        projectId: '',
-        dueDate: '',
-        parentId: ''
-      });
-      setAttachments([]);
+      resetFormState();
       setShowForm(false);
-      setEditingRequest(null);
       await fetchData(); // Wait for data to load before closing
     } catch (err) {
       setError('Failed to save service request: ' + err.message);
@@ -307,7 +327,7 @@ function ServiceRequestList() {
     // Load existing attachments
     try {
       const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
-      setAttachments(attachmentsResponse.data || []);
+      setAttachments(filterAttachmentsByType(attachmentsResponse.data, 'REQUEST'));
     } catch (err) {
       console.error('Failed to load attachments:', err);
       setAttachments([]);
@@ -328,26 +348,39 @@ function ServiceRequestList() {
   };
 
   const handleCancel = () => {
+    resetFormState();
     setShowForm(false);
-    setEditingRequest(null);
-    setAttachments([]);
-    setFormData({
-      title: '',
-      description: '',
-      status: 'OPEN',
-      priority: 'MEDIUM',
-      customerId: '',
-      projectId: '',
-      dueDate: '',
-      parentId: ''
-    });
   };
 
-  const handleStatusChange = async (requestId, newStatus) => {
+  const openResolutionDialog = async (request) => {
+    const requestId = typeof request === 'object' ? request?.id : request;
+    const targetRequest = typeof request === 'object'
+      ? request
+      : requests.find((req) => req.id === requestId);
+
+    setResolvingRequest(requestId);
+    const editingCompleted = (targetRequest?.status || '') === 'RESOLVED';
+    setIsEditingResolution(editingCompleted);
+    setResolutionData({
+      hoursSpent: targetRequest?.hoursSpent ? String(targetRequest.hoursSpent) : '',
+      resolutionNotes: targetRequest?.resolutionNotes || ''
+    });
+    try {
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(requestId);
+      const resolutionOnly = filterAttachmentsByType(attachmentsResponse.data, 'RESOLUTION');
+      setResolutionAttachments(editingCompleted ? resolutionOnly : []);
+    } catch (err) {
+      setResolutionAttachments([]);
+    }
+    setShowResolutionDialog(true);
+  };
+
+  const handleStatusChange = async (request, newStatus) => {
+    const requestId = typeof request === 'object' ? request.id : request;
+
     // If changing to RESOLVED, show dialog to collect hours and notes
     if (newStatus === 'RESOLVED') {
-      setResolvingRequest(requestId);
-      setShowResolutionDialog(true);
+      await openResolutionDialog(request);
       return;
     }
 
@@ -371,11 +404,14 @@ function ServiceRequestList() {
         resolvingRequest,
         'RESOLVED',
         parseFloat(resolutionData.hoursSpent),
-        resolutionData.resolutionNotes
+        resolutionData.resolutionNotes,
+        resolutionAttachments
       );
       setShowResolutionDialog(false);
       setResolvingRequest(null);
       setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+      setIsEditingResolution(false);
+      setResolutionAttachments([]);
       fetchData();
       setError(null);
     } catch (err) {
@@ -387,6 +423,8 @@ function ServiceRequestList() {
     setShowResolutionDialog(false);
     setResolvingRequest(null);
     setResolutionData({ hoursSpent: '', resolutionNotes: '' });
+    setIsEditingResolution(false);
+    setResolutionAttachments([]);
   };
 
   const handleUnassign = async (requestId) => {
@@ -468,6 +506,24 @@ function ServiceRequestList() {
     return false;
   };
 
+  const statusLabelMap = {
+    'OPEN': '대기',
+    'IN_PROGRESS': '진행중',
+    'RESOLVED': '완료',
+    'HOLD': '보류',
+    'CANCELLED': '취소'
+  };
+
+  const priorityLabelMap = {
+    'LOW': '낮음',
+    'MEDIUM': '보통',
+    'HIGH': '높음',
+    'URGENT': '긴급'
+  };
+
+  const getStatusLabel = (status) => status ? (statusLabelMap[status] || status) : '';
+  const getPriorityLabel = (priority) => priority ? (priorityLabelMap[priority] || priority) : '';
+
   const getStatusChip = (status) => {
     const colorMap = {
       'OPEN': 'primary',
@@ -476,14 +532,7 @@ function ServiceRequestList() {
       'HOLD': 'warning',
       'CANCELLED': 'error'
     };
-    const labelMap = {
-      'OPEN': '대기',
-      'IN_PROGRESS': '진행중',
-      'RESOLVED': '완료',
-      'HOLD': '보류',
-      'CANCELLED': '취소'
-    };
-    return <Chip label={labelMap[status] || status} color={colorMap[status] || 'default'} size="small" />;
+    return <Chip label={getStatusLabel(status)} color={colorMap[status] || 'default'} size="small" />;
   };
 
   const getPriorityChip = (priority) => {
@@ -493,13 +542,7 @@ function ServiceRequestList() {
       'HIGH': 'warning',
       'URGENT': 'error'
     };
-    const labelMap = {
-      'LOW': '낮음',
-      'MEDIUM': '보통',
-      'HIGH': '높음',
-      'URGENT': '긴급'
-    };
-    return <Chip label={labelMap[priority] || priority} color={colorMap[priority] || 'default'} size="small" />;
+    return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
   const columns = [
@@ -511,21 +554,23 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (value) => value || '없음'
+      valueGetter: (params) => params.value || '없음'
     },
     {
       field: 'status',
       headerName: '상태',
       flex: 1,
       minWidth: 120,
-      renderCell: (params) => params.value ? getStatusChip(params.value) : null
+      valueGetter: (params) => getStatusLabel(params.value),
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
     },
     {
       field: 'priority',
       headerName: '우선순위',
       flex: 0.8,
       minWidth: 100,
-      renderCell: (params) => params.value ? getPriorityChip(params.value) : null
+      valueGetter: (params) => getPriorityLabel(params.value),
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
     },
     {
       field: 'dueDate',
@@ -604,17 +649,30 @@ function ServiceRequestList() {
             {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
               <>
                 {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
-                {params.row.status !== 'IN_PROGRESS' && (
+                {params.row.status !== 'IN_PROGRESS' && params.row.status !== 'RESOLVED' && (
                   <IconButton
                     size="small"
                     color="success"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleStatusChange(params.row.id, 'IN_PROGRESS');
+                      handleStatusChange(params.row, 'IN_PROGRESS');
                     }}
                     title="시작"
                   >
                     <StartIcon fontSize="small" />
+                  </IconButton>
+                )}
+                {params.row.status === 'RESOLVED' && (
+                  <IconButton
+                    size="small"
+                    color="info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(params.row, 'RESOLVED');
+                    }}
+                    title="완료 내용 수정"
+                  >
+                    <EditIcon fontSize="small" />
                   </IconButton>
                 )}
                 {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
@@ -626,7 +684,7 @@ function ServiceRequestList() {
                         color="info"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'RESOLVED');
+                          handleStatusChange(params.row, 'RESOLVED');
                         }}
                         title="완료"
                       >
@@ -639,7 +697,7 @@ function ServiceRequestList() {
                         color="warning"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStatusChange(params.row.id, 'HOLD');
+                          handleStatusChange(params.row, 'HOLD');
                         }}
                         title="보류"
                       >
@@ -780,19 +838,32 @@ function ServiceRequestList() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                resetFormState();
+                setShowForm(true);
+              }}
             >
               새 요청 생성
             </Button>
           )}
         </Box>
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'hidden',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          minHeight: 0
+        }}
+      >
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
               {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
@@ -827,15 +898,17 @@ function ServiceRequestList() {
                   onChange={handleInputChange}
                 />
 
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="설명"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    설명
+                  </Typography>
+                  <RichTextEditor
+                    value={formData.description}
+                    onChange={(value) => setFormData({ ...formData, description: value })}
+                    placeholder="서비스 요청 내용을 상세히 입력하세요..."
+                    minHeight={200}
+                  />
+                </Box>
 
                 <FormControl fullWidth required>
                   <InputLabel>우선순위</InputLabel>
@@ -948,30 +1021,38 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Detail View Dialog */}
-        <Dialog open={showDetailDialog} onClose={handleCloseDetail} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <DialogTitle>
+        <Dialog
+          open={showDetailDialog}
+          onClose={handleCloseDetail}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 2 } }}
+        >
+          <DialogTitle sx={{ pr: 6 }}>
             서비스 요청 상세정보
             <IconButton
               onClick={handleCloseDetail}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
+              sx={{ position: 'absolute', right: 12, top: 12 }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent>
+          <DialogContent dividers>
             {selectedRequest && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" gutterBottom>기본 정보</Typography>
+              <Stack spacing={2}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    기본 정보
+                  </Typography>
                   <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">제목</Typography>
-                      <Typography variant="body1">{selectedRequest.title}</Typography>
+                      <Typography variant="body1" fontWeight="medium" sx={{ mt: 0.5 }}>{selectedRequest.title}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">상태</Typography>
-                      <Box>
+                      <Box sx={{ mt: 0.5 }}>
                         <Chip
                           label={selectedRequest.status === 'OPEN' ? '열림' :
                                  selectedRequest.status === 'IN_PROGRESS' ? '진행중' :
@@ -985,9 +1066,9 @@ function ServiceRequestList() {
                         />
                       </Box>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">우선순위</Typography>
-                      <Box>
+                      <Box sx={{ mt: 0.5 }}>
                         <Chip
                           label={selectedRequest.priority === 'LOW' ? '낮음' :
                                  selectedRequest.priority === 'MEDIUM' ? '보통' :
@@ -998,121 +1079,196 @@ function ServiceRequestList() {
                         />
                       </Box>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">고객</Typography>
-                      <Typography variant="body1">{selectedRequest.customerName || '-'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.customerName || '-'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">담당자</Typography>
-                      <Typography variant="body1">{selectedRequest.managerName || '미할당'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.managerName || '미할당'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">프로젝트</Typography>
-                      <Typography variant="body1">{selectedRequest.projectName || '-'}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{selectedRequest.projectName || '-'}</Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">마감일</Typography>
-                      <Typography variant="body1">
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
                         {selectedRequest.dueDate ? formatDateForDisplay(selectedRequest.dueDate) : '-'}
                       </Typography>
                     </Box>
-                    <Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">생성일</Typography>
-                      <Typography variant="body1">{formatDateTime(selectedRequest.createdAt)}</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>{formatDateTime(selectedRequest.createdAt)}</Typography>
                     </Box>
                   </Box>
-                </Box>
+                </Paper>
 
                 {selectedRequest.description && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">설명</Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-                      {selectedRequest.description}
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      설명
                     </Typography>
-                  </Box>
+                    <Divider sx={{ mb: 2 }} />
+                    <Box
+                      sx={{
+                        '& .ql-editor': { padding: 0 },
+                        '& p': { margin: '0.5em 0' },
+                        '& img': { maxWidth: '100%' }
+                      }}
+                      dangerouslySetInnerHTML={{ __html: selectedRequest.description }}
+                    />
+                  </Paper>
                 )}
 
                 {selectedRequest.resolutionNotes && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">처리 내용</Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-                      {selectedRequest.resolutionNotes}
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      처리 내용
                     </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Box
+                      sx={{
+                        '& .ql-editor': { padding: 0 },
+                        '& p': { margin: '0.5em 0' },
+                        '& img': { maxWidth: '100%' }
+                      }}
+                      dangerouslySetInnerHTML={{ __html: selectedRequest.resolutionNotes }}
+                    />
                     {selectedRequest.hoursSpent && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                         소요 시간: {selectedRequest.hoursSpent}m/d
                       </Typography>
                     )}
-                  </Box>
+                  </Paper>
                 )}
 
-                {selectedAttachments.length > 0 && (
-                  <Box>
-                    <Typography variant="h6" gutterBottom>첨부파일</Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    {selectedAttachments.map((attachment) => (
-                      <Box
-                        key={attachment.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          p: 1,
-                          borderRadius: 1,
-                          '&:hover': { backgroundColor: 'action.hover' }
-                        }}
-                      >
-                        <Typography variant="body2">{attachment.originalFileName}</Typography>
-                        <Button
-                          size="small"
-                          startIcon={<DownloadIcon />}
-                          onClick={() => handleDownloadAttachment(attachment)}
-                        >
-                          다운로드
-                        </Button>
-                      </Box>
-                    ))}
-                  </Box>
+                {(selectedRequestAttachments.length > 0 || selectedResolutionAttachments.length > 0) && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      첨부파일
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={1.5}>
+                      {selectedRequestAttachments.length > 0 && (
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip label="요청 첨부" color="default" size="small" variant="outlined" />
+                            <Typography variant="body2" color="text.secondary">
+                              요청 단계에 등록된 파일
+                            </Typography>
+                          </Box>
+                          <Stack spacing={0.75}>
+                            {selectedRequestAttachments.map((attachment) => (
+                              <Box
+                                key={`${attachment.id}-request`}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: 'grey.50'
+                                }}
+                              >
+                                <Typography variant="body2">{attachment.originalFileName}</Typography>
+                                <Button
+                                  size="small"
+                                  startIcon={<DownloadIcon />}
+                                  onClick={() => handleDownloadAttachment(attachment)}
+                                >
+                                  다운로드
+                                </Button>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {selectedResolutionAttachments.length > 0 && (
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip label="완료 첨부" color="success" size="small" variant="outlined" />
+                            <Typography variant="body2" color="text.secondary">
+                              완료 단계에 추가된 파일
+                            </Typography>
+                          </Box>
+                          <Stack spacing={0.75}>
+                            {selectedResolutionAttachments.map((attachment) => (
+                              <Box
+                                key={`${attachment.id}-resolution`}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: 'grey.50'
+                                }}
+                              >
+                                <Typography variant="body2">{attachment.originalFileName}</Typography>
+                                <Button
+                                  size="small"
+                                  startIcon={<DownloadIcon />}
+                                  onClick={() => handleDownloadAttachment(attachment)}
+                                >
+                                  다운로드
+                                </Button>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Paper>
                 )}
 
                 {selectedFollowUps.length > 0 && (
-                  <Box>
-                    <Typography variant="h6" gutterBottom>후속 요청</Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    {selectedFollowUps.map((followUp) => (
-                      <Box
-                        key={followUp.id}
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          mb: 1
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body2" fontWeight="bold">
-                            #{followUp.id} - {followUp.title}
-                          </Typography>
-                          <Chip
-                            label={followUp.status === 'OPEN' ? '열림' :
-                                   followUp.status === 'IN_PROGRESS' ? '진행중' :
-                                   followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
-                            size="small"
-                            color={followUp.status === 'RESOLVED' ? 'success' :
-                                   followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
-                          />
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      후속 요청
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={1}>
+                      {selectedFollowUps.map((followUp) => (
+                        <Box
+                          key={followUp.id}
+                          sx={{
+                            p: 1,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'grey.50'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" fontWeight="bold">
+                              #{followUp.id} - {followUp.title}
+                            </Typography>
+                            <Chip
+                              label={followUp.status === 'OPEN' ? '열림' :
+                                     followUp.status === 'IN_PROGRESS' ? '진행중' :
+                                     followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
+                              size="small"
+                              color={followUp.status === 'RESOLVED' ? 'success' :
+                                     followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
+                            />
+                          </Box>
+                          {followUp.description && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {followUp.description}
+                            </Typography>
+                          )}
                         </Box>
-                        {followUp.description && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                            {followUp.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
+                      ))}
+                    </Stack>
+                  </Paper>
                 )}
-              </Box>
+              </Stack>
             )}
           </DialogContent>
           <DialogActions>
@@ -1121,12 +1277,14 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <DialogTitle>서비스 요청 완료</DialogTitle>
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+          <DialogTitle>{isEditingResolution ? '완료 내용 수정' : '서비스 요청 완료'}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Alert severity="info">
-                서비스 요청을 완료하려면 소요시간과 처리 내용을 입력해주세요.
+                {isEditingResolution
+                  ? '등록된 완료 내용을 수정할 수 있습니다. 필요 시 소요시간과 처리 내용을 업데이트하세요.'
+                  : '서비스 요청을 완료하려면 소요시간과 처리 내용을 입력해주세요.'}
               </Alert>
               <TextField
                 fullWidth
@@ -1138,15 +1296,24 @@ function ServiceRequestList() {
                 inputProps={{ step: "0.5", min: "0" }}
                 helperText="예: 2.5m/d"
               />
-              <TextField
-                fullWidth
-                required
-                multiline
-                rows={4}
-                label="처리 내용"
-                value={resolutionData.resolutionNotes}
-                onChange={(e) => setResolutionData({ ...resolutionData, resolutionNotes: e.target.value })}
-                placeholder="수행한 작업 내용을 상세히 입력해주세요."
+
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  처리 내용 *
+                </Typography>
+                <RichTextEditor
+                  value={resolutionData.resolutionNotes}
+                  onChange={(value) => setResolutionData({ ...resolutionData, resolutionNotes: value })}
+                  placeholder="수행한 작업 내용을 상세히 입력해주세요..."
+                  minHeight={150}
+                />
+              </Box>
+
+              <Divider sx={{ my: 1 }} />
+
+              <FileUpload
+                attachments={resolutionAttachments}
+                onAttachmentsChange={setResolutionAttachments}
               />
             </Box>
           </DialogContent>
@@ -1164,7 +1331,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
             rows={requests}
             columns={columns}
@@ -1184,6 +1351,7 @@ function ServiceRequestList() {
             sx={{
               height: '100%',
               minHeight: 500,
+              flex: 1,
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'

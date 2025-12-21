@@ -115,7 +115,20 @@ public class AttachmentService {
     }
 
     public void linkToServiceRequest(Long serviceRequestId, Long attachmentId) {
-        attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId);
+        linkToServiceRequest(serviceRequestId, attachmentId, "REQUEST");
+    }
+
+    public void linkToServiceRequest(Long serviceRequestId, Long attachmentId, String attachmentType) {
+        attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId, attachmentType);
+    }
+
+    public void unlinkFromServiceRequest(Long serviceRequestId, Long attachmentId) {
+        attachmentMapper.unlinkFromServiceRequest(serviceRequestId, attachmentId);
+
+        int remainingLinks = attachmentMapper.countLinksForAttachment(attachmentId);
+        if (remainingLinks == 0) {
+            deleteAttachment(attachmentId);
+        }
     }
 
     public void deleteAttachment(Long id) {
@@ -140,6 +153,7 @@ public class AttachmentService {
         dto.setFileSize(attachment.getFileSize());
         dto.setContentType(attachment.getContentType());
         dto.setUploadedByUserId(attachment.getUploadedByUserId());
+        dto.setAttachmentType(attachment.getAttachmentType());
         dto.setCreatedAt(attachment.getCreatedAt());
 
         if (attachment.getUploadedByUserId() != null) {

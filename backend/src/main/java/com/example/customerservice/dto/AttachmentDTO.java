@@ -16,6 +16,7 @@ public class AttachmentDTO {
     private Long fileSize;
     private String contentType;
     private Long uploadedByUserId;
+    private String attachmentType;
     private String uploadedByUsername;
     private LocalDateTime createdAt;
 }

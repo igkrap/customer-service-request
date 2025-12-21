@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -254,18 +256,33 @@ public class ServiceRequestService {
         serviceRequestMapper.update(serviceRequest);
 
         // Update attachments if provided
-        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
+        if (dto.getAttachments() != null) {
+            List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                attachmentService.getAttachmentsByServiceRequestId(id);
+
+            Set<Long> incomingAttachmentIds = dto.getAttachments().stream()
+                .filter(a -> a.getId() != null)
+                .map(com.example.customerservice.dto.AttachmentDTO::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+
+            List<com.example.customerservice.dto.AttachmentDTO> existingRequestAttachments = existingAttachments.stream()
+                .filter(a -> a.getAttachmentType() == null || "REQUEST".equalsIgnoreCase(a.getAttachmentType()))
+                .collect(Collectors.toList());
+
             for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : dto.getAttachments()) {
                 if (attachmentDTO.getId() != null) {
-                    // Check if attachment is already linked
-                    List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
-                        attachmentService.getAttachmentsByServiceRequestId(id);
-                    boolean alreadyLinked = existingAttachments.stream()
+                    boolean alreadyLinked = existingRequestAttachments.stream()
                         .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
 
                     if (!alreadyLinked) {
                         attachmentService.linkToServiceRequest(id, attachmentDTO.getId());
                     }
+                }
+            }
+
+            for (com.example.customerservice.dto.AttachmentDTO existing : existingRequestAttachments) {
+                if (!incomingAttachmentIds.contains(existing.getId())) {
+                    attachmentService.unlinkFromServiceRequest(id, existing.getId());
                 }
             }
         }
@@ -296,11 +313,17 @@ public class ServiceRequestService {
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
-        return updateServiceRequestStatus(id, status, null, null);
+        return updateServiceRequestStatus(id, status, null, null, null);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
                                                         Double hoursSpent, String resolutionNotes) {
+        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null);
+    }
+
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
+                                                        Double hoursSpent, String resolutionNotes,
+                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -325,6 +348,38 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.update(serviceRequest);
+
+        // Link resolution attachments if provided
+        if (attachments != null) {
+            List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+                attachmentService.getAttachmentsByServiceRequestId(id);
+
+            Set<Long> incomingAttachmentIds = attachments.stream()
+                .filter(a -> a.getId() != null)
+                .map(com.example.customerservice.dto.AttachmentDTO::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+
+            List<com.example.customerservice.dto.AttachmentDTO> existingResolutionAttachments = existingAttachments.stream()
+                .filter(a -> "RESOLUTION".equalsIgnoreCase(a.getAttachmentType()))
+                .collect(Collectors.toList());
+
+            for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : attachments) {
+                if (attachmentDTO.getId() != null) {
+                    boolean alreadyLinked = existingResolutionAttachments.stream()
+                        .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
+
+                    if (!alreadyLinked) {
+                        attachmentService.linkToServiceRequest(id, attachmentDTO.getId(), "RESOLUTION");
+                    }
+                }
+            }
+
+            for (com.example.customerservice.dto.AttachmentDTO existing : existingResolutionAttachments) {
+                if (!incomingAttachmentIds.contains(existing.getId())) {
+                    attachmentService.unlinkFromServiceRequest(id, existing.getId());
+                }
+            }
+        }
 
         // Send email notification to customer if status changed
         if (status != oldStatus) {
