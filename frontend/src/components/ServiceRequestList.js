@@ -863,7 +863,7 @@ function ServiceRequestList() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+        <Dialog open={showForm} onClose={handleCancel} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <form onSubmit={handleSubmit}>
             <DialogTitle>
               {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
@@ -1024,7 +1024,7 @@ function ServiceRequestList() {
         <Dialog
           open={showDetailDialog}
           onClose={handleCloseDetail}
-          maxWidth="md"
+          maxWidth="lg"
           fullWidth
           PaperProps={{ sx: { borderRadius: 2 } }}
         >
@@ -1277,7 +1277,7 @@ function ServiceRequestList() {
         </Dialog>
 
         {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <DialogTitle>{isEditingResolution ? '완료 내용 수정' : '서비스 요청 완료'}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
