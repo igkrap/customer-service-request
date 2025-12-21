@@ -104,7 +104,7 @@ function ServiceRequestList() {
   });
   const [resolutionAttachments, setResolutionAttachments] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
-  const [formData, setFormData] = useState({
+  const getInitialFormData = () => ({
     title: '',
     description: '',
     status: 'OPEN',
@@ -114,6 +114,14 @@ function ServiceRequestList() {
     dueDate: '',
     parentId: ''
   });
+
+  const resetFormState = () => {
+    setFormData(getInitialFormData());
+    setAttachments([]);
+    setEditingRequest(null);
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData());
   const [attachments, setAttachments] = useState([]);
 
   const filterAttachmentsByType = (items, type) => {
@@ -295,19 +303,8 @@ function ServiceRequestList() {
         await serviceRequestAPI.create(submitData);
       }
 
-      setFormData({
-        title: '',
-        description: '',
-        status: 'OPEN',
-        priority: 'MEDIUM',
-        customerId: '',
-        projectId: '',
-        dueDate: '',
-        parentId: ''
-      });
-      setAttachments([]);
+      resetFormState();
       setShowForm(false);
-      setEditingRequest(null);
       await fetchData(); // Wait for data to load before closing
     } catch (err) {
       setError('Failed to save service request: ' + err.message);
@@ -351,19 +348,8 @@ function ServiceRequestList() {
   };
 
   const handleCancel = () => {
+    resetFormState();
     setShowForm(false);
-    setEditingRequest(null);
-    setAttachments([]);
-    setFormData({
-      title: '',
-      description: '',
-      status: 'OPEN',
-      priority: 'MEDIUM',
-      customerId: '',
-      projectId: '',
-      dueDate: '',
-      parentId: ''
-    });
   };
 
   const openResolutionDialog = async (request) => {
@@ -852,7 +838,10 @@ function ServiceRequestList() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                resetFormState();
+                setShowForm(true);
+              }}
             >
               새 요청 생성
             </Button>
