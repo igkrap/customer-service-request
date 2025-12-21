@@ -122,6 +122,15 @@ public class AttachmentService {
         attachmentMapper.linkToServiceRequest(serviceRequestId, attachmentId, attachmentType);
     }
 
+    public void unlinkFromServiceRequest(Long serviceRequestId, Long attachmentId) {
+        attachmentMapper.unlinkFromServiceRequest(serviceRequestId, attachmentId);
+
+        int remainingLinks = attachmentMapper.countLinksForAttachment(attachmentId);
+        if (remainingLinks == 0) {
+            deleteAttachment(attachmentId);
+        }
+    }
+
     public void deleteAttachment(Long id) {
         Attachment attachment = attachmentMapper.findById(id);
         if (attachment != null) {

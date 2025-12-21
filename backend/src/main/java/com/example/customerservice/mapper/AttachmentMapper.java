@@ -33,4 +33,7 @@ public interface AttachmentMapper {
 
     @Delete("DELETE FROM service_request_attachments WHERE service_request_id = #{serviceRequestId} AND attachment_id = #{attachmentId}")
     int unlinkFromServiceRequest(@Param("serviceRequestId") Long serviceRequestId, @Param("attachmentId") Long attachmentId);
+
+    @Select("SELECT COUNT(*) FROM service_request_attachments WHERE attachment_id = #{attachmentId}")
+    int countLinksForAttachment(@Param("attachmentId") Long attachmentId);
 }
