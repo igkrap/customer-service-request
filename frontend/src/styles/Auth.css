@@ -214,6 +214,11 @@
   padding-right: 70px;
 }
 
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear {
+  display: none;
+}
+
 .password-toggle {
   position: absolute;
   right: 12px;
