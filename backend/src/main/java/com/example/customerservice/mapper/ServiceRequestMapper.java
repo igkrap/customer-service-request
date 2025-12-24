@@ -11,35 +11,51 @@ import java.util.Optional;
 @Mapper
 public interface ServiceRequestMapper {
 
-    @Select("SELECT * FROM service_requests")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id")
     List<ServiceRequest> findAll();
 
-    @Select("SELECT * FROM service_requests WHERE id = #{id}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.id = #{id}")
     Optional<ServiceRequest> findById(Long id);
 
-    @Select("SELECT * FROM service_requests WHERE customer_id = #{customerId}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.customer_id = #{customerId}")
     List<ServiceRequest> findByCustomerId(Long customerId);
 
-    @Select("SELECT * FROM service_requests WHERE manager_id = #{managerId}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.manager_id = #{managerId}")
     List<ServiceRequest> findByManagerId(Long managerId);
 
     // Find all service requests accessible by a manager (assigned to them OR related to their projects)
-    @Select("SELECT DISTINCT sr.* FROM service_requests sr " +
+    @Select("SELECT DISTINCT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
             "LEFT JOIN user_projects up ON sr.project_id = up.project_id " +
             "WHERE sr.manager_id = #{managerId} " +
             "OR (sr.project_id IS NOT NULL AND up.user_id = #{managerId})")
     List<ServiceRequest> findByManagerIdOrProjectAccess(Long managerId);
 
-    @Select("SELECT * FROM service_requests WHERE status = #{status}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.status = #{status}")
     List<ServiceRequest> findByStatus(RequestStatus status);
 
-    @Select("SELECT * FROM service_requests WHERE priority = #{priority}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.priority = #{priority}")
     List<ServiceRequest> findByPriority(Priority priority);
 
-    @Select("SELECT * FROM service_requests WHERE created_by_user_id = #{userId}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.created_by_user_id = #{userId}")
     List<ServiceRequest> findByCreatedByUserId(Long userId);
 
-    @Select("SELECT * FROM service_requests WHERE parent_id = #{parentId}")
+    @Select("SELECT sr.*, p.project_name AS project_name FROM service_requests sr " +
+            "LEFT JOIN projects p ON sr.project_id = p.id " +
+            "WHERE sr.parent_id = #{parentId}")
     List<ServiceRequest> findByParentId(Long parentId);
 
     @Select("SELECT COUNT(*) > 0 FROM service_requests WHERE id = #{id}")

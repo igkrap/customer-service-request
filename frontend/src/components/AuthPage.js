@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
@@ -10,6 +11,7 @@ function AuthPage() {
     userId: '',
     password: ''
   });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [registerData, setRegisterData] = useState({
     userId: '',
     username: '',
@@ -120,6 +122,7 @@ function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError('');
+    setShowLoginPassword(false);
   };
 
   return (
@@ -150,15 +153,27 @@ function AuthPage() {
 
               <div className="form-group">
                 <label htmlFor="login-password">비밀번호</label>
-                <input
-                  type="password"
-                  id="login-password"
-                  name="password"
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                  required
-                  disabled={loading}
-                />
+                <div className="password-field">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    id="login-password"
+                    name="password"
+                    value={loginData.password}
+                    onChange={handleLoginChange}
+                    required
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowLoginPassword((prev) => !prev)}
+                    aria-pressed={showLoginPassword}
+                    aria-label={showLoginPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                    disabled={loading}
+                  >
+                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                  </button>
+                </div>
               </div>
 
               <button type="submit" className="auth-button" disabled={loading}>
