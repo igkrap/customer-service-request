@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
@@ -170,15 +171,7 @@ function AuthPage() {
                     aria-label={showLoginPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                     disabled={loading}
                   >
-                    {showLoginPassword ? (
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2.1 12c2.2-4.3 6.2-7 9.9-7s7.7 2.7 9.9 7c-2.2 4.3-6.2 7-9.9 7s-7.7-2.7-9.9-7zm9.9 4.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2.1 12c2.2-4.3 6.2-7 9.9-7 2 0 4 0.7 5.8 1.9l-1.6 1.6A7.8 7.8 0 0 0 12 7.5c-3 0-5.8 1.9-7.6 4.5 0.9 1.3 2.1 2.4 3.5 3.2l-1.4 1.4A11 11 0 0 1 2.1 12zm18.5 6.4-2.2-2.2A9.7 9.7 0 0 1 12 19c-3.7 0-7.7-2.7-9.9-7 1-1.9 2.4-3.5 4-4.7L3.4 5.7l1.4-1.4 17.2 17.2-1.4 1.4zm-6.3-6.3-1.6-1.6a2.3 2.3 0 0 1 1.6 1.6zm-4.2-4.2-1.6-1.6a4.5 4.5 0 0 1 6.2 6.2l-1.6-1.6a2.3 2.3 0 0 0-3-3z" />
-                      </svg>
-                    )}
+                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
                   </button>
                 </div>
               </div>
