@@ -29,6 +29,8 @@ public class ServiceRequest {
 
     private Long projectId;
 
+    private String projectName;
+
     private Long createdByUserId;
 
     private Long parentId;
