@@ -584,14 +584,14 @@ function ServiceRequestList() {
       headerName: '프로젝트',
       flex: 1.2,
       minWidth: 120,
-      valueGetter: (params) => params.value || '없음'
+      valueGetter: (value) => value || '없음'
     },
     {
       field: 'status',
       headerName: '상태',
       flex: 1,
       minWidth: 120,
-      valueGetter: (params) => getStatusLabel(params.value),
+      valueGetter: (value) => getStatusLabel(value),
       renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
     },
     {
@@ -599,7 +599,7 @@ function ServiceRequestList() {
       headerName: '우선순위',
       flex: 0.8,
       minWidth: 100,
-      valueGetter: (params) => getPriorityLabel(params.value),
+      valueGetter: (value) => getPriorityLabel(value),
       renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
     },
     {
