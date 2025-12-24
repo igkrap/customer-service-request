@@ -487,7 +487,9 @@ public class ServiceRequestService {
 
         // Load project details for DTO
         dto.setProjectId(serviceRequest.getProjectId());
-        if (serviceRequest.getProjectId() != null) {
+        if (serviceRequest.getProjectName() != null && !serviceRequest.getProjectName().isBlank()) {
+            dto.setProjectName(serviceRequest.getProjectName());
+        } else if (serviceRequest.getProjectId() != null) {
             Project project = projectMapper.findById(serviceRequest.getProjectId())
                     .orElse(null);
             if (project != null) {
