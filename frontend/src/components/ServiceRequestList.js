@@ -147,6 +147,26 @@ function ServiceRequestList() {
     fetchData();
   }, []);
 
+  const enrichRequestsWithProjectNames = (items, availableProjects) => {
+    if (!Array.isArray(items) || !Array.isArray(availableProjects)) return items;
+    const projectMap = new Map(
+      availableProjects.map((project) => [project.id, project.projectName])
+    );
+
+    return items.map((request) => {
+      if (request.projectName || !request.projectId) {
+        return request;
+      }
+
+      const projectName = projectMap.get(request.projectId);
+      if (!projectName) {
+        return request;
+      }
+
+      return { ...request, projectName };
+    });
+  };
+
   // Dynamically fetch projects when customer is selected (for ADMIN creating requests for customers)
   useEffect(() => {
     const fetchProjectsForCustomer = async () => {
@@ -207,7 +227,9 @@ function ServiceRequestList() {
     try {
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
-      setRequests(requestsResponse.data);
+      let requestData = requestsResponse.data || [];
+      let projectsForSelection = [];
+      let projectsForLookup = [];
 
       // Fetch all users (customers) if admin
       if (user?.role === 'ROLE_ADMIN') {
@@ -225,38 +247,46 @@ function ServiceRequestList() {
           if (user.role === 'ROLE_CUSTOMER') {
             // Customer: Only show assigned (mapped) projects that are within active date range
             const userProjectsResponse = await userAPI.getProjects(user.id);
-            const assignedProjectIds = userProjectsResponse.data;
+            const assignedProjectIds = userProjectsResponse.data || [];
 
-            const userResponse = await userAPI.getById(user.id);
-            const userData = userResponse.data;
-
-            if (userData.companyId && assignedProjectIds.length > 0) {
-              const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              // Filter to only show assigned projects that are active (within date range)
-              const assignedProjects = projectsResponse.data.filter(p =>
-                assignedProjectIds.includes(p.id) && isProjectActive(p)
-              );
-              setProjects(assignedProjects);
-            } else {
-              setProjects([]);
-            }
-          } else {
-            // Admin/Manager: Show all projects from company
             const userResponse = await userAPI.getById(user.id);
             const userData = userResponse.data;
 
             if (userData.companyId) {
               const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-              setProjects(projectsResponse.data);
-            } else {
-              setProjects([]);
+              const companyProjects = projectsResponse.data || [];
+              projectsForLookup = companyProjects;
+
+              if (assignedProjectIds.length > 0) {
+                // Filter to only show assigned projects that are active (within date range)
+                projectsForSelection = companyProjects.filter(p =>
+                  assignedProjectIds.includes(p.id) && isProjectActive(p)
+                );
+              }
             }
+          } else if (user.role === 'ROLE_MANAGER') {
+            const userProjectsResponse = await userAPI.getProjects(user.id);
+            const assignedProjectIds = userProjectsResponse.data || [];
+            const projectsResponse = await projectAPI.getAll();
+            const allProjects = projectsResponse.data || [];
+            projectsForLookup = allProjects;
+            projectsForSelection = assignedProjectIds.length > 0
+              ? allProjects.filter((project) => assignedProjectIds.includes(project.id))
+              : [];
+          } else {
+            // Admin: Show all projects
+            const projectsResponse = await projectAPI.getAll();
+            projectsForSelection = projectsResponse.data || [];
+            projectsForLookup = projectsForSelection;
           }
         } catch (err) {
           // Error handling without console
         }
       }
 
+      setProjects(projectsForSelection);
+      requestData = enrichRequestsWithProjectNames(requestData, projectsForLookup);
+      setRequests(requestData);
       setError(null);
     } catch (err) {
       if (err.response?.status !== 403) {
