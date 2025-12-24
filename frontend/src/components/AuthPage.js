@@ -10,6 +10,7 @@ function AuthPage() {
     userId: '',
     password: ''
   });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [registerData, setRegisterData] = useState({
     userId: '',
     username: '',
@@ -120,6 +121,7 @@ function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError('');
+    setShowLoginPassword(false);
   };
 
   return (
@@ -150,15 +152,35 @@ function AuthPage() {
 
               <div className="form-group">
                 <label htmlFor="login-password">비밀번호</label>
-                <input
-                  type="password"
-                  id="login-password"
-                  name="password"
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                  required
-                  disabled={loading}
-                />
+                <div className="password-field">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    id="login-password"
+                    name="password"
+                    value={loginData.password}
+                    onChange={handleLoginChange}
+                    required
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowLoginPassword((prev) => !prev)}
+                    aria-pressed={showLoginPassword}
+                    aria-label={showLoginPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                    disabled={loading}
+                  >
+                    {showLoginPassword ? (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.1 12c2.2-4.3 6.2-7 9.9-7s7.7 2.7 9.9 7c-2.2 4.3-6.2 7-9.9 7s-7.7-2.7-9.9-7zm9.9 4.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.1 12c2.2-4.3 6.2-7 9.9-7 2 0 4 0.7 5.8 1.9l-1.6 1.6A7.8 7.8 0 0 0 12 7.5c-3 0-5.8 1.9-7.6 4.5 0.9 1.3 2.1 2.4 3.5 3.2l-1.4 1.4A11 11 0 0 1 2.1 12zm18.5 6.4-2.2-2.2A9.7 9.7 0 0 1 12 19c-3.7 0-7.7-2.7-9.9-7 1-1.9 2.4-3.5 4-4.7L3.4 5.7l1.4-1.4 17.2 17.2-1.4 1.4zm-6.3-6.3-1.6-1.6a2.3 2.3 0 0 1 1.6 1.6zm-4.2-4.2-1.6-1.6a4.5 4.5 0 0 1 6.2 6.2l-1.6-1.6a2.3 2.3 0 0 0-3-3z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button type="submit" className="auth-button" disabled={loading}>
