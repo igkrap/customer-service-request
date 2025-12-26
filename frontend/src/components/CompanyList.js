@@ -141,7 +141,7 @@ function CompanyList() {
       width: 240,
       sortable: false,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', height: '100%' }}>
           <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
             {params.value || '-'}
           </Typography>
@@ -260,7 +260,7 @@ function CompanyList() {
   }
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography
@@ -285,7 +285,7 @@ function CompanyList() {
           )}
         </Box>
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flexGrow: 1, minHeight: 0, p: 3, display: 'flex', flexDirection: 'column' }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Dialog open={showForm} onClose={handleCancel} maxWidth="sm" fullWidth>
@@ -330,7 +330,7 @@ function CompanyList() {
           </form>
         </Dialog>
 
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           <DataGrid
             rows={companies}
             columns={columns}
