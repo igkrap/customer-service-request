@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,6 @@ public class CompanyService {
         }
 
         Company company = convertToEntity(dto);
-        company.setLicenseKey(generateLicenseKey());
         company.setCreatedAt(LocalDateTime.now());
         company.setUpdatedAt(LocalDateTime.now());
 
@@ -79,7 +77,6 @@ public class CompanyService {
         dto.setCompanyName(company.getCompanyName());
         dto.setCompanyCode(company.getCompanyCode());
         dto.setBusinessNumber(company.getBusinessNumber());
-        dto.setLicenseKey(company.getLicenseKey());
         dto.setCreatedAt(company.getCreatedAt());
         dto.setUpdatedAt(company.getUpdatedAt());
         return dto;
@@ -90,23 +87,6 @@ public class CompanyService {
         company.setCompanyName(dto.getCompanyName());
         company.setCompanyCode(dto.getCompanyCode());
         company.setBusinessNumber(dto.getBusinessNumber());
-        company.setLicenseKey(dto.getLicenseKey());
         return company;
-    }
-
-    private String generateLicenseKey() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-        StringBuilder builder = new StringBuilder("PX");
-        for (int i = 0; i < timestamp.length(); i++) {
-            int position = i + 1;
-            int digit = Character.digit(timestamp.charAt(i), 10);
-            boolean shouldConvert = (position % 2 == 0 && digit % 2 == 0) || (position % 2 == 1 && digit % 2 == 1);
-            if (shouldConvert) {
-                builder.append((char) ('A' + digit));
-            } else {
-                builder.append(digit);
-            }
-        }
-        return builder.toString();
     }
 }

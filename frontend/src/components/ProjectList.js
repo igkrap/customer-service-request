@@ -7,6 +7,7 @@ import {
   IconButton,
   Button,
   Chip,
+  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,6 +22,7 @@ import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { projectAPI, companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
@@ -158,6 +160,29 @@ function ProjectList() {
     });
   };
 
+  const handleCopyLicenseKey = async (licenseKey) => {
+    if (!licenseKey) {
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(licenseKey);
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = licenseKey;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    } catch (err) {
+      setError('라이센스 키 복사 실패: ' + err.message);
+    }
+  };
+
   const getServiceTypeBadge = (type) => {
     const color = type === 'MAINTENANCE' ? 'info' : type === 'DEFECT_REPAIR' ? 'warning' : 'default';
     const typeLabel = type === 'MAINTENANCE' ? '유지보수' : type === 'DEFECT_REPAIR' ? '하자보수' : '기타';
@@ -176,6 +201,30 @@ function ProjectList() {
     { field: 'id', headerName: '프로젝트 ID', width: 100 },
     { field: 'projectName', headerName: '프로젝트명', width: 220 },
     { field: 'companyName', headerName: '회사', width: 150 },
+    {
+      field: 'licenseKey',
+      headerName: '라이센스 키',
+      width: 220,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', height: '100%' }}>
+          <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+            {params.value || '-'}
+          </Typography>
+          {params.value && (
+            <Tooltip title="복사">
+              <IconButton
+                size="small"
+                onClick={() => handleCopyLicenseKey(params.value)}
+                aria-label="project-license-key-copy"
+              >
+                <ContentCopyIcon fontSize="inherit" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      )
+    },
     {
       field: 'serviceType',
       headerName: '서비스 유형',
@@ -256,7 +305,7 @@ function ProjectList() {
   ];
 
   const handleExportToExcel = () => {
-    const headers = ['프로젝트 ID', '프로젝트명', '회사', '서비스 유형', '계약 시작일', '계약 종료일', 'm/d'];
+    const headers = ['프로젝트 ID', '프로젝트명', '회사', '라이센스 키', '서비스 유형', '계약 시작일', '계약 종료일', 'm/d'];
 
     const serviceTypeMap = {
       'DEVELOPMENT': '개발',
@@ -268,6 +317,7 @@ function ProjectList() {
       proj.id,
       proj.projectName,
       proj.companyName,
+      proj.licenseKey || '',
       serviceTypeMap[proj.serviceType] || proj.serviceType,
       proj.contractStartDate ? new Date(proj.contractStartDate).toLocaleDateString() : '',
       proj.contractEndDate ? new Date(proj.contractEndDate).toLocaleDateString() : '',
@@ -281,6 +331,7 @@ function ProjectList() {
       { wch: 12 }, // 프로젝트 ID
       { wch: 25 }, // 프로젝트명
       { wch: 20 }, // 회사
+      { wch: 24 }, // 라이센스 키
       { wch: 15 }, // 서비스 유형
       { wch: 15 }, // 계약 시작일
       { wch: 15 }, // 계약 종료일

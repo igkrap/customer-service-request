@@ -35,6 +35,8 @@ public class Project {
     @NotNull(message = "Contract man-days is required")
     private BigDecimal contractManDays;
 
+    private String licenseKey;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

@@ -19,9 +19,9 @@ public interface ProjectMapper {
     List<Project> findByCompanyId(Long companyId);
 
     @Insert("INSERT INTO projects (company_id, project_name, service_type, contract_start_date, " +
-            "contract_end_date, contract_man_days, created_at, updated_at) " +
+            "contract_end_date, contract_man_days, license_key, created_at, updated_at) " +
             "VALUES (#{companyId}, #{projectName}, #{serviceType}, #{contractStartDate}, " +
-            "#{contractEndDate}, #{contractManDays}, #{createdAt}, #{updatedAt})")
+            "#{contractEndDate}, #{contractManDays}, #{licenseKey}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(Project project);
 

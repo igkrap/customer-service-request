@@ -14,7 +14,6 @@ public class CompanyDTO {
     private String companyName;
     private String companyCode;
     private String businessNumber;
-    private String licenseKey;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
