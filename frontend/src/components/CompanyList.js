@@ -116,7 +116,19 @@ function CompanyList() {
       return;
     }
     try {
-      await navigator.clipboard.writeText(licenseKey);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(licenseKey);
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = licenseKey;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
     } catch (err) {
       setError('라이센스 키 복사 실패: ' + err.message);
     }
