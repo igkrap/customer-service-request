@@ -16,6 +16,16 @@ export const getProfilePictureUrl = (profilePictureId) => {
   return `${API_BASE_URL}/users/profile-picture/${profilePictureId}`;
 };
 
+export const getWebSocketUrl = () => {
+  try {
+    const parsed = new URL(SERVER_URL);
+    const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${parsed.host}/ws/notifications`;
+  } catch (error) {
+    return 'ws://localhost:8080/ws/notifications';
+  }
+};
+
 // Add JWT token to requests
 api.interceptors.request.use(
   (config) => {

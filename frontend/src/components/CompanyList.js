@@ -5,6 +5,7 @@ import {
   Typography,
   Alert,
   IconButton,
+  Tooltip,
   Button,
   Dialog,
   DialogTitle,
@@ -16,6 +17,7 @@ import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { companyAPI } from '../services/api';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
@@ -109,6 +111,17 @@ function CompanyList() {
     });
   };
 
+  const handleCopyLicenseKey = async (licenseKey) => {
+    if (!licenseKey) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(licenseKey);
+    } catch (err) {
+      setError('라이센스 키 복사 실패: ' + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -122,6 +135,30 @@ function CompanyList() {
     { field: 'companyName', headerName: '회사명', width: 220 },
     { field: 'companyCode', headerName: '회사 코드', width: 150 },
     { field: 'businessNumber', headerName: '사업자 번호', width: 200 },
+    {
+      field: 'licenseKey',
+      headerName: '라이센스 키',
+      width: 240,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+          <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+            {params.value || '-'}
+          </Typography>
+          {params.value && (
+            <Tooltip title="복사">
+              <IconButton
+                size="small"
+                onClick={() => handleCopyLicenseKey(params.value)}
+                aria-label="license-key-copy"
+              >
+                <ContentCopyIcon fontSize="inherit" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      )
+    },
     {
       field: 'createdAt',
       headerName: '생성일',
@@ -162,13 +199,14 @@ function CompanyList() {
   ];
 
   const handleExportToExcel = () => {
-    const headers = ['회사 ID', '회사명', '회사 코드', '사업자 번호', '생성일'];
+    const headers = ['회사 ID', '회사명', '회사 코드', '사업자 번호', '라이센스 키', '생성일'];
 
     const excelData = companies.map(company => [
       company.id,
       company.companyName,
       company.companyCode,
       company.businessNumber,
+      company.licenseKey || '',
       company.createdAt ? formatDateTime(company.createdAt) : ''
     ]);
 
@@ -180,6 +218,7 @@ function CompanyList() {
       { wch: 25 }, // 회사명
       { wch: 15 }, // 회사 코드
       { wch: 20 }, // 사업자 번호
+      { wch: 24 }, // 라이센스 키
       { wch: 20 }  // 생성일
     ];
     worksheet['!cols'] = columnWidths;

@@ -18,8 +18,8 @@ public interface CompanyMapper {
     @Select("SELECT * FROM companies WHERE company_code = #{companyCode}")
     Optional<Company> findByCompanyCode(String companyCode);
 
-    @Insert("INSERT INTO companies (company_name, company_code, business_number, created_at, updated_at) " +
-            "VALUES (#{companyName}, #{companyCode}, #{businessNumber}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO companies (company_name, company_code, business_number, license_key, created_at, updated_at) " +
+            "VALUES (#{companyName}, #{companyCode}, #{businessNumber}, #{licenseKey}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(Company company);
 

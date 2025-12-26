@@ -36,6 +36,9 @@ public class ServiceRequestService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
                 .map(this::convertToDTO)
@@ -146,6 +149,8 @@ public class ServiceRequestService {
             }
         }
 
+        notificationService.sendServiceRequestCreated(serviceRequest);
+
         return convertToDTO(serviceRequest);
     }
 
@@ -198,6 +203,8 @@ public class ServiceRequestService {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
         }
+
+        notificationService.sendServiceRequestCreated(serviceRequest);
 
         return convertToDTO(serviceRequest);
     }
@@ -309,6 +316,10 @@ public class ServiceRequestService {
             }
         }
 
+        if (dto.getStatus() != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -394,6 +405,10 @@ public class ServiceRequestService {
             }
         }
 
+        if (status != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
@@ -447,6 +462,10 @@ public class ServiceRequestService {
                         oldStatus != null ? oldStatus.name() : "UNKNOWN", status.name());
                 }
             }
+        }
+
+        if (status != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
         }
 
         return convertToDTO(serviceRequest);

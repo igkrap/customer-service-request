@@ -23,6 +23,8 @@ public class Company {
     @NotBlank(message = "Business number is required")
     private String businessNumber;
 
+    private String licenseKey;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

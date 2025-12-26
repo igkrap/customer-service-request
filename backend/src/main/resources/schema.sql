@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS companies (
     company_name VARCHAR(255) NOT NULL,
     company_code VARCHAR(50) NOT NULL UNIQUE,
     business_number VARCHAR(50) NOT NULL UNIQUE,
+    license_key VARCHAR(50) UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -190,6 +191,7 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_re
 CREATE INDEX IF NOT EXISTS idx_service_requests_due_date ON service_requests(due_date);
 CREATE INDEX IF NOT EXISTS idx_service_requests_parent_id ON service_requests(parent_id);
 CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code);
+CREATE INDEX IF NOT EXISTS idx_companies_license_key ON companies(license_key);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON user_projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_project_id ON user_projects(project_id);
