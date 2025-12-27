@@ -19,6 +19,9 @@ export const getProfilePictureUrl = (profilePictureId) => {
 export const getWebSocketUrl = () => {
   try {
     const parsed = new URL(SERVER_URL);
+    if (parsed.pathname === '/api' || parsed.pathname.startsWith('/api/')) {
+      parsed.pathname = '/';
+    }
     const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${parsed.host}/ws/notifications`;
   } catch (error) {
