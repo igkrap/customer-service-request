@@ -234,7 +234,9 @@ public class ServiceRequestService {
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
-        serviceRequest.setManagerId(dto.getManagerId());
+        if (dto.getManagerId() != null) {
+            serviceRequest.setManagerId(dto.getManagerId());
+        }
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setDueDate(dto.getDueDate());
         serviceRequest.setResolvedAt(dto.getResolvedAt());
