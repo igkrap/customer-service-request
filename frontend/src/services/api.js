@@ -50,22 +50,18 @@ api.interceptors.response.use(
     if (error.response) {
       const { status } = error.response;
 
-      // Handle unauthorized (invalid/expired token) or forbidden
+      // Mark token invalid; actual logout happens on next app load.
       if (status === 401 || status === 403) {
-        // Clear auth data
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.setItem('auth-expired', String(status));
 
-        // Dispatch custom event for auth context to handle
         window.dispatchEvent(new CustomEvent('auth-expired', {
           detail: {
             status,
-            message: status === 401 ? '세션이 만료되었습니다. 다시 로그인해주세요.' : '접근 권한이 없습니다.'
+            message: status === 401
+              ? '세션이 만료되었습니다. 다시 접속 시 로그인 상태가 해제됩니다.'
+              : '접근 권한이 없습니다.'
           }
         }));
-
-        // Redirect to login
-        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
