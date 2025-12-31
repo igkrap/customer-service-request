@@ -147,6 +147,9 @@ public class ServiceRequestService {
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+            }
         }
 
         notificationService.sendServiceRequestCreated(serviceRequest);
@@ -201,6 +204,9 @@ public class ServiceRequestService {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
             }
         }
 
@@ -300,6 +306,9 @@ public class ServiceRequestService {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
             }
         }
 
@@ -448,6 +457,9 @@ public class ServiceRequestService {
             User manager = userMapper.findById(managerId).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
             }
         }
 

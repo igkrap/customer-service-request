@@ -61,6 +61,7 @@ const formatDateForDisplay = (yyyymmdd) => {
   return `${year}/${month}/${day}`;
 };
 
+
 // 현재 날짜를 yyyyMMdd 형식으로 반환
 const getTodayYYYYMMDD = () => {
   const today = new Date();
@@ -142,6 +143,7 @@ function ServiceRequestList() {
 
   const selectedRequestAttachments = filterAttachmentsByType(selectedAttachments, 'REQUEST');
   const selectedResolutionAttachments = filterAttachmentsByType(selectedAttachments, 'RESOLUTION');
+
 
   useEffect(() => {
     fetchData();
@@ -575,6 +577,49 @@ function ServiceRequestList() {
     return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
+  const buildTimelineEntries = (request) => {
+    if (!request) return [];
+    const entries = [
+      {
+        key: 'created',
+        label: '요청 생성',
+        detail: request.customerName ? `${request.customerName} 요청` : null,
+        date: request.createdAt ? new Date(request.createdAt) : null,
+      },
+    ];
+
+    if (request.managerName && request.managerName !== '미할당') {
+      entries.push({
+        key: 'manager',
+        label: '담당자 배정',
+        detail: request.managerName,
+        date: request.updatedAt ? new Date(request.updatedAt) : null,
+      });
+    }
+
+    if (request.status && request.status !== 'OPEN') {
+      entries.push({
+        key: 'status',
+        label: '상태 변경',
+        detail: getStatusLabel(request.status),
+        date: request.updatedAt ? new Date(request.updatedAt) : null,
+      });
+    }
+
+    if (request.resolvedAt) {
+      entries.push({
+        key: 'resolved',
+        label: '해결 완료',
+        detail: null,
+        date: new Date(request.resolvedAt),
+      });
+    }
+
+    return entries
+      .filter((entry) => entry.date)
+      .sort((a, b) => a.date - b.date);
+  };
+
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
@@ -846,6 +891,8 @@ function ServiceRequestList() {
       </Box>
     );
   }
+
+  const timelineEntries = buildTimelineEntries(selectedRequest);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -1133,6 +1180,44 @@ function ServiceRequestList() {
                     </Box>
                   </Box>
                 </Paper>
+
+                {timelineEntries.length > 0 && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      요청 이력
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={2} sx={{ pl: 1 }}>
+                      {timelineEntries.map((entry, index) => (
+                        <Box key={`${entry.key}-${index}`} sx={{ display: 'flex', gap: 2, position: 'relative' }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              bgcolor: 'primary.main',
+                              borderRadius: '50%',
+                              mt: 0.75,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {entry.label}
+                            </Typography>
+                            {entry.detail && (
+                              <Typography variant="body2" color="text.secondary">
+                                {entry.detail}
+                              </Typography>
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDateTime(entry.date)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Paper>
+                )}
 
                 {selectedRequest.description && (
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>

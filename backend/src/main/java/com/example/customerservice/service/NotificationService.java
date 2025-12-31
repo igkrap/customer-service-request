@@ -37,12 +37,26 @@ public class NotificationService {
         String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
         String message = String.format("서비스 요청 상태가 변경되었습니다: %s (%s)", serviceRequest.getTitle(), status);
         NotificationMessage payload = new NotificationMessage(
-                "SERVICE_REQUEST_STATUS_UPDATED",
-                serviceRequest.getId(),
-                serviceRequest.getTitle(),
-                status,
-                message,
-                LocalDateTime.now()
+            "SERVICE_REQUEST_STATUS_UPDATED",
+            serviceRequest.getId(),
+            serviceRequest.getTitle(),
+            status,
+            message,
+            LocalDateTime.now()
+        );
+        broadcast(payload);
+    }
+
+    public void sendManagerAssigned(ServiceRequest serviceRequest, String managerName) {
+        String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
+        String message = String.format("담당자가 배정되었습니다: %s (%s)", serviceRequest.getTitle(), managerName);
+        NotificationMessage payload = new NotificationMessage(
+            "MANAGER_ASSIGNED",
+            serviceRequest.getId(),
+            serviceRequest.getTitle(),
+            status,
+            message,
+            LocalDateTime.now()
         );
         broadcast(payload);
     }

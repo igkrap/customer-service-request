@@ -88,6 +88,19 @@ function Dashboard() {
   });
   const [notificationList, setNotificationList] = useState([]);
 
+  const getNotificationTypeMeta = (type) => {
+    switch (type) {
+      case 'SERVICE_REQUEST_CREATED':
+        return { label: '신규 요청', color: 'primary' };
+      case 'SERVICE_REQUEST_STATUS_UPDATED':
+        return { label: '상태 변경', color: 'info' };
+      case 'MANAGER_ASSIGNED':
+        return { label: '담당자 배정', color: 'success' };
+      default:
+        return { label: '알림', color: 'default' };
+    }
+  };
+
   const getRoleText = () => {
     if (isAdmin) return '관리자';
     if (isManager) return '매니저';
@@ -168,12 +181,14 @@ function Dashboard() {
       try {
         const payload = JSON.parse(event.data);
         const message = payload.message || '새 알림이 도착했습니다.';
+        const type = payload.type || 'GENERAL';
         const createdAt = payload.createdAt ? new Date(payload.createdAt) : new Date();
         setNotification({ open: true, message });
         setNotificationList((prev) => [
           {
             id: `${createdAt.getTime()}-${prev.length}`,
             message,
+            type,
             createdAt,
           },
           ...prev,
@@ -184,6 +199,7 @@ function Dashboard() {
           {
             id: `${Date.now()}-${prev.length}`,
             message: '새 알림이 도착했습니다.',
+            type: 'GENERAL',
             createdAt: new Date(),
           },
           ...prev,
@@ -564,10 +580,17 @@ function Dashboard() {
                     setNotificationList((prev) => prev.filter((entry) => entry.id !== item.id))
                   }
                 >
-                  <ListItemText
-                    primary={item.message}
-                    secondary={item.createdAt.toLocaleString('ko-KR')}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Chip
+                      label={getNotificationTypeMeta(item.type).label}
+                      color={getNotificationTypeMeta(item.type).color}
+                      size="small"
+                    />
+                    <ListItemText
+                      primary={item.message}
+                      secondary={item.createdAt.toLocaleString('ko-KR')}
+                    />
+                  </Box>
                 </ListItem>
               ))}
             </List>
