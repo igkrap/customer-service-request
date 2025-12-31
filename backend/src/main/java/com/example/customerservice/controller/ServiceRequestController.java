@@ -156,6 +156,11 @@ public class ServiceRequestController {
                         .body("You can only update your own requests");
             }
 
+            if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+                dto.setReceivedAt(existingRequest.getReceivedAt());
+                dto.setResolvedAt(existingRequest.getResolvedAt());
+            }
+
             ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequest(id, dto);
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {

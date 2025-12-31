@@ -113,6 +113,8 @@ function ServiceRequestList() {
     customerId: '',
     projectId: '',
     dueDate: '',
+    receivedAt: '',
+    resolvedAt: '',
     parentId: ''
   });
 
@@ -326,6 +328,8 @@ function ServiceRequestList() {
         projectId: formData.projectId ? parseInt(formData.projectId) : null,
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
         dueDate: formatDateToYYYYMMDD(formData.dueDate),
+        receivedAt: formData.receivedAt ? formatDateToYYYYMMDD(formData.receivedAt) : null,
+        resolvedAt: formData.resolvedAt ? formatDateToYYYYMMDD(formData.resolvedAt) : null,
         attachments: attachments
       };
 
@@ -353,6 +357,8 @@ function ServiceRequestList() {
       customerId: request.customerId.toString(),
       projectId: request.projectId ? request.projectId.toString() : '',
       dueDate: formatDateFromYYYYMMDD(request.dueDate),
+      receivedAt: formatDateFromYYYYMMDD(request.receivedAt),
+      resolvedAt: formatDateFromYYYYMMDD(request.resolvedAt),
       parentId: request.parentId ? request.parentId.toString() : ''
     });
 
@@ -579,12 +585,25 @@ function ServiceRequestList() {
 
   const buildTimelineEntries = (request) => {
     if (!request) return [];
+    const receivedDate = request.receivedAt
+      ? new Date(formatDateFromYYYYMMDD(request.receivedAt))
+      : request.createdAt
+        ? new Date(request.createdAt)
+        : null;
+    const resolvedDate = request.resolvedAt
+      ? new Date(formatDateFromYYYYMMDD(request.resolvedAt))
+      : null;
     const entries = [
       {
         key: 'created',
         label: '요청 생성',
         detail: request.customerName ? `${request.customerName} 요청` : null,
-        date: request.createdAt ? new Date(request.createdAt) : null,
+        date: receivedDate,
+        dateLabel: request.receivedAt
+          ? formatDateForDisplay(request.receivedAt)
+          : request.createdAt
+            ? formatDateTime(request.createdAt)
+            : '',
       },
     ];
 
@@ -594,6 +613,7 @@ function ServiceRequestList() {
         label: '담당자 배정',
         detail: request.managerName,
         date: request.updatedAt ? new Date(request.updatedAt) : null,
+        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
       });
     }
 
@@ -603,6 +623,7 @@ function ServiceRequestList() {
         label: '상태 변경',
         detail: getStatusLabel(request.status),
         date: request.updatedAt ? new Date(request.updatedAt) : null,
+        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
       });
     }
 
@@ -611,7 +632,8 @@ function ServiceRequestList() {
         key: 'resolved',
         label: '해결 완료',
         detail: null,
-        date: new Date(request.resolvedAt),
+        date: resolvedDate,
+        dateLabel: formatDateForDisplay(request.resolvedAt),
       });
     }
 
@@ -665,13 +687,13 @@ function ServiceRequestList() {
       valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
     },
     {
-      field: 'createdAt',
-      headerName: '생성일',
-      flex: 1.5,
-      minWidth: 180,
+      field: 'receivedAt',
+      headerName: '접수일자',
+      flex: 1.2,
+      minWidth: 130,
       valueFormatter: (value) => {
         if (!value) return '';
-        return formatDateTime(value) || '';
+        return formatDateForDisplay(value) || '';
       }
     },
     {
@@ -801,33 +823,18 @@ function ServiceRequestList() {
   ];
 
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(m/d)'];
-
-    const statusMap = {
-      'PENDING': '대기',
-      'IN_PROGRESS': '진행중',
-      'ON_HOLD': '보류',
-      'RESOLVED': '완료',
-      'CANCELLED': '취소'
-    };
-
-    const priorityMap = {
-      'LOW': '낮음',
-      'NORMAL': '보통',
-      'HIGH': '높음',
-      'URGENT': '긴급'
-    };
+    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '접수일자', '소요시간(m/d)'];
 
     const excelData = requests.map(req => [
       req.id,
       req.title,
       req.customerName,
       req.projectName || '없음',
-      statusMap[req.status] || req.status,
-      priorityMap[req.priority] || req.priority,
+      getStatusLabel(req.status) || req.status,
+      getPriorityLabel(req.priority) || req.priority,
       req.dueDate ? formatDateForDisplay(req.dueDate) : '',
       (req.managerName && req.managerName.trim() !== '') ? req.managerName : '미배정',
-      req.createdAt ? formatDateTime(req.createdAt) : '',
+      req.receivedAt ? formatDateForDisplay(req.receivedAt) : '',
       req.hoursSpent || ''
     ]);
 
@@ -843,7 +850,7 @@ function ServiceRequestList() {
       { wch: 10 }, // 우선순위
       { wch: 12 }, // 마감일
       { wch: 15 }, // 담당자
-      { wch: 20 }, // 생성일
+      { wch: 14 }, // 접수일자
       { wch: 12 }  // 소요시간
     ];
     worksheet['!cols'] = columnWidths;
@@ -1074,11 +1081,44 @@ function ServiceRequestList() {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  inputProps={{
-                    min: new Date().toISOString().split('T')[0]
-                  }}
-                  helperText="마감일을 선택하세요 (오늘 이후만 가능)"
+                  inputProps={
+                    user?.role === 'ROLE_ADMIN'
+                      ? {}
+                      : { min: new Date().toISOString().split('T')[0] }
+                  }
+                  helperText={
+                    user?.role === 'ROLE_ADMIN'
+                      ? '마감일을 선택하세요'
+                      : '마감일을 선택하세요 (오늘 이후만 가능)'
+                  }
                 />
+
+                {user?.role === 'ROLE_ADMIN' && (
+                  <>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="접수일자"
+                      name="receivedAt"
+                      value={formData.receivedAt}
+                      onChange={handleInputChange}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="해결일자"
+                      name="resolvedAt"
+                      value={formData.resolvedAt}
+                      onChange={handleInputChange}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </>
+                )}
 
                 <Divider sx={{ my: 1 }} />
 
@@ -1175,8 +1215,20 @@ function ServiceRequestList() {
                       </Typography>
                     </Box>
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
-                      <Typography variant="caption" color="text.secondary">생성일</Typography>
-                      <Typography variant="body1" sx={{ mt: 0.5 }}>{formatDateTime(selectedRequest.createdAt)}</Typography>
+                      <Typography variant="caption" color="text.secondary">접수일자</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {selectedRequest.receivedAt
+                          ? formatDateForDisplay(selectedRequest.receivedAt)
+                          : formatDateTime(selectedRequest.createdAt)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
+                      <Typography variant="caption" color="text.secondary">해결일자</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {selectedRequest.resolvedAt
+                          ? formatDateForDisplay(selectedRequest.resolvedAt)
+                          : '-'}
+                      </Typography>
                     </Box>
                   </Box>
                 </Paper>
@@ -1210,7 +1262,7 @@ function ServiceRequestList() {
                               </Typography>
                             )}
                             <Typography variant="caption" color="text.secondary">
-                              {formatDateTime(entry.date)}
+                              {entry.dateLabel}
                             </Typography>
                           </Box>
                         </Box>

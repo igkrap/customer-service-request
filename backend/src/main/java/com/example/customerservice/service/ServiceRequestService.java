@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -121,6 +123,9 @@ public class ServiceRequestService {
         serviceRequest.setCreatedByUserId(userId);
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        if (serviceRequest.getReceivedAt() == null || serviceRequest.getReceivedAt().isBlank()) {
+            serviceRequest.setReceivedAt(getTodayDateString());
+        }
 
         // Set default values if not provided
         if (serviceRequest.getStatus() == null) {
@@ -179,6 +184,9 @@ public class ServiceRequestService {
         serviceRequest.setCustomerId(customer.getId());
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        if (serviceRequest.getReceivedAt() == null || serviceRequest.getReceivedAt().isBlank()) {
+            serviceRequest.setReceivedAt(getTodayDateString());
+        }
 
         // Set default values if not provided
         if (serviceRequest.getStatus() == null) {
@@ -229,13 +237,15 @@ public class ServiceRequestService {
         serviceRequest.setManagerId(dto.getManagerId());
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setDueDate(dto.getDueDate());
+        serviceRequest.setResolvedAt(dto.getResolvedAt());
+        serviceRequest.setReceivedAt(dto.getReceivedAt());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
         // Set resolvedAt when status changes to RESOLVED
         if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -354,8 +364,8 @@ public class ServiceRequestService {
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -444,8 +454,8 @@ public class ServiceRequestService {
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -533,6 +543,7 @@ public class ServiceRequestService {
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());
+        dto.setReceivedAt(serviceRequest.getReceivedAt());
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
@@ -559,6 +570,12 @@ public class ServiceRequestService {
         serviceRequest.setHoursSpent(dto.getHoursSpent());
         serviceRequest.setResolutionNotes(dto.getResolutionNotes());
         serviceRequest.setDueDate(dto.getDueDate());
+        serviceRequest.setResolvedAt(dto.getResolvedAt());
+        serviceRequest.setReceivedAt(dto.getReceivedAt());
         return serviceRequest;
+    }
+
+    private String getTodayDateString() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 }

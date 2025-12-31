@@ -157,8 +157,10 @@ function ManagerMonthlyReport() {
             if (req.projectId !== project.id) return false;
             if (!req.resolvedAt) return false;
 
-            // resolvedAt을 날짜 형식으로 변환 (yyyy-MM-dd)
-            const resolvedDate = req.resolvedAt.split('T')[0];
+            const resolvedValue = req.resolvedAt;
+            const resolvedDate = resolvedValue && resolvedValue.length === 8
+              ? `${resolvedValue.slice(0, 4)}-${resolvedValue.slice(4, 6)}-${resolvedValue.slice(6, 8)}`
+              : resolvedValue?.split('T')[0];
             return resolvedDate === targetDate;
           });
 
