@@ -21,7 +21,8 @@ import {
   Divider,
   Alert,
   CircularProgress,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -156,20 +157,26 @@ function ServiceRequestList() {
   const enrichRequestsWithProjectNames = (items, availableProjects) => {
     if (!Array.isArray(items) || !Array.isArray(availableProjects)) return items;
     const projectMap = new Map(
-      availableProjects.map((project) => [project.id, project.projectName])
+      availableProjects.map((project) => [project.id, project])
     );
 
     return items.map((request) => {
-      if (request.projectName || !request.projectId) {
+      if (!request.projectId) {
         return request;
       }
 
-      const projectName = projectMap.get(request.projectId);
-      if (!projectName) {
+      const project = projectMap.get(request.projectId);
+      if (!project) {
         return request;
       }
 
-      return { ...request, projectName };
+      return {
+        ...request,
+        projectName: request.projectName || project.projectName,
+        projectServiceType: project.serviceType,
+        projectContractStartDate: project.contractStartDate,
+        projectContractEndDate: project.contractEndDate
+      };
     });
   };
 
@@ -711,7 +718,7 @@ function ServiceRequestList() {
       <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
         <Avatar
           src={getProfilePictureUrl(profilePictureId)}
-          sx={{ width: 32, height: 32, bgcolor: 'grey.200', color: 'text.secondary' }}
+          sx={{ width: 36, height: 36, bgcolor: 'grey.200', color: 'text.secondary' }}
         >
           {name?.charAt(0)?.toUpperCase()}
         </Avatar>
@@ -720,22 +727,143 @@ function ServiceRequestList() {
     );
   };
 
+  const formatProjectDate = (dateValue) => {
+    if (!dateValue) return '-';
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return '-';
+    return parsedDate.toLocaleDateString();
+  };
+
+  const renderHeaderTooltip = (label, description) => (
+    <Tooltip
+      arrow
+      placement="top"
+      title={(
+        <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3 }}>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {label}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {description || label}
+          </Typography>
+        </Paper>
+      )}
+    >
+      <Typography variant="body2" fontWeight={600}>
+        {label}
+      </Typography>
+    </Tooltip>
+  );
+
+  const renderProjectTooltipContent = (row) => (
+    <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3 }}>
+      <Typography variant="subtitle2" fontWeight={600}>
+        {row?.projectName || '프로젝트 정보 없음'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        유형: {row?.projectServiceType || '-'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        기간: {formatProjectDate(row?.projectContractStartDate)} ~ {formatProjectDate(row?.projectContractEndDate)}
+      </Typography>
+    </Paper>
+  );
+
+  const renderPersonTooltipContent = (row, name, profilePictureId, email, companyName) => (
+    <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3, minWidth: 220 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar
+          src={getProfilePictureUrl(profilePictureId)}
+          sx={{ width: 48, height: 48, bgcolor: 'grey.200', color: 'text.secondary' }}
+        >
+          {name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+        <Box>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {name}
+          </Typography>
+          {companyName && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {companyName}
+            </Typography>
+          )}
+          {email && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {email}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </Paper>
+  );
+
   const columns = [
-    { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
-    { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
     {
-      field: 'customerName',
-      headerName: '요청자',
-      flex: 1.3,
-      minWidth: 130,
-      renderCell: (params) => renderProfileCell(params.value || '-', params.row?.customerProfilePictureId)
+      field: 'id',
+      headerName: '요청 ID',
+      flex: 0.6,
+      minWidth: 80,
+      renderHeader: () => renderHeaderTooltip('요청 ID', '요청 식별 번호')
+    },
+    {
+      field: 'companyName',
+      headerName: '회사 명',
+      flex: 1.2,
+      minWidth: 140,
+      valueGetter: (value) => value || '-',
+      renderHeader: () => renderHeaderTooltip('회사 명', '요청자 소속 회사')
     },
     {
       field: 'projectName',
-      headerName: '프로젝트',
-      flex: 1.2,
-      minWidth: 120,
-      valueGetter: (value) => value || '없음'
+      headerName: '프로젝트 명',
+      flex: 1.3,
+      minWidth: 150,
+      valueGetter: (value) => value || '없음',
+      renderHeader: () => renderHeaderTooltip('프로젝트 명', '프로젝트 정보'),
+      renderCell: (params) => (
+        <Tooltip arrow placement="right" title={renderProjectTooltipContent(params.row)}>
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <Typography variant="body2">{params.value || '없음'}</Typography>
+          </Box>
+        </Tooltip>
+      )
+    },
+    {
+      field: 'customerName',
+      headerName: '요청자',
+      flex: 1.4,
+      minWidth: 160,
+      renderHeader: () => renderHeaderTooltip('요청자', '요청자 정보'),
+      renderCell: (params) => {
+        const name = params.value || '-';
+        if (name === '-') {
+          return renderProfileCell(name);
+        }
+        return (
+          <Tooltip
+            arrow
+            placement="right"
+            title={renderPersonTooltipContent(
+              params.row,
+              name,
+              params.row?.customerProfilePictureId,
+              params.row?.customerEmail,
+              params.row?.companyName
+            )}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              {renderProfileCell(name, params.row?.customerProfilePictureId)}
+            </Box>
+          </Tooltip>
+        );
+      }
+    },
+    {
+      field: 'title',
+      headerName: '제목',
+      flex: 2,
+      minWidth: 180,
+      renderHeader: () => renderHeaderTooltip('제목', '요청 제목')
     },
     {
       field: 'status',
@@ -743,24 +871,45 @@ function ServiceRequestList() {
       flex: 1,
       minWidth: 120,
       valueGetter: (value) => getStatusLabel(value),
-      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null,
+      renderHeader: () => renderHeaderTooltip('상태', '진행 상태')
     },
     {
       field: 'priority',
       headerName: '우선순위',
       flex: 0.8,
-      minWidth: 100,
+      minWidth: 110,
       valueGetter: (value) => getPriorityLabel(value),
-      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null,
+      renderHeader: () => renderHeaderTooltip('우선순위', '요청 우선순위')
     },
     {
       field: 'managerName',
       headerName: '담당자',
       flex: 1.3,
-      minWidth: 130,
+      minWidth: 160,
+      renderHeader: () => renderHeaderTooltip('담당자', '담당자 정보'),
       renderCell: (params) => {
         const name = params.value?.trim() ? params.value : '-';
-        return renderProfileCell(name, params.row?.managerProfilePictureId);
+        if (name === '-') {
+          return renderProfileCell(name);
+        }
+        return (
+          <Tooltip
+            arrow
+            placement="right"
+            title={renderPersonTooltipContent(
+              params.row,
+              name,
+              params.row?.managerProfilePictureId,
+              params.row?.managerEmail
+            )}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              {renderProfileCell(name, params.row?.managerProfilePictureId)}
+            </Box>
+          </Tooltip>
+        );
       }
     },
     {
@@ -771,7 +920,8 @@ function ServiceRequestList() {
       valueFormatter: (value) => {
         if (!value) return '';
         return formatDateForDisplay(value) || '';
-      }
+      },
+      renderHeader: () => renderHeaderTooltip('접수일자', '요청 접수일')
     },
     {
       field: 'dueDate',
@@ -781,7 +931,8 @@ function ServiceRequestList() {
       valueFormatter: (value) => {
         if (!value) return '';
         return formatDateForDisplay(value);
-      }
+      },
+      renderHeader: () => renderHeaderTooltip('마감일자', '요청 마감일')
     },
     {
       field: 'resolvedAt',
@@ -791,7 +942,8 @@ function ServiceRequestList() {
       valueFormatter: (value) => {
         if (!value) return '';
         return formatDateForDisplay(value);
-      }
+      },
+      renderHeader: () => renderHeaderTooltip('완료일자', '요청 완료일')
     },
     {
       field: 'actions',
@@ -801,7 +953,8 @@ function ServiceRequestList() {
       sortable: false,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => params.row ? renderActionButtons(params.row) : null
+      renderCell: (params) => params.row ? renderActionButtons(params.row) : null,
+      renderHeader: () => renderHeaderTooltip('작업버튼', '요청 처리 작업')
     }
   ];
 
@@ -865,13 +1018,14 @@ function ServiceRequestList() {
   };
 
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
+    const headers = ['요청 ID', '회사 명', '프로젝트 명', '요청자', '제목', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
 
     const excelData = requests.map(req => [
       req.id,
-      req.title,
-      req.customerName,
+      req.companyName || '-',
       req.projectName || '없음',
+      req.customerName,
+      req.title,
       getStatusLabel(req.status) || req.status,
       getPriorityLabel(req.priority) || req.priority,
       (req.managerName && req.managerName.trim() !== '') ? req.managerName : '-',
@@ -885,9 +1039,10 @@ function ServiceRequestList() {
 
     const columnWidths = [
       { wch: 10 }, // 요청 ID
-      { wch: 30 }, // 제목
+      { wch: 20 }, // 회사 명
+      { wch: 20 }, // 프로젝트 명
       { wch: 15 }, // 요청자
-      { wch: 20 }, // 프로젝트
+      { wch: 30 }, // 제목
       { wch: 10 }, // 상태
       { wch: 10 }, // 우선순위
       { wch: 15 }, // 담당자
