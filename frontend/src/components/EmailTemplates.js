@@ -118,7 +118,7 @@ function EmailTemplates() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
         <Typography
           variant="h5"
           sx={{
