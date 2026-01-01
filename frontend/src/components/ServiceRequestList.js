@@ -788,7 +788,7 @@ function ServiceRequestList() {
                         <CompleteIcon fontSize="small" />
                       </IconButton>
                     )}
-                    {params.row.status !== 'HOLD' && (
+                    {params.row.status === 'IN_PROGRESS' && (
                       <IconButton
                         size="small"
                         color="warning"
