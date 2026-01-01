@@ -502,11 +502,15 @@ function ServiceRequestList() {
       setSelectedFollowUps([]);
     }
 
-    try {
-      const historiesResponse = await serviceRequestAPI.getHistories(request.id);
-      setSelectedHistories(historiesResponse.data || []);
-    } catch (err) {
-      console.error('Failed to load histories:', err);
+    if (user?.role === 'ROLE_ADMIN') {
+      try {
+        const historiesResponse = await serviceRequestAPI.getHistories(request.id);
+        setSelectedHistories(historiesResponse.data || []);
+      } catch (err) {
+        console.error('Failed to load histories:', err);
+        setSelectedHistories([]);
+      }
+    } else {
       setSelectedHistories([]);
     }
   };
@@ -1239,7 +1243,7 @@ function ServiceRequestList() {
                   </Box>
                 </Paper>
 
-                {timelineEntries.length > 0 && (
+                {user?.role === 'ROLE_ADMIN' && timelineEntries.length > 0 && (
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       요청 이력
@@ -1277,56 +1281,58 @@ function ServiceRequestList() {
                   </Paper>
                 )}
 
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    변경 기록
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  {selectedHistories.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      등록된 변경 기록이 없습니다.
+                {user?.role === 'ROLE_ADMIN' && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      변경 기록
                     </Typography>
-                  ) : (
-                    <Stack spacing={1}>
-                      {selectedHistories.map((history) => (
-                        <Box
-                          key={history.id}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: 1,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: 'grey.50'
-                          }}
-                        >
-                          <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" fontWeight={600}>
-                              {history.eventType || '기록'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {history.createdAt ? formatDateTime(history.createdAt) : ''}
-                            </Typography>
-                          </Stack>
-                          {(history.fromStatus || history.toStatus) && (
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>
-                              상태: {history.fromStatus || '-'} → {history.toStatus || '-'}
-                            </Typography>
-                          )}
-                          {(history.fromManagerId || history.toManagerId) && (
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>
-                              담당자 ID: {history.fromManagerId || '-'} → {history.toManagerId || '-'}
-                            </Typography>
-                          )}
-                          {history.note && (
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>
-                              {history.note}
-                            </Typography>
-                          )}
-                        </Box>
-                      ))}
-                    </Stack>
-                  )}
-                </Paper>
+                    <Divider sx={{ mb: 2 }} />
+                    {selectedHistories.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        등록된 변경 기록이 없습니다.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1}>
+                        {selectedHistories.map((history) => (
+                          <Box
+                            key={history.id}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: 'grey.50'
+                            }}
+                          >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Typography variant="body2" fontWeight={600}>
+                                {history.eventType || '기록'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {history.createdAt ? formatDateTime(history.createdAt) : ''}
+                              </Typography>
+                            </Stack>
+                            {(history.fromStatus || history.toStatus) && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                상태: {history.fromStatus || '-'} → {history.toStatus || '-'}
+                              </Typography>
+                            )}
+                            {(history.fromManagerId || history.toManagerId) && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                담당자 ID: {history.fromManagerId || '-'} → {history.toManagerId || '-'}
+                              </Typography>
+                            )}
+                            {history.note && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                {history.note}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Stack>
+                    )}
+                  </Paper>
+                )}
 
                 {selectedRequest.description && (
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
