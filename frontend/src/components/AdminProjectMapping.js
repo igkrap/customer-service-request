@@ -18,7 +18,7 @@ import {
   Divider,
   Grid
 } from '@mui/material';
-import { Save as SaveIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Save as SaveIcon } from '@mui/icons-material';
 
 function AdminProjectMapping() {
   const { user: currentUser } = useAuth();
@@ -164,14 +164,6 @@ function AdminProjectMapping() {
           >
             사용자별 프로젝트 등록
           </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchData}
-            disabled={loading}
-          >
-            새로고침
-          </Button>
         </Box>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
