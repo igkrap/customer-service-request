@@ -1490,7 +1490,7 @@ function ServiceRequestList() {
         {/* Card View */}
         <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <CustomToolbar />
-          <Stack spacing={2} sx={{ overflow: 'auto', pb: 2 }}>
+          <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
             {requests.length === 0 ? (
               <Typography color="text.secondary">등록된 서비스 요청이 없습니다.</Typography>
             ) : (
@@ -1499,9 +1499,9 @@ function ServiceRequestList() {
                   key={request.id}
                   variant="outlined"
                   onClick={() => handleDetailOpen(request)}
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', height: 156 }}
                 >
-                  <CardContent sx={{ p: 2 }}>
+                  <CardContent sx={{ p: 2, height: '100%', display: 'flex' }}>
                     <Box
                       sx={{
                         display: 'grid',
@@ -1510,7 +1510,7 @@ function ServiceRequestList() {
                         columnGap: 2,
                         rowGap: 1,
                         alignItems: 'start',
-                        minHeight: 78,
+                        width: '100%',
                       }}
                     >
                       <Box sx={{ gridColumn: '1', gridRow: '1' }}>
