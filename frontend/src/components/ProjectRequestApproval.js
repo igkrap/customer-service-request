@@ -484,6 +484,7 @@ function ProjectRequestApproval() {
             columns={columns}
             pagination={false}
             hideFooterPagination
+            hideFooter
             disableSelectionOnClick
             autoHeight={false}
             onRowClick={handleRowClick}

@@ -1565,6 +1565,7 @@ function ServiceRequestList() {
             columns={columns}
             pagination={false}
             hideFooterPagination
+            hideFooter
             disableRowSelectionOnClick
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}

@@ -444,6 +444,7 @@ function ProjectRequestList() {
             columns={columns}
             pagination={false}
             hideFooterPagination
+            hideFooter
             disableSelectionOnClick
             autoHeight={false}
             slots={{

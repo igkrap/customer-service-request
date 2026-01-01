@@ -505,6 +505,7 @@ function ProjectList() {
             columns={columns}
             pagination={false}
             hideFooterPagination
+            hideFooter
             disableSelectionOnClick
             autoHeight={false}
             slots={{
