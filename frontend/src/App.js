@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './components/AuthPage';
@@ -11,8 +11,6 @@ import CompanyList from './components/CompanyList';
 import ProjectList from './components/ProjectList';
 import MyProjectList from './components/MyProjectList';
 import AdminProjectMapping from './components/AdminProjectMapping';
-import ProjectRequestList from './components/ProjectRequestList';
-import ProjectRequestApproval from './components/ProjectRequestApproval';
 import ManagerMonthlyReport from './components/ManagerMonthlyReport';
 import EmailSettings from './components/EmailSettings';
 import EmailTemplates from './components/EmailTemplates';
@@ -36,14 +34,15 @@ import {
   Fab,
   Dialog,
   DialogContent,
-  DialogTitle
+  DialogTitle,
+  Snackbar,
+  Alert,
+  Badge
 } from '@mui/material';
 import {
   Home as HomeIcon,
   Assignment as RequestIcon,
-  PlaylistAddCheck as ProjectRequestIcon,
   Folder as MyProjectIcon,
-  CheckCircle as ApprovalIcon,
   People as UsersIcon,
   Business as CompanyIcon,
   Work as ProjectIcon,
@@ -58,10 +57,11 @@ import {
   Close as CloseIcon,
   Email as EmailIcon,
   Description as TemplateIcon,
-  MenuBook as KnowledgeIcon
+  MenuBook as KnowledgeIcon,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
-import { getProfilePictureUrl } from './services/api';
+import { getProfilePictureUrl, getWebSocketUrl } from './services/api';
 import './styles/App.css';
 
 const drawerWidth = 280;
@@ -77,6 +77,25 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+  });
+  const [notificationList, setNotificationList] = useState([]);
+
+  const getNotificationTypeMeta = (type) => {
+    switch (type) {
+      case 'SERVICE_REQUEST_CREATED':
+        return { label: '신규 요청', color: 'primary' };
+      case 'SERVICE_REQUEST_STATUS_UPDATED':
+        return { label: '상태 변경', color: 'info' };
+      case 'MANAGER_ASSIGNED':
+        return { label: '담당자 배정', color: 'success' };
+      default:
+        return { label: '알림', color: 'default' };
+    }
+  };
 
   const getRoleText = () => {
     if (isAdmin) return '관리자';
@@ -113,9 +132,7 @@ function Dashboard() {
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
     { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: hasKnownRole },
-    { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
-    { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
     { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
     { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
@@ -129,9 +146,7 @@ function Dashboard() {
 
     if (activeTab === 'home') return <DashboardHome />;
     if (activeTab === 'requests') return <ServiceRequestList />;
-    if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
     if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
-    if (activeTab === 'projectrequestapproval' && isAdmin) return <ProjectRequestApproval />;
     if (activeTab === 'users' && isAdmin) return <UserList />;
     if (activeTab === 'companies' && isAdmin) return <CompanyList />;
     if (activeTab === 'projects' && isAdmin) return <ProjectList />;
@@ -145,7 +160,52 @@ function Dashboard() {
     return null;
   };
 
-  const floatingOffset = drawerOpen ? drawerWidth : collapsedDrawerWidth;
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const socket = new WebSocket(getWebSocketUrl());
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        const message = payload.message || '새 알림이 도착했습니다.';
+        const type = payload.type || 'GENERAL';
+        const createdAt = payload.createdAt ? new Date(payload.createdAt) : new Date();
+        setNotification({ open: true, message });
+        setNotificationList((prev) => [
+          {
+            id: `${createdAt.getTime()}-${prev.length}`,
+            message,
+            type,
+            createdAt,
+          },
+          ...prev,
+        ]);
+      } catch (error) {
+        setNotification({ open: true, message: '새 알림이 도착했습니다.' });
+        setNotificationList((prev) => [
+          {
+            id: `${Date.now()}-${prev.length}`,
+            message: '새 알림이 도착했습니다.',
+            type: 'GENERAL',
+            createdAt: new Date(),
+          },
+          ...prev,
+        ]);
+      }
+    };
+
+    socket.onerror = () => {
+      socket.close();
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [user]);
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -359,13 +419,39 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          left: floatingOffset + 16,
-          right: 'auto',
+          right: 24,
           zIndex: 1000,
-          transition: 'left 0.3s ease',
         }}
       >
         <ChatIcon />
+      </Fab>
+
+      {/* Floating Notifications Button */}
+      <Fab
+        color="primary"
+        aria-label="notifications"
+        onClick={() => setNotificationOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 96,
+          right: 24,
+          zIndex: 1000,
+        }}
+      >
+        <Badge
+          color="error"
+          badgeContent={notificationList.length}
+          overlap="circular"
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: 11,
+              height: 18,
+              minWidth: 18,
+            },
+          }}
+        >
+          <NotificationsIcon />
+        </Badge>
       </Fab>
 
       {/* Chatbot Dialog */}
@@ -378,12 +464,13 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 24,
-            left: floatingOffset + 16,
-            right: 'auto',
+            right: 24,
             m: 0,
             maxHeight: '70vh',
             height: '600px',
-            transition: 'left 0.3s ease',
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
           }
         }}
       >
@@ -392,9 +479,11 @@ function Dashboard() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            bgcolor: 'primary.main',
+            bgcolor: 'transparent',
             color: 'white',
             py: 1.5,
+            px: 2.5,
+            backgroundImage: 'linear-gradient(120deg, #1e88e5 0%, #42a5f5 100%)',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -413,6 +502,99 @@ function Dashboard() {
           <ChatBot />
         </DialogContent>
       </Dialog>
+
+      {/* Notifications Dialog */}
+      <Dialog
+        open={notificationOpen}
+        onClose={() => setNotificationOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            position: 'fixed',
+            bottom: 110,
+            right: 24,
+            m: 0,
+            maxHeight: '60vh',
+            height: '420px',
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+          }
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: 'transparent',
+            color: 'white',
+            py: 1.5,
+            px: 2.5,
+            backgroundImage: 'linear-gradient(120deg, #1e88e5 0%, #42a5f5 100%)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationsIcon />
+            <Typography variant="h6">알림</Typography>
+          </Box>
+          <IconButton
+            onClick={() => setNotificationOpen(false)}
+            size="small"
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {notificationList.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+              아직 도착한 알림이 없습니다.
+            </Box>
+          ) : (
+            <List>
+              {notificationList.map((item) => (
+                <ListItem
+                  key={item.id}
+                  divider
+                  button
+                  onClick={() =>
+                    setNotificationList((prev) => prev.filter((entry) => entry.id !== item.id))
+                  }
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Chip
+                      label={getNotificationTypeMeta(item.type).label}
+                      color={getNotificationTypeMeta(item.type).color}
+                      size="small"
+                    />
+                    <ListItemText
+                      primary={item.message}
+                      secondary={item.createdAt.toLocaleString('ko-KR')}
+                    />
+                  </Box>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={5000}
+        onClose={() => setNotification({ ...notification, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setNotification({ ...notification, open: false })}
+          severity="info"
+          variant="filled"
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

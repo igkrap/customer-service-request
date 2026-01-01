@@ -21,6 +21,7 @@ public class ProjectDTO {
     private LocalDate contractStartDate;
     private LocalDate contractEndDate;
     private BigDecimal contractManDays;
+    private String licenseKey;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

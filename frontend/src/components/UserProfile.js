@@ -165,7 +165,7 @@ function UserProfile({ onBack }) {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {onBack && (
             <IconButton onClick={onBack} sx={{ mr: 2 }}>

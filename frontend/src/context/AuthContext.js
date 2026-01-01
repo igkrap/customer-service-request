@@ -10,15 +10,19 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in on mount
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
+    const authExpired = localStorage.getItem('auth-expired');
 
-    if (token && userData) {
+    if (authExpired && token) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth-expired');
+    } else if (token && userData) {
       setUser(JSON.parse(userData));
     }
     setLoading(false);
 
     // Listen for auth expiry events from API interceptor
     const handleAuthExpired = (event) => {
-      setUser(null);
       // Optional: show alert message
       if (event.detail?.message) {
         alert(event.detail.message);
@@ -35,12 +39,14 @@ export const AuthProvider = ({ children }) => {
   const login = (userData, token) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.removeItem('auth-expired');
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('auth-expired');
     setUser(null);
   };
 

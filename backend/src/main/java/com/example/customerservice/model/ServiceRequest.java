@@ -39,7 +39,9 @@ public class ServiceRequest {
 
     private LocalDateTime updatedAt;
 
-    private LocalDateTime resolvedAt;
+    private String resolvedAt;
+
+    private String receivedAt;
 
     private Double hoursSpent;
 

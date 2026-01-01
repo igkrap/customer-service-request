@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Paper,
@@ -74,7 +75,7 @@ function MyProjectList() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
         <Typography
           variant="h5"
           sx={{
@@ -119,7 +120,7 @@ function MyProjectList() {
                         {project.projectName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        회사: {project.companyName} | 유형: {project.serviceType} |
+                        회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                         계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
                       </Typography>
                     </Box>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Paper,
@@ -18,7 +19,7 @@ import {
   Divider,
   Grid
 } from '@mui/material';
-import { Save as SaveIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Save as SaveIcon } from '@mui/icons-material';
 
 function AdminProjectMapping() {
   const { user: currentUser } = useAuth();
@@ -151,7 +152,7 @@ function AdminProjectMapping() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography
             variant="h5"
@@ -164,14 +165,6 @@ function AdminProjectMapping() {
           >
             사용자별 프로젝트 등록
           </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchData}
-            disabled={loading}
-          >
-            새로고침
-          </Button>
         </Box>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
@@ -260,7 +253,7 @@ function AdminProjectMapping() {
                                     {project.projectName}
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
-                                    회사: {project.companyName} | 유형: {project.serviceType} |
+                                    회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                                     계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                                     m/d: {project.contractManDays}
                                   </Typography>
@@ -306,7 +299,7 @@ function AdminProjectMapping() {
                                 {project.projectName}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                회사: {project.companyName} | 유형: {project.serviceType} |
+                                회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                                 계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                                 m/d: {project.contractManDays}
                               </Typography>
@@ -336,7 +329,7 @@ function AdminProjectMapping() {
                         {project.projectName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        회사: {project.companyName} | 유형: {project.serviceType} |
+                        회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                         계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                         m/d: {project.contractManDays}
                       </Typography>

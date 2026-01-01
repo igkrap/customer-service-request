@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080';
+const SERVER_URL = process.env.REACT_APP_API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,6 +14,19 @@ const api = axios.create({
 export const getProfilePictureUrl = (profilePictureId) => {
   if (!profilePictureId) return null;
   return `${API_BASE_URL}/users/profile-picture/${profilePictureId}`;
+};
+
+export const getWebSocketUrl = () => {
+  try {
+    let parsed = new URL(SERVER_URL);
+    if (parsed.pathname === '/api' || parsed.pathname.startsWith('/api/')) {
+      parsed = new URL(parsed.origin);
+    }
+    const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${parsed.host}/ws/notifications`;
+  } catch (error) {
+    return 'ws://localhost:8080/ws/notifications';
+  }
 };
 
 // Add JWT token to requests
@@ -37,22 +50,18 @@ api.interceptors.response.use(
     if (error.response) {
       const { status } = error.response;
 
-      // Handle unauthorized (invalid/expired token) or forbidden
+      // Mark token invalid; actual logout happens on next app load.
       if (status === 401 || status === 403) {
-        // Clear auth data
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.setItem('auth-expired', String(status));
 
-        // Dispatch custom event for auth context to handle
         window.dispatchEvent(new CustomEvent('auth-expired', {
           detail: {
             status,
-            message: status === 401 ? '세션이 만료되었습니다. 다시 로그인해주세요.' : '접근 권한이 없습니다.'
+            message: status === 401
+              ? '세션이 만료되었습니다. 다시 접속 시 로그인 상태가 해제됩니다.'
+              : '접근 권한이 없습니다.'
           }
         }));
-
-        // Redirect to login
-        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
@@ -104,6 +113,7 @@ export const serviceRequestAPI = {
   getByStatus: (status) => api.get(`/service-requests/status/${status}`),
   getByPriority: (priority) => api.get(`/service-requests/priority/${priority}`),
   getFollowUps: (parentId) => api.get(`/service-requests/${parentId}/follow-ups`),
+  getHistories: (id) => api.get(`/service-requests/${id}/histories`),
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
   updateStatus: (id, status, hoursSpent, resolutionNotes, attachments) =>

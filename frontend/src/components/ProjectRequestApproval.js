@@ -24,6 +24,7 @@ import {
   Download as DownloadIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import * as XLSX from 'xlsx';
 
 function ProjectRequestApproval() {
@@ -124,7 +125,7 @@ function ProjectRequestApproval() {
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
         if (!value) return '';
-        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : value === 'ETC' ? '기타' : '';
+        return getServiceTypeLabel(value);
       }
     },
     {
@@ -215,12 +216,6 @@ function ProjectRequestApproval() {
   const handleExportToExcel = () => {
     const headers = ['프로젝트 요청 ID', '요청자', '회사', '프로젝트명', '서비스 유형', '시작일', 'm/d', '상태', '생성일'];
 
-    const serviceTypeMap = {
-      'MAINTENANCE': '유지보수',
-      'DEFECT_REPAIR': '하자보수',
-      'ETC': '기타'
-    };
-
     const statusMap = {
       'PENDING': '대기',
       'APPROVED': '승인',
@@ -232,7 +227,7 @@ function ProjectRequestApproval() {
       req.requestedByUsername,
       req.companyName,
       req.projectName,
-      serviceTypeMap[req.serviceType] || req.serviceType,
+      getServiceTypeLabel(req.serviceType),
       req.contractStartDate ? new Date(req.contractStartDate).toLocaleDateString() : '',
       req.contractManDays || '',
       statusMap[req.requestStatus] || req.requestStatus,
@@ -301,7 +296,7 @@ function ProjectRequestApproval() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
         <Typography
           variant="h5"
           sx={{
@@ -401,7 +396,7 @@ function ProjectRequestApproval() {
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">서비스 유형</Typography>
                     <Typography variant="body1">
-                      {selectedRequest.serviceType === 'MAINTENANCE' ? '유지보수' : selectedRequest.serviceType === 'DEFECT_REPAIR' ? '하자보수' : '기타'}
+                      {getServiceTypeLabel(selectedRequest.serviceType)}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
@@ -482,8 +477,9 @@ function ProjectRequestApproval() {
           <DataGrid
             rows={requests}
             columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10, 25, 50]}
+            pagination={false}
+            hideFooterPagination
+            hideFooter
             disableSelectionOnClick
             autoHeight={false}
             onRowClick={handleRowClick}

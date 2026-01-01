@@ -57,6 +57,9 @@ public class SecurityConfig {
                         // Profile picture endpoint - public access
                         .requestMatchers("/api/users/profile-picture/*").permitAll()
 
+                        // WebSocket notifications - public access
+                        .requestMatchers("/ws/**").permitAll()
+
                         // User endpoints - require authentication
                         // Additional @PreAuthorize("hasRole('ADMIN')") on most endpoints in UserController
                         .requestMatchers("/api/users/**").authenticated()

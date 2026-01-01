@@ -28,9 +28,15 @@ public class ServiceRequestDTO {
     private Long customerId;
 
     private String customerName;
+    private Long customerProfilePictureId;
+    private String customerEmail;
+
+    private String companyName;
 
     private Long managerId;
     private String managerName;
+    private Long managerProfilePictureId;
+    private String managerEmail;
 
     private Long projectId;
     private String projectName;
@@ -41,7 +47,9 @@ public class ServiceRequestDTO {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime resolvedAt;
+    private String resolvedAt;
+
+    private String receivedAt;
 
     private Double hoursSpent;
     private String resolutionNotes;

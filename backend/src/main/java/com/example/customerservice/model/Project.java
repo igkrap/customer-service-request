@@ -35,11 +35,14 @@ public class Project {
     @NotNull(message = "Contract man-days is required")
     private BigDecimal contractManDays;
 
+    private String licenseKey;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     public enum ServiceType {
+        NEW,                // 신규
         MAINTENANCE,        // 유지보수
         DEFECT_REPAIR,      // 하자보수
         ETC                 // 기타

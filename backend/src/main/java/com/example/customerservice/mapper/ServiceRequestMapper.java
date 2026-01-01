@@ -63,17 +63,17 @@ public interface ServiceRequestMapper {
 
     @Insert("INSERT INTO service_requests (title, description, status, priority, customer_id, " +
             "manager_id, project_id, created_by_user_id, parent_id, created_at, updated_at, resolved_at, " +
-            "hours_spent, resolution_notes, due_date) " +
+            "hours_spent, resolution_notes, due_date, received_at) " +
             "VALUES (#{title}, #{description}, #{status}, #{priority}, #{customerId}, " +
             "#{managerId}, #{projectId}, #{createdByUserId}, #{parentId}, #{createdAt}, #{updatedAt}, #{resolvedAt}, " +
-            "#{hoursSpent}, #{resolutionNotes}, #{dueDate})")
+            "#{hoursSpent}, #{resolutionNotes}, #{dueDate}, #{receivedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ServiceRequest serviceRequest);
 
     @Update("UPDATE service_requests SET title = #{title}, description = #{description}, " +
             "status = #{status}, priority = #{priority}, customer_id = #{customerId}, " +
             "manager_id = #{managerId}, project_id = #{projectId}, parent_id = #{parentId}, updated_at = #{updatedAt}, resolved_at = #{resolvedAt}, " +
-            "hours_spent = #{hoursSpent}, resolution_notes = #{resolutionNotes}, due_date = #{dueDate} " +
+            "hours_spent = #{hoursSpent}, resolution_notes = #{resolutionNotes}, due_date = #{dueDate}, received_at = #{receivedAt} " +
             "WHERE id = #{id}")
     int update(ServiceRequest serviceRequest);
 

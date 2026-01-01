@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI } from '../services/api';
+import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Button,
@@ -16,13 +17,15 @@ import {
   InputLabel,
   Chip,
   Typography,
+  Avatar,
   Paper,
   Divider,
   Alert,
   CircularProgress,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -61,6 +64,7 @@ const formatDateForDisplay = (yyyymmdd) => {
   return `${year}/${month}/${day}`;
 };
 
+
 // 현재 날짜를 yyyyMMdd 형식으로 반환
 const getTodayYYYYMMDD = () => {
   const today = new Date();
@@ -95,6 +99,7 @@ function ServiceRequestList() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedAttachments, setSelectedAttachments] = useState([]);
   const [selectedFollowUps, setSelectedFollowUps] = useState([]);
+  const [selectedHistories, setSelectedHistories] = useState([]);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
@@ -112,6 +117,8 @@ function ServiceRequestList() {
     customerId: '',
     projectId: '',
     dueDate: '',
+    receivedAt: '',
+    resolvedAt: '',
     parentId: ''
   });
 
@@ -143,6 +150,7 @@ function ServiceRequestList() {
   const selectedRequestAttachments = filterAttachmentsByType(selectedAttachments, 'REQUEST');
   const selectedResolutionAttachments = filterAttachmentsByType(selectedAttachments, 'RESOLUTION');
 
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -150,20 +158,26 @@ function ServiceRequestList() {
   const enrichRequestsWithProjectNames = (items, availableProjects) => {
     if (!Array.isArray(items) || !Array.isArray(availableProjects)) return items;
     const projectMap = new Map(
-      availableProjects.map((project) => [project.id, project.projectName])
+      availableProjects.map((project) => [project.id, project])
     );
 
     return items.map((request) => {
-      if (request.projectName || !request.projectId) {
+      if (!request.projectId) {
         return request;
       }
 
-      const projectName = projectMap.get(request.projectId);
-      if (!projectName) {
+      const project = projectMap.get(request.projectId);
+      if (!project) {
         return request;
       }
 
-      return { ...request, projectName };
+      return {
+        ...request,
+        projectName: request.projectName || project.projectName,
+        projectServiceType: project.serviceType,
+        projectContractStartDate: project.contractStartDate,
+        projectContractEndDate: project.contractEndDate
+      };
     });
   };
 
@@ -324,6 +338,8 @@ function ServiceRequestList() {
         projectId: formData.projectId ? parseInt(formData.projectId) : null,
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
         dueDate: formatDateToYYYYMMDD(formData.dueDate),
+        receivedAt: formData.receivedAt ? formatDateToYYYYMMDD(formData.receivedAt) : null,
+        resolvedAt: formData.resolvedAt ? formatDateToYYYYMMDD(formData.resolvedAt) : null,
         attachments: attachments
       };
 
@@ -351,6 +367,8 @@ function ServiceRequestList() {
       customerId: request.customerId.toString(),
       projectId: request.projectId ? request.projectId.toString() : '',
       dueDate: formatDateFromYYYYMMDD(request.dueDate),
+      receivedAt: formatDateFromYYYYMMDD(request.receivedAt),
+      resolvedAt: formatDateFromYYYYMMDD(request.resolvedAt),
       parentId: request.parentId ? request.parentId.toString() : ''
     });
 
@@ -471,13 +489,13 @@ function ServiceRequestList() {
     }
   };
 
-  const handleRowClick = async (params) => {
-    setSelectedRequest(params.row);
+  const handleDetailOpen = async (request) => {
+    setSelectedRequest(request);
     setShowDetailDialog(true);
 
     // Load attachments
     try {
-      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(params.row.id);
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
       setSelectedAttachments(attachmentsResponse.data || []);
     } catch (err) {
       console.error('Failed to load attachments:', err);
@@ -486,11 +504,23 @@ function ServiceRequestList() {
 
     // Load follow-up requests
     try {
-      const followUpsResponse = await serviceRequestAPI.getFollowUps(params.row.id);
+      const followUpsResponse = await serviceRequestAPI.getFollowUps(request.id);
       setSelectedFollowUps(followUpsResponse.data || []);
     } catch (err) {
       console.error('Failed to load follow-ups:', err);
       setSelectedFollowUps([]);
+    }
+
+    if (user?.role === 'ROLE_ADMIN') {
+      try {
+        const historiesResponse = await serviceRequestAPI.getHistories(request.id);
+        setSelectedHistories(historiesResponse.data || []);
+      } catch (err) {
+        console.error('Failed to load histories:', err);
+        setSelectedHistories([]);
+      }
+    } else {
+      setSelectedHistories([]);
     }
   };
 
@@ -499,6 +529,7 @@ function ServiceRequestList() {
     setSelectedRequest(null);
     setSelectedAttachments([]);
     setSelectedFollowUps([]);
+    setSelectedHistories([]);
   };
 
   const handleDownloadAttachment = async (attachment) => {
@@ -575,16 +606,265 @@ function ServiceRequestList() {
     return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
+  const renderActionButtons = (request) => (
+    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+      {canEditRequest(request) && (
+        <>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(request);
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(request.id);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
+      )}
+      {canChangeStatus(request) && user?.role === 'ROLE_MANAGER' && (
+        <>
+          {request.status !== 'IN_PROGRESS' && request.status !== 'RESOLVED' && (
+            <IconButton
+              size="small"
+              color="success"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange(request, 'IN_PROGRESS');
+              }}
+              title="시작"
+            >
+              <StartIcon fontSize="small" />
+            </IconButton>
+          )}
+          {request.status === 'RESOLVED' && (
+            <IconButton
+              size="small"
+              color="info"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange(request, 'RESOLVED');
+              }}
+              title="완료 내용 수정"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+          {request.managerId === user?.id && (
+            <>
+              {request.status !== 'RESOLVED' && (
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(request, 'RESOLVED');
+                  }}
+                  title="완료"
+                >
+                  <CompleteIcon fontSize="small" />
+                </IconButton>
+              )}
+              {request.status === 'IN_PROGRESS' && (
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(request, 'HOLD');
+                  }}
+                  title="보류"
+                >
+                  <HoldIcon fontSize="small" />
+                </IconButton>
+              )}
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnassign(request.id);
+                }}
+                title="할당 취소"
+              >
+                <UnassignIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+        </>
+      )}
+    </Box>
+  );
+
+  const renderProfileCell = (name, profilePictureId) => {
+    if (name === '-') {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography variant="body2">-</Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
+        <Avatar
+          src={getProfilePictureUrl(profilePictureId)}
+          sx={{ width: 36, height: 36, bgcolor: 'grey.200', color: 'text.secondary' }}
+        >
+          {name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+        <Typography variant="body2">{name}</Typography>
+      </Stack>
+    );
+  };
+
+  const formatProjectDate = (dateValue) => {
+    if (!dateValue) return '-';
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return '-';
+    return parsedDate.toLocaleDateString();
+  };
+
+  const renderHeaderTooltip = (label, description) => (
+    <Tooltip
+      arrow
+      placement="top"
+      title={(
+        <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3 }}>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {label}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {description || label}
+          </Typography>
+        </Paper>
+      )}
+    >
+      <Typography variant="body2" fontWeight={600}>
+        {label}
+      </Typography>
+    </Tooltip>
+  );
+
+  const renderProjectTooltipContent = (row) => (
+    <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3 }}>
+      <Typography variant="subtitle2" fontWeight={600}>
+        {row?.projectName || '프로젝트 정보 없음'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        유형: {getServiceTypeLabel(row?.projectServiceType)}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        기간: {formatProjectDate(row?.projectContractStartDate)} ~ {formatProjectDate(row?.projectContractEndDate)}
+      </Typography>
+    </Paper>
+  );
+
+  const renderPersonTooltipContent = (row, name, profilePictureId, email, companyName) => (
+    <Paper sx={{ p: 1.5, bgcolor: 'background.paper', boxShadow: 3, minWidth: 220 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar
+          src={getProfilePictureUrl(profilePictureId)}
+          sx={{ width: 48, height: 48, bgcolor: 'grey.200', color: 'text.secondary' }}
+        >
+          {name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+        <Box>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {name}
+          </Typography>
+          {companyName && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {companyName}
+            </Typography>
+          )}
+          {email && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {email}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </Paper>
+  );
+
   const columns = [
-    { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
-    { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
+    {
+      field: 'id',
+      headerName: '요청 ID',
+      flex: 0.6,
+      minWidth: 80,
+      renderHeader: () => renderHeaderTooltip('요청 ID', '요청 식별 번호')
+    },
+    {
+      field: 'companyName',
+      headerName: '회사 명',
+      flex: 1.2,
+      minWidth: 140,
+      valueGetter: (value) => value || '-',
+      renderHeader: () => renderHeaderTooltip('회사 명', '요청자 소속 회사')
+    },
     {
       field: 'projectName',
-      headerName: '프로젝트',
-      flex: 1.2,
-      minWidth: 120,
-      valueGetter: (value) => value || '없음'
+      headerName: '프로젝트 명',
+      flex: 1.3,
+      minWidth: 150,
+      valueGetter: (value) => value || '없음',
+      renderHeader: () => renderHeaderTooltip('프로젝트 명', '프로젝트 정보'),
+      renderCell: (params) => (
+        <Tooltip arrow placement="right" title={renderProjectTooltipContent(params.row)}>
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <Typography variant="body2">{params.value || '없음'}</Typography>
+          </Box>
+        </Tooltip>
+      )
+    },
+    {
+      field: 'customerName',
+      headerName: '요청자',
+      flex: 1.4,
+      minWidth: 160,
+      renderHeader: () => renderHeaderTooltip('요청자', '요청자 정보'),
+      renderCell: (params) => {
+        const name = params.value || '-';
+        if (name === '-') {
+          return renderProfileCell(name);
+        }
+        return (
+          <Tooltip
+            arrow
+            placement="right"
+            title={renderPersonTooltipContent(
+              params.row,
+              name,
+              params.row?.customerProfilePictureId,
+              params.row?.customerEmail,
+              params.row?.companyName
+            )}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              {renderProfileCell(name, params.row?.customerProfilePictureId)}
+            </Box>
+          </Tooltip>
+        );
+      }
+    },
+    {
+      field: 'title',
+      headerName: '제목',
+      flex: 2,
+      minWidth: 180,
+      renderHeader: () => renderHeaderTooltip('제목', '요청 제목')
     },
     {
       field: 'status',
@@ -592,198 +872,167 @@ function ServiceRequestList() {
       flex: 1,
       minWidth: 120,
       valueGetter: (value) => getStatusLabel(value),
-      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null,
+      renderHeader: () => renderHeaderTooltip('상태', '진행 상태')
     },
     {
       field: 'priority',
       headerName: '우선순위',
       flex: 0.8,
-      minWidth: 100,
-      valueGetter: (value) => getPriorityLabel(value),
-      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
-    },
-    {
-      field: 'dueDate',
-      headerName: '마감일',
-      flex: 1,
       minWidth: 110,
-      valueFormatter: (value) => {
-        if (!value) return '';
-        return formatDateForDisplay(value);
-      }
+      valueGetter: (value) => getPriorityLabel(value),
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null,
+      renderHeader: () => renderHeaderTooltip('우선순위', '요청 우선순위')
     },
     {
       field: 'managerName',
       headerName: '담당자',
       flex: 1.3,
+      minWidth: 160,
+      renderHeader: () => renderHeaderTooltip('담당자', '담당자 정보'),
+      renderCell: (params) => {
+        const name = params.value?.trim() ? params.value : '-';
+        if (name === '-') {
+          return renderProfileCell(name);
+        }
+        return (
+          <Tooltip
+            arrow
+            placement="right"
+            title={renderPersonTooltipContent(
+              params.row,
+              name,
+              params.row?.managerProfilePictureId,
+              params.row?.managerEmail
+            )}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              {renderProfileCell(name, params.row?.managerProfilePictureId)}
+            </Box>
+          </Tooltip>
+        );
+      }
+    },
+    {
+      field: 'receivedAt',
+      headerName: '접수일자',
+      flex: 1.2,
       minWidth: 130,
-      valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
-    },
-    {
-      field: 'createdAt',
-      headerName: '생성일',
-      flex: 1.5,
-      minWidth: 180,
       valueFormatter: (value) => {
         if (!value) return '';
-        return formatDateTime(value) || '';
-      }
+        return formatDateForDisplay(value) || '';
+      },
+      renderHeader: () => renderHeaderTooltip('접수일자', '요청 접수일')
     },
     {
-      field: 'hoursSpent',
-      headerName: '소요시간(m/d)',
-      flex: 0.8,
-      minWidth: 100,
+      field: 'dueDate',
+      headerName: '마감일자',
+      flex: 1,
+      minWidth: 110,
       valueFormatter: (value) => {
         if (!value) return '';
-        return `${value}`;
-      }
+        return formatDateForDisplay(value);
+      },
+      renderHeader: () => renderHeaderTooltip('마감일자', '요청 마감일')
+    },
+    {
+      field: 'resolvedAt',
+      headerName: '완료일자',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value);
+      },
+      renderHeader: () => renderHeaderTooltip('완료일자', '요청 완료일')
     },
     {
       field: 'actions',
-      headerName: '작업',
-      flex: 1.5,
-      minWidth: 150,
+      headerName: '작업버튼',
+      flex: 1.1,
+      minWidth: 120,
       sortable: false,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => {
-        if (!params.row) return null;
-
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '100%' }}>
-            {canEditRequest(params.row) && (
-              <>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(params.row);
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(params.row.id);
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </>
-            )}
-            {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
-              <>
-                {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
-                {params.row.status !== 'IN_PROGRESS' && params.row.status !== 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row, 'IN_PROGRESS');
-                    }}
-                    title="시작"
-                  >
-                    <StartIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {params.row.status === 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row, 'RESOLVED');
-                    }}
-                    title="완료 내용 수정"
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
-                {params.row.managerId === user?.id && (
-                  <>
-                    {params.row.status !== 'RESOLVED' && (
-                      <IconButton
-                        size="small"
-                        color="info"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(params.row, 'RESOLVED');
-                        }}
-                        title="완료"
-                      >
-                        <CompleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                    {params.row.status !== 'HOLD' && (
-                      <IconButton
-                        size="small"
-                        color="warning"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(params.row, 'HOLD');
-                        }}
-                        title="보류"
-                      >
-                        <HoldIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnassign(params.row.id);
-                      }}
-                      title="할당 취소"
-                    >
-                      <UnassignIcon fontSize="small" />
-                    </IconButton>
-                  </>
-                )}
-              </>
-            )}
-          </Box>
-        );
-      }
+      renderCell: (params) => params.row ? renderActionButtons(params.row) : null,
+      renderHeader: () => renderHeaderTooltip('작업버튼', '요청 처리 작업')
     }
   ];
 
+  const buildTimelineEntries = (request) => {
+    if (!request) return [];
+    const receivedDate = request.receivedAt
+      ? new Date(formatDateFromYYYYMMDD(request.receivedAt))
+      : request.createdAt
+        ? new Date(request.createdAt)
+        : null;
+    const resolvedDate = request.resolvedAt
+      ? new Date(formatDateFromYYYYMMDD(request.resolvedAt))
+      : null;
+    const entries = [
+      {
+        key: 'created',
+        label: '요청 생성',
+        detail: request.customerName ? `${request.customerName} 요청` : null,
+        date: receivedDate,
+        dateLabel: request.receivedAt
+          ? formatDateForDisplay(request.receivedAt)
+          : request.createdAt
+            ? formatDateTime(request.createdAt)
+            : '',
+      },
+    ];
+
+    if (request.managerName && request.managerName !== '미할당') {
+      entries.push({
+        key: 'manager',
+        label: '담당자 배정',
+        detail: request.managerName,
+        date: request.updatedAt ? new Date(request.updatedAt) : null,
+        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
+      });
+    }
+
+    if (request.status && request.status !== 'OPEN') {
+      entries.push({
+        key: 'status',
+        label: '상태 변경',
+        detail: getStatusLabel(request.status),
+        date: request.updatedAt ? new Date(request.updatedAt) : null,
+        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
+      });
+    }
+
+    if (request.resolvedAt) {
+      entries.push({
+        key: 'resolved',
+        label: '해결 완료',
+        detail: null,
+        date: resolvedDate,
+        dateLabel: formatDateForDisplay(request.resolvedAt),
+      });
+    }
+
+    return entries
+      .filter((entry) => entry.date)
+      .sort((a, b) => a.date - b.date);
+  };
+
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '생성일', '소요시간(m/d)'];
-
-    const statusMap = {
-      'PENDING': '대기',
-      'IN_PROGRESS': '진행중',
-      'ON_HOLD': '보류',
-      'RESOLVED': '완료',
-      'CANCELLED': '취소'
-    };
-
-    const priorityMap = {
-      'LOW': '낮음',
-      'NORMAL': '보통',
-      'HIGH': '높음',
-      'URGENT': '긴급'
-    };
+    const headers = ['요청 ID', '회사 명', '프로젝트 명', '요청자', '제목', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
 
     const excelData = requests.map(req => [
       req.id,
-      req.title,
-      req.customerName,
+      req.companyName || '-',
       req.projectName || '없음',
-      statusMap[req.status] || req.status,
-      priorityMap[req.priority] || req.priority,
+      req.customerName,
+      req.title,
+      getStatusLabel(req.status) || req.status,
+      getPriorityLabel(req.priority) || req.priority,
+      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '-',
+      req.receivedAt ? formatDateForDisplay(req.receivedAt) : '',
       req.dueDate ? formatDateForDisplay(req.dueDate) : '',
-      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '미배정',
-      req.createdAt ? formatDateTime(req.createdAt) : '',
-      req.hoursSpent || ''
+      req.resolvedAt ? formatDateForDisplay(req.resolvedAt) : ''
     ]);
 
     const worksheetData = [headers, ...excelData];
@@ -791,15 +1040,16 @@ function ServiceRequestList() {
 
     const columnWidths = [
       { wch: 10 }, // 요청 ID
-      { wch: 30 }, // 제목
+      { wch: 20 }, // 회사 명
+      { wch: 20 }, // 프로젝트 명
       { wch: 15 }, // 요청자
-      { wch: 20 }, // 프로젝트
+      { wch: 30 }, // 제목
       { wch: 10 }, // 상태
       { wch: 10 }, // 우선순위
-      { wch: 12 }, // 마감일
       { wch: 15 }, // 담당자
-      { wch: 20 }, // 생성일
-      { wch: 12 }  // 소요시간
+      { wch: 14 }, // 접수일자
+      { wch: 12 }, // 마감일자
+      { wch: 12 }  // 완료일자
     ];
     worksheet['!cols'] = columnWidths;
 
@@ -812,7 +1062,7 @@ function ServiceRequestList() {
 
   function CustomToolbar() {
     return (
-      <GridToolbarContainer
+      <Box
         sx={{
           p: 1,
           borderBottom: '1px solid',
@@ -835,7 +1085,7 @@ function ServiceRequestList() {
         >
           Excel 내보내기
         </Button>
-      </GridToolbarContainer>
+      </Box>
     );
   }
 
@@ -847,10 +1097,12 @@ function ServiceRequestList() {
     );
   }
 
+  const timelineEntries = buildTimelineEntries(selectedRequest);
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <Typography
             variant="h5"
             sx={{
@@ -1027,11 +1279,44 @@ function ServiceRequestList() {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  inputProps={{
-                    min: new Date().toISOString().split('T')[0]
-                  }}
-                  helperText="마감일을 선택하세요 (오늘 이후만 가능)"
+                  inputProps={
+                    user?.role === 'ROLE_ADMIN'
+                      ? {}
+                      : { min: new Date().toISOString().split('T')[0] }
+                  }
+                  helperText={
+                    user?.role === 'ROLE_ADMIN'
+                      ? '마감일을 선택하세요'
+                      : '마감일을 선택하세요 (오늘 이후만 가능)'
+                  }
                 />
+
+                {user?.role === 'ROLE_ADMIN' && (
+                  <>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="접수일자"
+                      name="receivedAt"
+                      value={formData.receivedAt}
+                      onChange={handleInputChange}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="해결일자"
+                      name="resolvedAt"
+                      value={formData.resolvedAt}
+                      onChange={handleInputChange}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </>
+                )}
 
                 <Divider sx={{ my: 1 }} />
 
@@ -1128,11 +1413,114 @@ function ServiceRequestList() {
                       </Typography>
                     </Box>
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
-                      <Typography variant="caption" color="text.secondary">생성일</Typography>
-                      <Typography variant="body1" sx={{ mt: 0.5 }}>{formatDateTime(selectedRequest.createdAt)}</Typography>
+                      <Typography variant="caption" color="text.secondary">접수일자</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {selectedRequest.receivedAt
+                          ? formatDateForDisplay(selectedRequest.receivedAt)
+                          : formatDateTime(selectedRequest.createdAt)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
+                      <Typography variant="caption" color="text.secondary">해결일자</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {selectedRequest.resolvedAt
+                          ? formatDateForDisplay(selectedRequest.resolvedAt)
+                          : '-'}
+                      </Typography>
                     </Box>
                   </Box>
                 </Paper>
+
+                {user?.role === 'ROLE_ADMIN' && timelineEntries.length > 0 && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      요청 이력
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={2} sx={{ pl: 1 }}>
+                      {timelineEntries.map((entry, index) => (
+                        <Box key={`${entry.key}-${index}`} sx={{ display: 'flex', gap: 2, position: 'relative' }}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              bgcolor: 'primary.main',
+                              borderRadius: '50%',
+                              mt: 0.75,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {entry.label}
+                            </Typography>
+                            {entry.detail && (
+                              <Typography variant="body2" color="text.secondary">
+                                {entry.detail}
+                              </Typography>
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              {entry.dateLabel}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Paper>
+                )}
+
+                {user?.role === 'ROLE_ADMIN' && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      변경 기록
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    {selectedHistories.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        등록된 변경 기록이 없습니다.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1}>
+                        {selectedHistories.map((history) => (
+                          <Box
+                            key={history.id}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: 'grey.50'
+                            }}
+                          >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Typography variant="body2" fontWeight={600}>
+                                {history.eventType || '기록'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {history.createdAt ? formatDateTime(history.createdAt) : ''}
+                              </Typography>
+                            </Stack>
+                            {(history.fromStatus || history.toStatus) && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                상태: {history.fromStatus || '-'} → {history.toStatus || '-'}
+                              </Typography>
+                            )}
+                            {(history.fromManagerId || history.toManagerId) && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                담당자 ID: {history.fromManagerId || '-'} → {history.toManagerId || '-'}
+                              </Typography>
+                            )}
+                            {history.note && (
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                {history.note}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Stack>
+                    )}
+                  </Paper>
+                )}
 
                 {selectedRequest.description && (
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
@@ -1360,19 +1748,15 @@ function ServiceRequestList() {
           </DialogActions>
         </Dialog>
 
-        {/* DataGrid */}
         <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
             rows={requests}
             columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10 },
-              },
-            }}
-            pageSizeOptions={[10, 25, 50]}
+            pagination={false}
+            hideFooterPagination
+            hideFooter
             disableRowSelectionOnClick
-            onRowClick={handleRowClick}
+            onRowClick={(params) => handleDetailOpen(params.row)}
             getRowId={(row) => row.id}
             slots={{
               toolbar: CustomToolbar,

@@ -1,17 +1,23 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.mapper.CompanyMapper;
 import com.example.customerservice.mapper.ProjectMapper;
+import com.example.customerservice.mapper.ServiceRequestHistoryMapper;
 import com.example.customerservice.mapper.ServiceRequestMapper;
 import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.Project;
 import com.example.customerservice.model.ServiceRequest;
+import com.example.customerservice.model.ServiceRequestHistory;
 import com.example.customerservice.model.User;
+import com.example.customerservice.dto.ServiceRequestHistoryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +31,12 @@ public class ServiceRequestService {
     private ServiceRequestMapper serviceRequestMapper;
 
     @Autowired
+    private ServiceRequestHistoryMapper serviceRequestHistoryMapper;
+
+    @Autowired
+    private CompanyMapper companyMapper;
+
+    @Autowired
     private UserMapper userMapper;
 
     @Autowired
@@ -35,6 +47,9 @@ public class ServiceRequestService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public List<ServiceRequestDTO> getAllServiceRequests() {
         return serviceRequestMapper.findAll().stream()
@@ -90,6 +105,12 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestHistoryDTO> getServiceRequestHistories(Long serviceRequestId) {
+        return serviceRequestHistoryMapper.findByServiceRequestId(serviceRequestId).stream()
+                .map(this::convertToHistoryDTO)
+                .collect(Collectors.toList());
+    }
+
     public ServiceRequest getServiceRequestEntityById(Long id) {
         return serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
@@ -118,6 +139,9 @@ public class ServiceRequestService {
         serviceRequest.setCreatedByUserId(userId);
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        if (serviceRequest.getReceivedAt() == null || serviceRequest.getReceivedAt().isBlank()) {
+            serviceRequest.setReceivedAt(getTodayDateString());
+        }
 
         // Set default values if not provided
         if (serviceRequest.getStatus() == null) {
@@ -128,6 +152,14 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+        recordHistory(serviceRequest.getId(), "CREATE", null,
+                serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
+                null, serviceRequest.getManagerId(), "요청 생성", userId);
+
+        if (serviceRequest.getManagerId() != null) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED", null, null,
+                    null, serviceRequest.getManagerId(), "담당자 배정", userId);
+        }
 
         // Link attachments if provided
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
@@ -144,7 +176,12 @@ public class ServiceRequestService {
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+            }
         }
+
+        notificationService.sendServiceRequestCreated(serviceRequest);
 
         return convertToDTO(serviceRequest);
     }
@@ -171,6 +208,9 @@ public class ServiceRequestService {
         serviceRequest.setCustomerId(customer.getId());
         serviceRequest.setCreatedAt(LocalDateTime.now());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        if (serviceRequest.getReceivedAt() == null || serviceRequest.getReceivedAt().isBlank()) {
+            serviceRequest.setReceivedAt(getTodayDateString());
+        }
 
         // Set default values if not provided
         if (serviceRequest.getStatus() == null) {
@@ -181,6 +221,14 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+        recordHistory(serviceRequest.getId(), "CREATE", null,
+                serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
+                null, serviceRequest.getManagerId(), "요청 생성", null);
+
+        if (serviceRequest.getManagerId() != null) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED", null, null,
+                    null, serviceRequest.getManagerId(), "담당자 배정", null);
+        }
 
         // Link attachments if provided
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
@@ -197,12 +245,17 @@ public class ServiceRequestService {
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+            }
         }
+
+        notificationService.sendServiceRequestCreated(serviceRequest);
 
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequest(Long id, ServiceRequestDTO dto) {
+    public ServiceRequestDTO updateServiceRequest(Long id, ServiceRequestDTO dto, Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -213,16 +266,20 @@ public class ServiceRequestService {
         serviceRequest.setDescription(dto.getDescription());
         serviceRequest.setStatus(dto.getStatus());
         serviceRequest.setPriority(dto.getPriority());
-        serviceRequest.setManagerId(dto.getManagerId());
+        if (dto.getManagerId() != null) {
+            serviceRequest.setManagerId(dto.getManagerId());
+        }
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setDueDate(dto.getDueDate());
+        serviceRequest.setResolvedAt(dto.getResolvedAt());
+        serviceRequest.setReceivedAt(dto.getReceivedAt());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
 
         // Set resolvedAt when status changes to RESOLVED
         if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -294,6 +351,9 @@ public class ServiceRequestService {
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+            }
         }
 
         // 2. If status changed, notify customer
@@ -309,21 +369,42 @@ public class ServiceRequestService {
             }
         }
 
+        if (dto.getStatus() != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+        }
+
+        if (dto.getStatus() != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    oldManagerId, serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
+        if (dto.getManagerId() != null && !dto.getManagerId().equals(oldManagerId)) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    oldManagerId, dto.getManagerId(),
+                    "담당자 변경", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
-        return updateServiceRequestStatus(id, status, null, null, null);
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status, Long actorUserId) {
+        return updateServiceRequestStatus(id, status, null, null, null, actorUserId);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
-                                                        Double hoursSpent, String resolutionNotes) {
-        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null);
+                                                        Double hoursSpent, String resolutionNotes, Long actorUserId) {
+        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null, actorUserId);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
                                                         Double hoursSpent, String resolutionNotes,
-                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments) {
+                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments,
+                                                        Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -334,8 +415,8 @@ public class ServiceRequestService {
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -394,12 +475,27 @@ public class ServiceRequestService {
             }
         }
 
+        if (status != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+        }
+
+        if (status != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    serviceRequest.getManagerId(), serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status, Long managerId) {
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
+                                                        Long managerId, Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+
+        Long oldManagerId = serviceRequest.getManagerId();
 
         // Check if already IN_PROGRESS and prevent other managers from taking over
         if (status == ServiceRequest.RequestStatus.IN_PROGRESS) {
@@ -420,8 +516,8 @@ public class ServiceRequestService {
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
             oldStatus != ServiceRequest.RequestStatus.RESOLVED) {
-            if (serviceRequest.getResolvedAt() == null) {
-                serviceRequest.setResolvedAt(LocalDateTime.now());
+            if (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank()) {
+                serviceRequest.setResolvedAt(getTodayDateString());
             }
         }
 
@@ -433,6 +529,9 @@ public class ServiceRequestService {
             User manager = userMapper.findById(managerId).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+            }
+            if (manager != null) {
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
             }
         }
 
@@ -449,7 +548,45 @@ public class ServiceRequestService {
             }
         }
 
+        if (status != oldStatus) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+        }
+
+        if (status != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    oldManagerId, serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
+        if (status == ServiceRequest.RequestStatus.IN_PROGRESS && managerId != null &&
+            (oldManagerId == null || !oldManagerId.equals(managerId))) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    oldManagerId, managerId,
+                    "담당자 배정", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
+    }
+
+    public ServiceRequestDTO unassignServiceRequest(Long id, Long actorUserId) {
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+        Long oldManagerId = serviceRequest.getManagerId();
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+
+        serviceRequestMapper.unassign(id);
+
+        recordHistory(id, "MANAGER_UNASSIGNED",
+                oldStatus != null ? oldStatus.name() : null,
+                ServiceRequest.RequestStatus.OPEN.name(),
+                oldManagerId, null,
+                "담당자 해제", actorUserId);
+
+        return getServiceRequestById(id);
     }
 
     public void deleteServiceRequest(Long id) {
@@ -474,6 +611,15 @@ public class ServiceRequestService {
                 .orElse(null);
         if (customer != null) {
             dto.setCustomerName(customer.getUsername());
+            dto.setCustomerProfilePictureId(customer.getProfilePictureId());
+            dto.setCustomerEmail(customer.getEmail());
+            if (customer.getCompanyId() != null) {
+                com.example.customerservice.model.Company company =
+                    companyMapper.findById(customer.getCompanyId()).orElse(null);
+                if (company != null) {
+                    dto.setCompanyName(company.getCompanyName());
+                }
+            }
         }
 
         // Load manager details for DTO
@@ -482,6 +628,8 @@ public class ServiceRequestService {
                     .orElse(null);
             if (manager != null) {
                 dto.setManagerName(manager.getUsername());
+                dto.setManagerProfilePictureId(manager.getProfilePictureId());
+                dto.setManagerEmail(manager.getEmail());
             }
         }
 
@@ -502,6 +650,7 @@ public class ServiceRequestService {
         dto.setCreatedAt(serviceRequest.getCreatedAt());
         dto.setUpdatedAt(serviceRequest.getUpdatedAt());
         dto.setResolvedAt(serviceRequest.getResolvedAt());
+        dto.setReceivedAt(serviceRequest.getReceivedAt());
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
@@ -528,6 +677,42 @@ public class ServiceRequestService {
         serviceRequest.setHoursSpent(dto.getHoursSpent());
         serviceRequest.setResolutionNotes(dto.getResolutionNotes());
         serviceRequest.setDueDate(dto.getDueDate());
+        serviceRequest.setResolvedAt(dto.getResolvedAt());
+        serviceRequest.setReceivedAt(dto.getReceivedAt());
         return serviceRequest;
+    }
+
+    private void recordHistory(Long serviceRequestId, String eventType, String fromStatus, String toStatus,
+                               Long fromManagerId, Long toManagerId, String note, Long createdByUserId) {
+        ServiceRequestHistory history = new ServiceRequestHistory();
+        history.setServiceRequestId(serviceRequestId);
+        history.setEventType(eventType);
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        history.setFromManagerId(fromManagerId);
+        history.setToManagerId(toManagerId);
+        history.setNote(note);
+        history.setCreatedByUserId(createdByUserId);
+        history.setCreatedAt(LocalDateTime.now());
+        serviceRequestHistoryMapper.insert(history);
+    }
+
+    private ServiceRequestHistoryDTO convertToHistoryDTO(ServiceRequestHistory history) {
+        ServiceRequestHistoryDTO dto = new ServiceRequestHistoryDTO();
+        dto.setId(history.getId());
+        dto.setServiceRequestId(history.getServiceRequestId());
+        dto.setEventType(history.getEventType());
+        dto.setFromStatus(history.getFromStatus());
+        dto.setToStatus(history.getToStatus());
+        dto.setFromManagerId(history.getFromManagerId());
+        dto.setToManagerId(history.getToManagerId());
+        dto.setNote(history.getNote());
+        dto.setCreatedByUserId(history.getCreatedByUserId());
+        dto.setCreatedAt(history.getCreatedAt());
+        return dto;
+    }
+
+    private String getTodayDateString() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 }

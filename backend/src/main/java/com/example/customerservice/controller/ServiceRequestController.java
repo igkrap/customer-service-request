@@ -6,7 +6,6 @@ import com.example.customerservice.model.ServiceRequest;
 import com.example.customerservice.model.User;
 import com.example.customerservice.service.ServiceRequestService;
 import com.example.customerservice.mapper.UserMapper;
-import com.example.customerservice.mapper.ServiceRequestMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,8 +27,6 @@ public class ServiceRequestController {
     @Autowired
     private UserMapper userMapper;
 
-    @Autowired
-    private ServiceRequestMapper serviceRequestMapper;
 
     @GetMapping
     public ResponseEntity<List<ServiceRequestDTO>> getAllServiceRequests(Authentication authentication) {
@@ -99,6 +96,11 @@ public class ServiceRequestController {
         return ResponseEntity.ok(followUps);
     }
 
+    @GetMapping("/{id}/histories")
+    public ResponseEntity<?> getServiceRequestHistories(@PathVariable Long id) {
+        return ResponseEntity.ok(serviceRequestService.getServiceRequestHistories(id));
+    }
+
     @PostMapping
     public ResponseEntity<?> createServiceRequest(@Valid @RequestBody ServiceRequestDTO dto, Authentication authentication) {
         try {
@@ -156,7 +158,12 @@ public class ServiceRequestController {
                         .body("You can only update your own requests");
             }
 
-            ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequest(id, dto);
+            if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+                dto.setReceivedAt(existingRequest.getReceivedAt());
+                dto.setResolvedAt(existingRequest.getResolvedAt());
+            }
+
+            ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequest(id, dto, user.getId());
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -214,7 +221,8 @@ public class ServiceRequestController {
                 // For IN_PROGRESS, allow manager to take the request if it's not assigned or assigned to them
                 if (request.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
                     // Service layer will handle the logic and throw exception if another manager already handling
-                    ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(id, request.getStatus(), user.getId());
+                    ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(
+                        id, request.getStatus(), user.getId(), user.getId());
                     return ResponseEntity.ok(updatedRequest);
                 }
 
@@ -227,7 +235,8 @@ public class ServiceRequestController {
             }
 
             ServiceRequestDTO updatedRequest = serviceRequestService.updateServiceRequestStatus(
-                    id, request.getStatus(), request.getHoursSpent(), request.getResolutionNotes(), request.getAttachments());
+                    id, request.getStatus(), request.getHoursSpent(), request.getResolutionNotes(),
+                    request.getAttachments(), user.getId());
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -258,10 +267,7 @@ public class ServiceRequestController {
                 }
             }
 
-            // Unassign: use mapper to directly update database with NULL values
-            serviceRequestMapper.unassign(id);
-
-            ServiceRequestDTO updatedRequest = serviceRequestService.getServiceRequestById(id);
+            ServiceRequestDTO updatedRequest = serviceRequestService.unassignServiceRequest(id, user.getId());
             return ResponseEntity.ok(updatedRequest);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
