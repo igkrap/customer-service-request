@@ -2,11 +2,14 @@ package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
 import com.example.customerservice.mapper.ProjectMapper;
+import com.example.customerservice.mapper.ServiceRequestHistoryMapper;
 import com.example.customerservice.mapper.ServiceRequestMapper;
 import com.example.customerservice.mapper.UserMapper;
 import com.example.customerservice.model.Project;
 import com.example.customerservice.model.ServiceRequest;
+import com.example.customerservice.model.ServiceRequestHistory;
 import com.example.customerservice.model.User;
+import com.example.customerservice.dto.ServiceRequestHistoryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,9 @@ public class ServiceRequestService {
 
     @Autowired
     private ServiceRequestMapper serviceRequestMapper;
+
+    @Autowired
+    private ServiceRequestHistoryMapper serviceRequestHistoryMapper;
 
     @Autowired
     private UserMapper userMapper;
@@ -95,6 +101,12 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServiceRequestHistoryDTO> getServiceRequestHistories(Long serviceRequestId) {
+        return serviceRequestHistoryMapper.findByServiceRequestId(serviceRequestId).stream()
+                .map(this::convertToHistoryDTO)
+                .collect(Collectors.toList());
+    }
+
     public ServiceRequest getServiceRequestEntityById(Long id) {
         return serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
@@ -136,6 +148,13 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+        recordHistory(serviceRequest.getId(), "CREATE", null, serviceRequest.getStatus(),
+                null, serviceRequest.getManagerId(), "요청 생성", userId);
+
+        if (serviceRequest.getManagerId() != null) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED", null, null,
+                    null, serviceRequest.getManagerId(), "담당자 배정", userId);
+        }
 
         // Link attachments if provided
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
@@ -197,6 +216,13 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
+        recordHistory(serviceRequest.getId(), "CREATE", null, serviceRequest.getStatus(),
+                null, serviceRequest.getManagerId(), "요청 생성", null);
+
+        if (serviceRequest.getManagerId() != null) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED", null, null,
+                    null, serviceRequest.getManagerId(), "담당자 배정", null);
+        }
 
         // Link attachments if provided
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
@@ -223,7 +249,7 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequest(Long id, ServiceRequestDTO dto) {
+    public ServiceRequestDTO updateServiceRequest(Long id, ServiceRequestDTO dto, Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -341,21 +367,38 @@ public class ServiceRequestService {
             notificationService.sendServiceRequestStatusUpdated(serviceRequest);
         }
 
+        if (dto.getStatus() != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    oldManagerId, serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
+        if (dto.getManagerId() != null && !dto.getManagerId().equals(oldManagerId)) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    oldManagerId, dto.getManagerId(),
+                    "담당자 변경", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status) {
-        return updateServiceRequestStatus(id, status, null, null, null);
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status, Long actorUserId) {
+        return updateServiceRequestStatus(id, status, null, null, null, actorUserId);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
-                                                        Double hoursSpent, String resolutionNotes) {
-        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null);
+                                                        Double hoursSpent, String resolutionNotes, Long actorUserId) {
+        return updateServiceRequestStatus(id, status, hoursSpent, resolutionNotes, null, actorUserId);
     }
 
     public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
                                                         Double hoursSpent, String resolutionNotes,
-                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments) {
+                                                        List<com.example.customerservice.dto.AttachmentDTO> attachments,
+                                                        Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
 
@@ -430,12 +473,23 @@ public class ServiceRequestService {
             notificationService.sendServiceRequestStatusUpdated(serviceRequest);
         }
 
+        if (status != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    serviceRequest.getManagerId(), serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
     }
 
-    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status, Long managerId) {
+    public ServiceRequestDTO updateServiceRequestStatus(Long id, ServiceRequest.RequestStatus status,
+                                                        Long managerId, Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+
+        Long oldManagerId = serviceRequest.getManagerId();
 
         // Check if already IN_PROGRESS and prevent other managers from taking over
         if (status == ServiceRequest.RequestStatus.IN_PROGRESS) {
@@ -492,7 +546,41 @@ public class ServiceRequestService {
             notificationService.sendServiceRequestStatusUpdated(serviceRequest);
         }
 
+        if (status != oldStatus) {
+            recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    oldManagerId, serviceRequest.getManagerId(),
+                    "상태 변경", actorUserId);
+        }
+
+        if (status == ServiceRequest.RequestStatus.IN_PROGRESS && managerId != null &&
+            (oldManagerId == null || !oldManagerId.equals(managerId))) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
+                    oldStatus != null ? oldStatus.name() : null,
+                    status != null ? status.name() : null,
+                    oldManagerId, managerId,
+                    "담당자 배정", actorUserId);
+        }
+
         return convertToDTO(serviceRequest);
+    }
+
+    public ServiceRequestDTO unassignServiceRequest(Long id, Long actorUserId) {
+        ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
+        Long oldManagerId = serviceRequest.getManagerId();
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+
+        serviceRequestMapper.unassign(id);
+
+        recordHistory(id, "MANAGER_UNASSIGNED",
+                oldStatus != null ? oldStatus.name() : null,
+                ServiceRequest.RequestStatus.OPEN.name(),
+                oldManagerId, null,
+                "담당자 해제", actorUserId);
+
+        return getServiceRequestById(id);
     }
 
     public void deleteServiceRequest(Long id) {
@@ -575,6 +663,36 @@ public class ServiceRequestService {
         serviceRequest.setResolvedAt(dto.getResolvedAt());
         serviceRequest.setReceivedAt(dto.getReceivedAt());
         return serviceRequest;
+    }
+
+    private void recordHistory(Long serviceRequestId, String eventType, String fromStatus, String toStatus,
+                               Long fromManagerId, Long toManagerId, String note, Long createdByUserId) {
+        ServiceRequestHistory history = new ServiceRequestHistory();
+        history.setServiceRequestId(serviceRequestId);
+        history.setEventType(eventType);
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        history.setFromManagerId(fromManagerId);
+        history.setToManagerId(toManagerId);
+        history.setNote(note);
+        history.setCreatedByUserId(createdByUserId);
+        history.setCreatedAt(LocalDateTime.now());
+        serviceRequestHistoryMapper.insert(history);
+    }
+
+    private ServiceRequestHistoryDTO convertToHistoryDTO(ServiceRequestHistory history) {
+        ServiceRequestHistoryDTO dto = new ServiceRequestHistoryDTO();
+        dto.setId(history.getId());
+        dto.setServiceRequestId(history.getServiceRequestId());
+        dto.setEventType(history.getEventType());
+        dto.setFromStatus(history.getFromStatus());
+        dto.setToStatus(history.getToStatus());
+        dto.setFromManagerId(history.getFromManagerId());
+        dto.setToManagerId(history.getToManagerId());
+        dto.setNote(history.getNote());
+        dto.setCreatedByUserId(history.getCreatedByUserId());
+        dto.setCreatedAt(history.getCreatedAt());
+        return dto;
     }
 
     private String getTodayDateString() {

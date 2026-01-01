@@ -96,6 +96,7 @@ function ServiceRequestList() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedAttachments, setSelectedAttachments] = useState([]);
   const [selectedFollowUps, setSelectedFollowUps] = useState([]);
+  const [selectedHistories, setSelectedHistories] = useState([]);
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
@@ -500,6 +501,14 @@ function ServiceRequestList() {
       console.error('Failed to load follow-ups:', err);
       setSelectedFollowUps([]);
     }
+
+    try {
+      const historiesResponse = await serviceRequestAPI.getHistories(params.row.id);
+      setSelectedHistories(historiesResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load histories:', err);
+      setSelectedHistories([]);
+    }
   };
 
   const handleCloseDetail = () => {
@@ -507,6 +516,7 @@ function ServiceRequestList() {
     setSelectedRequest(null);
     setSelectedAttachments([]);
     setSelectedFollowUps([]);
+    setSelectedHistories([]);
   };
 
   const handleDownloadAttachment = async (attachment) => {
@@ -1270,6 +1280,57 @@ function ServiceRequestList() {
                     </Stack>
                   </Paper>
                 )}
+
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    변경 기록
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  {selectedHistories.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      등록된 변경 기록이 없습니다.
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1}>
+                      {selectedHistories.map((history) => (
+                        <Box
+                          key={history.id}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'grey.50'
+                          }}
+                        >
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" fontWeight={600}>
+                              {history.eventType || '기록'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {history.createdAt ? formatDateTime(history.createdAt) : ''}
+                            </Typography>
+                          </Stack>
+                          {(history.fromStatus || history.toStatus) && (
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              상태: {history.fromStatus || '-'} → {history.toStatus || '-'}
+                            </Typography>
+                          )}
+                          {(history.fromManagerId || history.toManagerId) && (
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              담당자 ID: {history.fromManagerId || '-'} → {history.toManagerId || '-'}
+                            </Typography>
+                          )}
+                          {history.note && (
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              {history.note}
+                            </Typography>
+                          )}
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Paper>
 
                 {selectedRequest.description && (
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>

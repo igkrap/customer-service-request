@@ -113,6 +113,7 @@ export const serviceRequestAPI = {
   getByStatus: (status) => api.get(`/service-requests/status/${status}`),
   getByPriority: (priority) => api.get(`/service-requests/priority/${priority}`),
   getFollowUps: (parentId) => api.get(`/service-requests/${parentId}/follow-ups`),
+  getHistories: (id) => api.get(`/service-requests/${id}/histories`),
   create: (request) => api.post('/service-requests', request),
   update: (id, request) => api.put(`/service-requests/${id}`, request),
   updateStatus: (id, status, hoursSpent, resolutionNotes, attachments) =>

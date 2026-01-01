@@ -81,6 +81,24 @@ CREATE TABLE IF NOT EXISTS service_requests (
     FOREIGN KEY (parent_id) REFERENCES service_requests(id) ON DELETE CASCADE
 );
 
+-- Create service_request_histories table
+CREATE TABLE IF NOT EXISTS service_request_histories (
+    id BIGSERIAL PRIMARY KEY,
+    service_request_id BIGINT NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    from_status VARCHAR(50),
+    to_status VARCHAR(50),
+    from_manager_id BIGINT,
+    to_manager_id BIGINT,
+    note TEXT,
+    created_by_user_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+    FOREIGN KEY (from_manager_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (to_manager_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Create user_projects table for many-to-many relationship between users and projects
 CREATE TABLE IF NOT EXISTS user_projects (
     id BIGSERIAL PRIMARY KEY,
@@ -191,6 +209,8 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(pri
 CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_requests(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_service_requests_due_date ON service_requests(due_date);
 CREATE INDEX IF NOT EXISTS idx_service_requests_parent_id ON service_requests(parent_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_histories_request_id ON service_request_histories(service_request_id);
+CREATE INDEX IF NOT EXISTS idx_service_request_histories_created_at ON service_request_histories(created_at);
 CREATE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_projects_license_key ON projects(license_key);
