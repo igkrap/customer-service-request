@@ -25,7 +25,6 @@ import {
   CircularProgress,
   IconButton
 } from '@mui/material';
-import { GridToolbarContainer } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -804,7 +803,7 @@ function ServiceRequestList() {
 
   function CustomToolbar() {
     return (
-      <GridToolbarContainer
+      <Box
         sx={{
           p: 1,
           borderBottom: '1px solid',
@@ -827,7 +826,7 @@ function ServiceRequestList() {
         >
           Excel 내보내기
         </Button>
-      </GridToolbarContainer>
+      </Box>
     );
   }
 
