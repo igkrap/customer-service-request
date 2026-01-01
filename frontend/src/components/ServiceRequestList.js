@@ -3,10 +3,7 @@ import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI } from '../servic
 import { useAuth } from '../context/AuthContext';
 import {
   Box,
-  Avatar,
   Button,
-  Card,
-  CardContent,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -72,13 +69,6 @@ const getTodayYYYYMMDD = () => {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   return `${year}${month}${day}`;
-};
-
-const getInitials = (name) => {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  const initials = parts.map((part) => part[0]).join('');
-  return initials.slice(0, 2).toUpperCase();
 };
 
 // 프로젝트가 현재 기간 내에 있는지 확인
@@ -1564,126 +1554,31 @@ function ServiceRequestList() {
           </DialogActions>
         </Dialog>
 
-        {user?.role === 'ROLE_ADMIN' ? (
-          <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
-            <DataGrid
-              rows={requests}
-              columns={columns}
-              pagination={false}
-              hideFooterPagination
-              hideFooter
-              disableRowSelectionOnClick
-              onRowClick={(params) => handleDetailOpen(params.row)}
-              getRowId={(row) => row.id}
-              slots={{
-                toolbar: CustomToolbar,
-              }}
-              showToolbar
-              sx={{
-                height: '100%',
-                minHeight: 500,
-                flex: 1,
-                '& .MuiDataGrid-row:hover': {
-                  cursor: 'pointer',
-                  backgroundColor: 'action.hover'
-                }
-              }}
-            />
-          </Box>
-        ) : (
-          <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <CustomToolbar />
-            <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
-              {requests.length === 0 ? (
-                <Typography color="text.secondary">등록된 서비스 요청이 없습니다.</Typography>
-              ) : (
-                requests.map((request) => (
-                  <Card
-                    key={request.id}
-                    variant="outlined"
-                    onClick={() => handleDetailOpen(request)}
-                    sx={{ cursor: 'pointer', height: 156, minHeight: 156, maxHeight: 156, overflow: 'hidden' }}
-                  >
-                    <CardContent sx={{ p: 2, height: '100%', overflow: 'hidden' }}>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: '2fr 2fr 1fr',
-                          gridTemplateRows: '1fr 1fr',
-                          columnGap: 2,
-                          rowGap: 1,
-                          alignItems: 'center',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      >
-                        <Box sx={{ gridColumn: '1', gridRow: '1' }}>
-                          <Stack spacing={0.5} sx={{ overflow: 'hidden' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                              <Chip label={`#${request.id}`} size="small" color="primary" variant="outlined" />
-                              <Typography variant="body2" fontWeight={600} noWrap>
-                                {request.companyName || '회사 미지정'}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" noWrap>
-                                {request.projectName || '프로젝트 없음'}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Avatar sx={{ width: 28, height: 28 }}>
-                                {getInitials(request.customerName)}
-                              </Avatar>
-                              <Typography variant="body2" noWrap>{request.customerName || '-'}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
-
-                        <Box sx={{ gridColumn: '2', gridRow: '1' }}>
-                          <Stack spacing={0.5} alignItems="flex-end">
-                            <Typography variant="caption" color="text.secondary">접수일자</Typography>
-                            <Typography variant="body2">
-                              {request.receivedAt ? formatDateForDisplay(request.receivedAt) : '-'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">마감일자</Typography>
-                            <Typography variant="body2">
-                              {request.dueDate ? formatDateForDisplay(request.dueDate) : '-'}
-                            </Typography>
-                          </Stack>
-                        </Box>
-
-                        <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, height: '100%' }}>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            {getPriorityChip(request.priority)}
-                            {getStatusChip(request.status)}
-                          </Box>
-                          {renderActionButtons(request)}
-                        </Box>
-
-                        <Box sx={{ gridColumn: '1', gridRow: '2' }}>
-                          <Typography variant="subtitle1" fontWeight={600} noWrap title={request.title}>
-                            {request.title}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ gridColumn: '2', gridRow: '2' }}>
-                          <Stack spacing={0.5} alignItems="flex-end">
-                            <Typography variant="caption" color="text.secondary">완료일자</Typography>
-                            <Typography variant="body2">
-                              {request.resolvedAt ? formatDateForDisplay(request.resolvedAt) : '-'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">소요시간</Typography>
-                            <Typography variant="body2">
-                              {request.hoursSpent ? `${request.hoursSpent}m/d` : '-'}
-                            </Typography>
-                          </Stack>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </Stack>
-          </Box>
-        )}
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
+          <DataGrid
+            rows={requests}
+            columns={columns}
+            pagination={false}
+            hideFooterPagination
+            hideFooter
+            disableRowSelectionOnClick
+            onRowClick={(params) => handleDetailOpen(params.row)}
+            getRowId={(row) => row.id}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
+            showToolbar
+            sx={{
+              height: '100%',
+              minHeight: 500,
+              flex: 1,
+              '& .MuiDataGrid-row:hover': {
+                cursor: 'pointer',
+                backgroundColor: 'action.hover'
+              }
+            }}
+          />
+        </Box>
       </Box>
     </Box>
   );
