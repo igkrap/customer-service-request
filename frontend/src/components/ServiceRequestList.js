@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI } from '../services/api';
+import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Box,
@@ -32,7 +32,6 @@ import {
   Check as CompleteIcon,
   Pause as HoldIcon,
   PersonRemove as UnassignIcon,
-  AccountCircle as ProfileIcon,
   Download as DownloadIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
@@ -699,14 +698,27 @@ function ServiceRequestList() {
     </Box>
   );
 
-  const renderProfileCell = (name) => (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
-      <Avatar sx={{ width: 24, height: 24, bgcolor: 'grey.200', color: 'text.secondary' }}>
-        <ProfileIcon fontSize="small" />
-      </Avatar>
-      <Typography variant="body2">{name}</Typography>
-    </Stack>
-  );
+  const renderProfileCell = (name, profilePictureId) => {
+    if (name === '-') {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography variant="body2">-</Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
+        <Avatar
+          src={getProfilePictureUrl(profilePictureId)}
+          sx={{ width: 32, height: 32, bgcolor: 'grey.200', color: 'text.secondary' }}
+        >
+          {name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+        <Typography variant="body2">{name}</Typography>
+      </Stack>
+    );
+  };
 
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
@@ -716,7 +728,7 @@ function ServiceRequestList() {
       headerName: '요청자',
       flex: 1.3,
       minWidth: 130,
-      renderCell: (params) => renderProfileCell(params.value || '-')
+      renderCell: (params) => renderProfileCell(params.value || '-', params.row?.customerProfilePictureId)
     },
     {
       field: 'projectName',
@@ -748,7 +760,7 @@ function ServiceRequestList() {
       minWidth: 130,
       renderCell: (params) => {
         const name = params.value?.trim() ? params.value : '-';
-        return renderProfileCell(name);
+        return renderProfileCell(name, params.row?.managerProfilePictureId);
       }
     },
     {

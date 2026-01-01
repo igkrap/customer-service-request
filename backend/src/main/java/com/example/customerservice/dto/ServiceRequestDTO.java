@@ -28,11 +28,13 @@ public class ServiceRequestDTO {
     private Long customerId;
 
     private String customerName;
+    private Long customerProfilePictureId;
 
     private String companyName;
 
     private Long managerId;
     private String managerName;
+    private Long managerProfilePictureId;
 
     private Long projectId;
     private String projectName;

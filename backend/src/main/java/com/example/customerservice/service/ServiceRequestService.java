@@ -611,6 +611,7 @@ public class ServiceRequestService {
                 .orElse(null);
         if (customer != null) {
             dto.setCustomerName(customer.getUsername());
+            dto.setCustomerProfilePictureId(customer.getProfilePictureId());
             if (customer.getCompanyId() != null) {
                 com.example.customerservice.model.Company company =
                     companyMapper.findById(customer.getCompanyId()).orElse(null);
@@ -626,6 +627,7 @@ public class ServiceRequestService {
                     .orElse(null);
             if (manager != null) {
                 dto.setManagerName(manager.getUsername());
+                dto.setManagerProfilePictureId(manager.getProfilePictureId());
             }
         }
 
