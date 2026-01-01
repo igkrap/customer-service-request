@@ -11,8 +11,6 @@ import CompanyList from './components/CompanyList';
 import ProjectList from './components/ProjectList';
 import MyProjectList from './components/MyProjectList';
 import AdminProjectMapping from './components/AdminProjectMapping';
-import ProjectRequestList from './components/ProjectRequestList';
-import ProjectRequestApproval from './components/ProjectRequestApproval';
 import ManagerMonthlyReport from './components/ManagerMonthlyReport';
 import EmailSettings from './components/EmailSettings';
 import EmailTemplates from './components/EmailTemplates';
@@ -44,9 +42,7 @@ import {
 import {
   Home as HomeIcon,
   Assignment as RequestIcon,
-  PlaylistAddCheck as ProjectRequestIcon,
   Folder as MyProjectIcon,
-  CheckCircle as ApprovalIcon,
   People as UsersIcon,
   Business as CompanyIcon,
   Work as ProjectIcon,
@@ -136,9 +132,7 @@ function Dashboard() {
     { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
     { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
     { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: hasKnownRole },
-    { key: 'projectrequests', label: '프로젝트 등록 요청', icon: <ProjectRequestIcon />, show: isCustomer },
     { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
-    { key: 'projectrequestapproval', label: '프로젝트 요청 승인', icon: <ApprovalIcon />, show: isAdmin },
     { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
     { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
     { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
@@ -152,9 +146,7 @@ function Dashboard() {
 
     if (activeTab === 'home') return <DashboardHome />;
     if (activeTab === 'requests') return <ServiceRequestList />;
-    if (activeTab === 'projectrequests' && isCustomer) return <ProjectRequestList />;
     if (activeTab === 'myprojects' && isCustomerOrManager) return <MyProjectList />;
-    if (activeTab === 'projectrequestapproval' && isAdmin) return <ProjectRequestApproval />;
     if (activeTab === 'users' && isAdmin) return <UserList />;
     if (activeTab === 'companies' && isAdmin) return <CompanyList />;
     if (activeTab === 'projects' && isAdmin) return <ProjectList />;
