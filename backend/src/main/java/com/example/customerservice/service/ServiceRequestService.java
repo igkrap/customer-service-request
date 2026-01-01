@@ -148,7 +148,8 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
-        recordHistory(serviceRequest.getId(), "CREATE", null, serviceRequest.getStatus(),
+        recordHistory(serviceRequest.getId(), "CREATE", null,
+                serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
                 null, serviceRequest.getManagerId(), "요청 생성", userId);
 
         if (serviceRequest.getManagerId() != null) {
@@ -216,7 +217,8 @@ public class ServiceRequestService {
         }
 
         serviceRequestMapper.insert(serviceRequest);
-        recordHistory(serviceRequest.getId(), "CREATE", null, serviceRequest.getStatus(),
+        recordHistory(serviceRequest.getId(), "CREATE", null,
+                serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
                 null, serviceRequest.getManagerId(), "요청 생성", null);
 
         if (serviceRequest.getManagerId() != null) {
