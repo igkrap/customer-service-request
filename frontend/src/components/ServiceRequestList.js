@@ -603,7 +603,7 @@ function ServiceRequestList() {
   };
 
   const renderActionButtons = (request) => (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
       {canEditRequest(request) && (
         <>
           <IconButton
@@ -1499,28 +1499,29 @@ function ServiceRequestList() {
                   key={request.id}
                   variant="outlined"
                   onClick={() => handleDetailOpen(request)}
-                  sx={{ cursor: 'pointer', height: 156 }}
+                  sx={{ cursor: 'pointer', height: 156, minHeight: 156, maxHeight: 156, overflow: 'hidden' }}
                 >
-                  <CardContent sx={{ p: 2, height: '100%', display: 'flex' }}>
+                  <CardContent sx={{ p: 2, height: '100%', overflow: 'hidden' }}>
                     <Box
                       sx={{
                         display: 'grid',
                         gridTemplateColumns: '2fr 2fr 1fr',
-                        gridTemplateRows: 'auto auto',
+                        gridTemplateRows: '1fr 1fr',
                         columnGap: 2,
                         rowGap: 1,
-                        alignItems: 'start',
+                        alignItems: 'center',
                         width: '100%',
+                        height: '100%',
                       }}
                     >
                       <Box sx={{ gridColumn: '1', gridRow: '1' }}>
-                        <Stack spacing={1}>
+                        <Stack spacing={0.5} sx={{ overflow: 'hidden' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                             <Chip label={`#${request.id}`} size="small" color="primary" variant="outlined" />
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography variant="body2" fontWeight={600} noWrap>
                               {request.companyName || '회사 미지정'}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" noWrap>
                               {request.projectName || '프로젝트 없음'}
                             </Typography>
                           </Box>
@@ -1528,7 +1529,7 @@ function ServiceRequestList() {
                             <Avatar sx={{ width: 28, height: 28 }}>
                               {getInitials(request.customerName)}
                             </Avatar>
-                            <Typography variant="body2">{request.customerName || '-'}</Typography>
+                            <Typography variant="body2" noWrap>{request.customerName || '-'}</Typography>
                           </Box>
                         </Stack>
                       </Box>
@@ -1546,7 +1547,7 @@ function ServiceRequestList() {
                         </Stack>
                       </Box>
 
-                      <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                      <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, height: '100%' }}>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
                           {getPriorityChip(request.priority)}
                           {getStatusChip(request.status)}
