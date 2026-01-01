@@ -31,6 +31,7 @@ import {
   Check as CompleteIcon,
   Pause as HoldIcon,
   PersonRemove as UnassignIcon,
+  AccountCircle as ProfileIcon,
   Download as DownloadIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
@@ -697,10 +698,23 @@ function ServiceRequestList() {
     </Box>
   );
 
+  const renderProfileCell = (name) => (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <ProfileIcon fontSize="small" color="action" />
+      <Typography variant="body2">{name}</Typography>
+    </Stack>
+  );
+
   const columns = [
     { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
     { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
+    {
+      field: 'customerName',
+      headerName: '요청자',
+      flex: 1.3,
+      minWidth: 130,
+      renderCell: (params) => renderProfileCell(params.value || '-')
+    },
     {
       field: 'projectName',
       headerName: '프로젝트',
@@ -725,21 +739,14 @@ function ServiceRequestList() {
       renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
     },
     {
-      field: 'dueDate',
-      headerName: '마감일',
-      flex: 1,
-      minWidth: 110,
-      valueFormatter: (value) => {
-        if (!value) return '';
-        return formatDateForDisplay(value);
-      }
-    },
-    {
       field: 'managerName',
       headerName: '담당자',
       flex: 1.3,
       minWidth: 130,
-      valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
+      renderCell: (params) => {
+        const name = params.value?.trim() ? params.value : '-';
+        return renderProfileCell(name);
+      }
     },
     {
       field: 'receivedAt',
@@ -752,18 +759,28 @@ function ServiceRequestList() {
       }
     },
     {
-      field: 'hoursSpent',
-      headerName: '소요시간(m/d)',
-      flex: 0.8,
-      minWidth: 100,
+      field: 'dueDate',
+      headerName: '마감일자',
+      flex: 1,
+      minWidth: 110,
       valueFormatter: (value) => {
         if (!value) return '';
-        return `${value}`;
+        return formatDateForDisplay(value);
+      }
+    },
+    {
+      field: 'resolvedAt',
+      headerName: '완료일자',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value);
       }
     },
     {
       field: 'actions',
-      headerName: '작업',
+      headerName: '작업버튼',
       flex: 1.5,
       minWidth: 150,
       sortable: false,
@@ -833,7 +850,7 @@ function ServiceRequestList() {
   };
 
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '접수일자', '소요시간(m/d)'];
+    const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
 
     const excelData = requests.map(req => [
       req.id,
@@ -842,10 +859,10 @@ function ServiceRequestList() {
       req.projectName || '없음',
       getStatusLabel(req.status) || req.status,
       getPriorityLabel(req.priority) || req.priority,
-      req.dueDate ? formatDateForDisplay(req.dueDate) : '',
-      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '미배정',
+      (req.managerName && req.managerName.trim() !== '') ? req.managerName : '-',
       req.receivedAt ? formatDateForDisplay(req.receivedAt) : '',
-      req.hoursSpent || ''
+      req.dueDate ? formatDateForDisplay(req.dueDate) : '',
+      req.resolvedAt ? formatDateForDisplay(req.resolvedAt) : ''
     ]);
 
     const worksheetData = [headers, ...excelData];
@@ -858,10 +875,10 @@ function ServiceRequestList() {
       { wch: 20 }, // 프로젝트
       { wch: 10 }, // 상태
       { wch: 10 }, // 우선순위
-      { wch: 12 }, // 마감일
       { wch: 15 }, // 담당자
       { wch: 14 }, // 접수일자
-      { wch: 12 }  // 소요시간
+      { wch: 12 }, // 마감일자
+      { wch: 12 }  // 완료일자
     ];
     worksheet['!cols'] = columnWidths;
 
