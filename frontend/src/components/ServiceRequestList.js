@@ -16,6 +16,7 @@ import {
   InputLabel,
   Chip,
   Typography,
+  Avatar,
   Paper,
   Divider,
   Alert,
@@ -599,7 +600,7 @@ function ServiceRequestList() {
   };
 
   const renderActionButtons = (request) => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
+    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
       {canEditRequest(request) && (
         <>
           <IconButton
@@ -699,8 +700,10 @@ function ServiceRequestList() {
   );
 
   const renderProfileCell = (name) => (
-    <Stack direction="row" spacing={1} alignItems="center">
-      <ProfileIcon fontSize="small" color="action" />
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ height: '100%' }}>
+      <Avatar sx={{ width: 24, height: 24, bgcolor: 'grey.200', color: 'text.secondary' }}>
+        <ProfileIcon fontSize="small" />
+      </Avatar>
       <Typography variant="body2">{name}</Typography>
     </Stack>
   );
