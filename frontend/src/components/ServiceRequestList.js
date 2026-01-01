@@ -3,7 +3,10 @@ import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI } from '../servic
 import { useAuth } from '../context/AuthContext';
 import {
   Box,
+  Avatar,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,7 +25,7 @@ import {
   CircularProgress,
   IconButton
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { GridToolbarContainer } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -69,6 +72,13 @@ const getTodayYYYYMMDD = () => {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   return `${year}${month}${day}`;
+};
+
+const getInitials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.map((part) => part[0]).join('');
+  return initials.slice(0, 2).toUpperCase();
 };
 
 // 프로젝트가 현재 기간 내에 있는지 확인
@@ -480,13 +490,13 @@ function ServiceRequestList() {
     }
   };
 
-  const handleRowClick = async (params) => {
-    setSelectedRequest(params.row);
+  const handleDetailOpen = async (request) => {
+    setSelectedRequest(request);
     setShowDetailDialog(true);
 
     // Load attachments
     try {
-      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(params.row.id);
+      const attachmentsResponse = await attachmentAPI.getByServiceRequestId(request.id);
       setSelectedAttachments(attachmentsResponse.data || []);
     } catch (err) {
       console.error('Failed to load attachments:', err);
@@ -495,7 +505,7 @@ function ServiceRequestList() {
 
     // Load follow-up requests
     try {
-      const followUpsResponse = await serviceRequestAPI.getFollowUps(params.row.id);
+      const followUpsResponse = await serviceRequestAPI.getFollowUps(request.id);
       setSelectedFollowUps(followUpsResponse.data || []);
     } catch (err) {
       console.error('Failed to load follow-ups:', err);
@@ -503,7 +513,7 @@ function ServiceRequestList() {
     }
 
     try {
-      const historiesResponse = await serviceRequestAPI.getHistories(params.row.id);
+      const historiesResponse = await serviceRequestAPI.getHistories(request.id);
       setSelectedHistories(historiesResponse.data || []);
     } catch (err) {
       console.error('Failed to load histories:', err);
@@ -593,6 +603,106 @@ function ServiceRequestList() {
     return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
+  const renderActionButtons = (request) => (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+      {canEditRequest(request) && (
+        <>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(request);
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(request.id);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
+      )}
+      {canChangeStatus(request) && user?.role === 'ROLE_MANAGER' && (
+        <>
+          {request.status !== 'IN_PROGRESS' && request.status !== 'RESOLVED' && (
+            <IconButton
+              size="small"
+              color="success"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange(request, 'IN_PROGRESS');
+              }}
+              title="시작"
+            >
+              <StartIcon fontSize="small" />
+            </IconButton>
+          )}
+          {request.status === 'RESOLVED' && (
+            <IconButton
+              size="small"
+              color="info"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange(request, 'RESOLVED');
+              }}
+              title="완료 내용 수정"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+          {request.managerId === user?.id && (
+            <>
+              {request.status !== 'RESOLVED' && (
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(request, 'RESOLVED');
+                  }}
+                  title="완료"
+                >
+                  <CompleteIcon fontSize="small" />
+                </IconButton>
+              )}
+              {request.status === 'IN_PROGRESS' && (
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(request, 'HOLD');
+                  }}
+                  title="보류"
+                >
+                  <HoldIcon fontSize="small" />
+                </IconButton>
+              )}
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnassign(request.id);
+                }}
+                title="할당 취소"
+              >
+                <UnassignIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+        </>
+      )}
+    </Box>
+  );
+
   const buildTimelineEntries = (request) => {
     if (!request) return [];
     const receivedDate = request.receivedAt
@@ -651,186 +761,6 @@ function ServiceRequestList() {
       .filter((entry) => entry.date)
       .sort((a, b) => a.date - b.date);
   };
-
-  const columns = [
-    { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
-    { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
-    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
-    {
-      field: 'projectName',
-      headerName: '프로젝트',
-      flex: 1.2,
-      minWidth: 120,
-      valueGetter: (value) => value || '없음'
-    },
-    {
-      field: 'status',
-      headerName: '상태',
-      flex: 1,
-      minWidth: 120,
-      valueGetter: (value) => getStatusLabel(value),
-      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
-    },
-    {
-      field: 'priority',
-      headerName: '우선순위',
-      flex: 0.8,
-      minWidth: 100,
-      valueGetter: (value) => getPriorityLabel(value),
-      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
-    },
-    {
-      field: 'dueDate',
-      headerName: '마감일',
-      flex: 1,
-      minWidth: 110,
-      valueFormatter: (value) => {
-        if (!value) return '';
-        return formatDateForDisplay(value);
-      }
-    },
-    {
-      field: 'managerName',
-      headerName: '담당자',
-      flex: 1.3,
-      minWidth: 130,
-      valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
-    },
-    {
-      field: 'receivedAt',
-      headerName: '접수일자',
-      flex: 1.2,
-      minWidth: 130,
-      valueFormatter: (value) => {
-        if (!value) return '';
-        return formatDateForDisplay(value) || '';
-      }
-    },
-    {
-      field: 'hoursSpent',
-      headerName: '소요시간(m/d)',
-      flex: 0.8,
-      minWidth: 100,
-      valueFormatter: (value) => {
-        if (!value) return '';
-        return `${value}`;
-      }
-    },
-    {
-      field: 'actions',
-      headerName: '작업',
-      flex: 1.5,
-      minWidth: 150,
-      sortable: false,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        if (!params.row) return null;
-
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '100%' }}>
-            {canEditRequest(params.row) && (
-              <>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(params.row);
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(params.row.id);
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </>
-            )}
-            {canChangeStatus(params.row) && user?.role === 'ROLE_MANAGER' && (
-              <>
-                {/* Show Start button if not yet IN_PROGRESS and (not assigned or assigned to this manager) */}
-                {params.row.status !== 'IN_PROGRESS' && params.row.status !== 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row, 'IN_PROGRESS');
-                    }}
-                    title="시작"
-                  >
-                    <StartIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {params.row.status === 'RESOLVED' && (
-                  <IconButton
-                    size="small"
-                    color="info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(params.row, 'RESOLVED');
-                    }}
-                    title="완료 내용 수정"
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {/* Only show Complete/Close/Unassign buttons if request is assigned to this manager */}
-                {params.row.managerId === user?.id && (
-                  <>
-                    {params.row.status !== 'RESOLVED' && (
-                      <IconButton
-                        size="small"
-                        color="info"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(params.row, 'RESOLVED');
-                        }}
-                        title="완료"
-                      >
-                        <CompleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                    {params.row.status === 'IN_PROGRESS' && (
-                      <IconButton
-                        size="small"
-                        color="warning"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(params.row, 'HOLD');
-                        }}
-                        title="보류"
-                      >
-                        <HoldIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnassign(params.row.id);
-                      }}
-                      title="할당 취소"
-                    >
-                      <UnassignIcon fontSize="small" />
-                    </IconButton>
-                  </>
-                )}
-              </>
-            )}
-          </Box>
-        );
-      }
-    }
-  ];
 
   const handleExportToExcel = () => {
     const headers = ['요청 ID', '제목', '요청자', '프로젝트', '상태', '우선순위', '마감일', '담당자', '접수일자', '소요시간(m/d)'];
@@ -1558,31 +1488,97 @@ function ServiceRequestList() {
           </DialogActions>
         </Dialog>
 
-        {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
-          <DataGrid
-            rows={requests}
-            columns={columns}
-            pagination={false}
-            hideFooterPagination
-            hideFooter
-            disableRowSelectionOnClick
-            onRowClick={handleRowClick}
-            getRowId={(row) => row.id}
-            slots={{
-              toolbar: CustomToolbar,
-            }}
-            showToolbar
-            sx={{
-              height: '100%',
-              minHeight: 500,
-              flex: 1,
-              '& .MuiDataGrid-row:hover': {
-                cursor: 'pointer',
-                backgroundColor: 'action.hover'
-              }
-            }}
-          />
+        {/* Card View */}
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <CustomToolbar />
+          <Stack spacing={2} sx={{ overflow: 'auto', pb: 2 }}>
+            {requests.length === 0 ? (
+              <Typography color="text.secondary">등록된 서비스 요청이 없습니다.</Typography>
+            ) : (
+              requests.map((request) => (
+                <Card
+                  key={request.id}
+                  variant="outlined"
+                  onClick={() => handleDetailOpen(request)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <CardContent sx={{ p: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 2fr 1fr',
+                        gridTemplateRows: 'auto auto',
+                        columnGap: 2,
+                        rowGap: 1,
+                        alignItems: 'start',
+                        minHeight: 78,
+                      }}
+                    >
+                      <Box sx={{ gridColumn: '1', gridRow: '1' }}>
+                        <Stack spacing={1}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Chip label={`#${request.id}`} size="small" color="primary" variant="outlined" />
+                            <Typography variant="body2" fontWeight={600}>
+                              {request.companyName || '회사 미지정'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {request.projectName || '프로젝트 없음'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar sx={{ width: 28, height: 28 }}>
+                              {getInitials(request.customerName)}
+                            </Avatar>
+                            <Typography variant="body2">{request.customerName || '-'}</Typography>
+                          </Box>
+                        </Stack>
+                      </Box>
+
+                      <Box sx={{ gridColumn: '2', gridRow: '1' }}>
+                        <Stack spacing={0.5} alignItems="flex-end">
+                          <Typography variant="caption" color="text.secondary">접수일자</Typography>
+                          <Typography variant="body2">
+                            {request.receivedAt ? formatDateForDisplay(request.receivedAt) : '-'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">마감일자</Typography>
+                          <Typography variant="body2">
+                            {request.dueDate ? formatDateForDisplay(request.dueDate) : '-'}
+                          </Typography>
+                        </Stack>
+                      </Box>
+
+                      <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          {getPriorityChip(request.priority)}
+                          {getStatusChip(request.status)}
+                        </Box>
+                        {renderActionButtons(request)}
+                      </Box>
+
+                      <Box sx={{ gridColumn: '1', gridRow: '2' }}>
+                        <Typography variant="subtitle1" fontWeight={600} noWrap title={request.title}>
+                          {request.title}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ gridColumn: '2', gridRow: '2' }}>
+                        <Stack spacing={0.5} alignItems="flex-end">
+                          <Typography variant="caption" color="text.secondary">완료일자</Typography>
+                          <Typography variant="body2">
+                            {request.resolvedAt ? formatDateForDisplay(request.resolvedAt) : '-'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">소요시간</Typography>
+                          <Typography variant="body2">
+                            {request.hoursSpent ? `${request.hoursSpent}m/d` : '-'}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Stack>
         </Box>
       </Box>
     </Box>

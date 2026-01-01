@@ -1,6 +1,7 @@
 package com.example.customerservice.service;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.mapper.CompanyMapper;
 import com.example.customerservice.mapper.ProjectMapper;
 import com.example.customerservice.mapper.ServiceRequestHistoryMapper;
 import com.example.customerservice.mapper.ServiceRequestMapper;
@@ -31,6 +32,9 @@ public class ServiceRequestService {
 
     @Autowired
     private ServiceRequestHistoryMapper serviceRequestHistoryMapper;
+
+    @Autowired
+    private CompanyMapper companyMapper;
 
     @Autowired
     private UserMapper userMapper;
@@ -607,6 +611,13 @@ public class ServiceRequestService {
                 .orElse(null);
         if (customer != null) {
             dto.setCustomerName(customer.getUsername());
+            if (customer.getCompanyId() != null) {
+                com.example.customerservice.model.Company company =
+                    companyMapper.findById(customer.getCompanyId()).orElse(null);
+                if (company != null) {
+                    dto.setCompanyName(company.getCompanyName());
+                }
+            }
         }
 
         // Load manager details for DTO

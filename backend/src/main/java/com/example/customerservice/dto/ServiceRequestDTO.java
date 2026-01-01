@@ -29,6 +29,8 @@ public class ServiceRequestDTO {
 
     private String customerName;
 
+    private String companyName;
+
     private Long managerId;
     private String managerName;
 
