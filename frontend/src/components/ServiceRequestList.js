@@ -25,6 +25,7 @@ import {
   CircularProgress,
   IconButton
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -701,6 +702,82 @@ function ServiceRequestList() {
       )}
     </Box>
   );
+
+  const columns = [
+    { field: 'id', headerName: '요청 ID', flex: 0.6, minWidth: 70 },
+    { field: 'title', headerName: '제목', flex: 2, minWidth: 150 },
+    { field: 'customerName', headerName: '요청자', flex: 1.3, minWidth: 130 },
+    {
+      field: 'projectName',
+      headerName: '프로젝트',
+      flex: 1.2,
+      minWidth: 120,
+      valueGetter: (value) => value || '없음'
+    },
+    {
+      field: 'status',
+      headerName: '상태',
+      flex: 1,
+      minWidth: 120,
+      valueGetter: (value) => getStatusLabel(value),
+      renderCell: (params) => params.row?.status ? getStatusChip(params.row.status) : null
+    },
+    {
+      field: 'priority',
+      headerName: '우선순위',
+      flex: 0.8,
+      minWidth: 100,
+      valueGetter: (value) => getPriorityLabel(value),
+      renderCell: (params) => params.row?.priority ? getPriorityChip(params.row.priority) : null
+    },
+    {
+      field: 'dueDate',
+      headerName: '마감일',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value);
+      }
+    },
+    {
+      field: 'managerName',
+      headerName: '담당자',
+      flex: 1.3,
+      minWidth: 130,
+      valueGetter: (value) => (value && value.trim() !== '') ? value : '미배정'
+    },
+    {
+      field: 'receivedAt',
+      headerName: '접수일자',
+      flex: 1.2,
+      minWidth: 130,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value) || '';
+      }
+    },
+    {
+      field: 'hoursSpent',
+      headerName: '소요시간(m/d)',
+      flex: 0.8,
+      minWidth: 100,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return `${value}`;
+      }
+    },
+    {
+      field: 'actions',
+      headerName: '작업',
+      flex: 1.5,
+      minWidth: 150,
+      sortable: false,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => params.row ? renderActionButtons(params.row) : null
+    }
+  ];
 
   const buildTimelineEntries = (request) => {
     if (!request) return [];
@@ -1487,99 +1564,126 @@ function ServiceRequestList() {
           </DialogActions>
         </Dialog>
 
-        {/* Card View */}
-        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <CustomToolbar />
-          <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
-            {requests.length === 0 ? (
-              <Typography color="text.secondary">등록된 서비스 요청이 없습니다.</Typography>
-            ) : (
-              requests.map((request) => (
-                <Card
-                  key={request.id}
-                  variant="outlined"
-                  onClick={() => handleDetailOpen(request)}
-                  sx={{ cursor: 'pointer', height: 156, minHeight: 156, maxHeight: 156, overflow: 'hidden' }}
-                >
-                  <CardContent sx={{ p: 2, height: '100%', overflow: 'hidden' }}>
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 2fr 1fr',
-                        gridTemplateRows: '1fr 1fr',
-                        columnGap: 2,
-                        rowGap: 1,
-                        alignItems: 'center',
-                        width: '100%',
-                        height: '100%',
-                      }}
-                    >
-                      <Box sx={{ gridColumn: '1', gridRow: '1' }}>
-                        <Stack spacing={0.5} sx={{ overflow: 'hidden' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                            <Chip label={`#${request.id}`} size="small" color="primary" variant="outlined" />
-                            <Typography variant="body2" fontWeight={600} noWrap>
-                              {request.companyName || '회사 미지정'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              {request.projectName || '프로젝트 없음'}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 28, height: 28 }}>
-                              {getInitials(request.customerName)}
-                            </Avatar>
-                            <Typography variant="body2" noWrap>{request.customerName || '-'}</Typography>
-                          </Box>
-                        </Stack>
-                      </Box>
-
-                      <Box sx={{ gridColumn: '2', gridRow: '1' }}>
-                        <Stack spacing={0.5} alignItems="flex-end">
-                          <Typography variant="caption" color="text.secondary">접수일자</Typography>
-                          <Typography variant="body2">
-                            {request.receivedAt ? formatDateForDisplay(request.receivedAt) : '-'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">마감일자</Typography>
-                          <Typography variant="body2">
-                            {request.dueDate ? formatDateForDisplay(request.dueDate) : '-'}
-                          </Typography>
-                        </Stack>
-                      </Box>
-
-                      <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, height: '100%' }}>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          {getPriorityChip(request.priority)}
-                          {getStatusChip(request.status)}
+        {user?.role === 'ROLE_ADMIN' ? (
+          <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
+            <DataGrid
+              rows={requests}
+              columns={columns}
+              pagination={false}
+              hideFooterPagination
+              hideFooter
+              disableRowSelectionOnClick
+              onRowClick={(params) => handleDetailOpen(params.row)}
+              getRowId={(row) => row.id}
+              slots={{
+                toolbar: CustomToolbar,
+              }}
+              showToolbar
+              sx={{
+                height: '100%',
+                minHeight: 500,
+                flex: 1,
+                '& .MuiDataGrid-row:hover': {
+                  cursor: 'pointer',
+                  backgroundColor: 'action.hover'
+                }
+              }}
+            />
+          </Box>
+        ) : (
+          <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <CustomToolbar />
+            <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
+              {requests.length === 0 ? (
+                <Typography color="text.secondary">등록된 서비스 요청이 없습니다.</Typography>
+              ) : (
+                requests.map((request) => (
+                  <Card
+                    key={request.id}
+                    variant="outlined"
+                    onClick={() => handleDetailOpen(request)}
+                    sx={{ cursor: 'pointer', height: 156, minHeight: 156, maxHeight: 156, overflow: 'hidden' }}
+                  >
+                    <CardContent sx={{ p: 2, height: '100%', overflow: 'hidden' }}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 2fr 1fr',
+                          gridTemplateRows: '1fr 1fr',
+                          columnGap: 2,
+                          rowGap: 1,
+                          alignItems: 'center',
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      >
+                        <Box sx={{ gridColumn: '1', gridRow: '1' }}>
+                          <Stack spacing={0.5} sx={{ overflow: 'hidden' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              <Chip label={`#${request.id}`} size="small" color="primary" variant="outlined" />
+                              <Typography variant="body2" fontWeight={600} noWrap>
+                                {request.companyName || '회사 미지정'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" noWrap>
+                                {request.projectName || '프로젝트 없음'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar sx={{ width: 28, height: 28 }}>
+                                {getInitials(request.customerName)}
+                              </Avatar>
+                              <Typography variant="body2" noWrap>{request.customerName || '-'}</Typography>
+                            </Box>
+                          </Stack>
                         </Box>
-                        {renderActionButtons(request)}
-                      </Box>
 
-                      <Box sx={{ gridColumn: '1', gridRow: '2' }}>
-                        <Typography variant="subtitle1" fontWeight={600} noWrap title={request.title}>
-                          {request.title}
-                        </Typography>
-                      </Box>
+                        <Box sx={{ gridColumn: '2', gridRow: '1' }}>
+                          <Stack spacing={0.5} alignItems="flex-end">
+                            <Typography variant="caption" color="text.secondary">접수일자</Typography>
+                            <Typography variant="body2">
+                              {request.receivedAt ? formatDateForDisplay(request.receivedAt) : '-'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">마감일자</Typography>
+                            <Typography variant="body2">
+                              {request.dueDate ? formatDateForDisplay(request.dueDate) : '-'}
+                            </Typography>
+                          </Stack>
+                        </Box>
 
-                      <Box sx={{ gridColumn: '2', gridRow: '2' }}>
-                        <Stack spacing={0.5} alignItems="flex-end">
-                          <Typography variant="caption" color="text.secondary">완료일자</Typography>
-                          <Typography variant="body2">
-                            {request.resolvedAt ? formatDateForDisplay(request.resolvedAt) : '-'}
+                        <Box sx={{ gridColumn: '3', gridRow: '1 / span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, height: '100%' }}>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {getPriorityChip(request.priority)}
+                            {getStatusChip(request.status)}
+                          </Box>
+                          {renderActionButtons(request)}
+                        </Box>
+
+                        <Box sx={{ gridColumn: '1', gridRow: '2' }}>
+                          <Typography variant="subtitle1" fontWeight={600} noWrap title={request.title}>
+                            {request.title}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">소요시간</Typography>
-                          <Typography variant="body2">
-                            {request.hoursSpent ? `${request.hoursSpent}m/d` : '-'}
-                          </Typography>
-                        </Stack>
+                        </Box>
+
+                        <Box sx={{ gridColumn: '2', gridRow: '2' }}>
+                          <Stack spacing={0.5} alignItems="flex-end">
+                            <Typography variant="caption" color="text.secondary">완료일자</Typography>
+                            <Typography variant="body2">
+                              {request.resolvedAt ? formatDateForDisplay(request.resolvedAt) : '-'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">소요시간</Typography>
+                            <Typography variant="body2">
+                              {request.hoursSpent ? `${request.hoursSpent}m/d` : '-'}
+                            </Typography>
+                          </Stack>
+                        </Box>
                       </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </Stack>
-        </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </Stack>
+          </Box>
+        )}
       </Box>
     </Box>
   );
