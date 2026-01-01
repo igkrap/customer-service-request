@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Button,
@@ -761,7 +762,7 @@ function ServiceRequestList() {
         {row?.projectName || '프로젝트 정보 없음'}
       </Typography>
       <Typography variant="caption" color="text.secondary" display="block">
-        유형: {row?.projectServiceType || '-'}
+        유형: {getServiceTypeLabel(row?.projectServiceType)}
       </Typography>
       <Typography variant="caption" color="text.secondary" display="block">
         기간: {formatProjectDate(row?.projectContractStartDate)} ~ {formatProjectDate(row?.projectContractEndDate)}
@@ -948,8 +949,8 @@ function ServiceRequestList() {
     {
       field: 'actions',
       headerName: '작업버튼',
-      flex: 1.5,
-      minWidth: 150,
+      flex: 1.1,
+      minWidth: 120,
       sortable: false,
       align: 'center',
       headerAlign: 'center',

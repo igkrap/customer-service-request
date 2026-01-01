@@ -25,6 +25,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { projectAPI, companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import * as XLSX from 'xlsx';
 
 function ProjectList() {
@@ -184,9 +185,8 @@ function ProjectList() {
   };
 
   const getServiceTypeBadge = (type) => {
-    const color = type === 'MAINTENANCE' ? 'info' : type === 'DEFECT_REPAIR' ? 'warning' : 'default';
-    const typeLabel = type === 'MAINTENANCE' ? '유지보수' : type === 'DEFECT_REPAIR' ? '하자보수' : '기타';
-    return <Chip label={typeLabel} color={color} size="small" />;
+    const color = type === 'NEW' ? 'primary' : type === 'MAINTENANCE' ? 'info' : type === 'DEFECT_REPAIR' ? 'warning' : 'default';
+    return <Chip label={getServiceTypeLabel(type)} color={color} size="small" />;
   };
 
   if (loading) {
@@ -307,18 +307,12 @@ function ProjectList() {
   const handleExportToExcel = () => {
     const headers = ['프로젝트 ID', '프로젝트명', '회사', '라이센스 키', '서비스 유형', '계약 시작일', '계약 종료일', 'm/d'];
 
-    const serviceTypeMap = {
-      'DEVELOPMENT': '개발',
-      'MAINTENANCE': '유지보수',
-      'CONSULTING': '컨설팅'
-    };
-
     const excelData = projects.map(proj => [
       proj.id,
       proj.projectName,
       proj.companyName,
       proj.licenseKey || '',
-      serviceTypeMap[proj.serviceType] || proj.serviceType,
+      getServiceTypeLabel(proj.serviceType),
       proj.contractStartDate ? new Date(proj.contractStartDate).toLocaleDateString() : '',
       proj.contractEndDate ? new Date(proj.contractEndDate).toLocaleDateString() : '',
       proj.contractManDays || ''
@@ -450,6 +444,7 @@ function ProjectList() {
                     onChange={handleInputChange}
                     label="서비스 유형"
                   >
+                    <MenuItem value="NEW">신규</MenuItem>
                     <MenuItem value="MAINTENANCE">유지보수</MenuItem>
                     <MenuItem value="DEFECT_REPAIR">하자보수</MenuItem>
                     <MenuItem value="ETC">기타</MenuItem>

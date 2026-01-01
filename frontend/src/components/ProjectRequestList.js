@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { projectRequestAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Button,
@@ -156,7 +157,7 @@ function ProjectRequestList() {
       valueFormatter: (params) => {
         const value = params?.value !== undefined ? params.value : params;
         if (!value) return '';
-        return value === 'MAINTENANCE' ? '유지보수' : value === 'DEFECT_REPAIR' ? '하자보수' : value === 'ETC' ? '기타' : '';
+        return getServiceTypeLabel(value);
       }
     },
     {
@@ -245,12 +246,6 @@ function ProjectRequestList() {
   const handleExportToExcel = () => {
     const headers = ['프로젝트 요청 ID', '프로젝트명', '회사', '서비스 유형', '시작일', '종료일', 'm/d', '상태', '생성일'];
 
-    const serviceTypeMap = {
-      'MAINTENANCE': '유지보수',
-      'DEFECT_REPAIR': '하자보수',
-      'ETC': '기타'
-    };
-
     const statusMap = {
       'PENDING': '대기',
       'APPROVED': '승인',
@@ -261,7 +256,7 @@ function ProjectRequestList() {
       req.id,
       req.projectName,
       req.companyName,
-      serviceTypeMap[req.serviceType] || req.serviceType,
+      getServiceTypeLabel(req.serviceType),
       req.contractStartDate ? new Date(req.contractStartDate).toLocaleDateString() : '',
       req.contractEndDate ? new Date(req.contractEndDate).toLocaleDateString() : '',
       req.contractManDays || '',
@@ -388,6 +383,7 @@ function ProjectRequestList() {
                     onChange={handleInputChange}
                     label="서비스 유형"
                   >
+                    <MenuItem value="NEW">신규</MenuItem>
                     <MenuItem value="MAINTENANCE">유지보수</MenuItem>
                     <MenuItem value="DEFECT_REPAIR">하자보수</MenuItem>
                     <MenuItem value="ETC">기타</MenuItem>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Paper,
@@ -252,7 +253,7 @@ function AdminProjectMapping() {
                                     {project.projectName}
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
-                                    회사: {project.companyName} | 유형: {project.serviceType} |
+                                    회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                                     계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                                     m/d: {project.contractManDays}
                                   </Typography>
@@ -298,7 +299,7 @@ function AdminProjectMapping() {
                                 {project.projectName}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                회사: {project.companyName} | 유형: {project.serviceType} |
+                                회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                                 계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                                 m/d: {project.contractManDays}
                               </Typography>
@@ -328,7 +329,7 @@ function AdminProjectMapping() {
                         {project.projectName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        회사: {project.companyName} | 유형: {project.serviceType} |
+                        회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
                         계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
                         m/d: {project.contractManDays}
                       </Typography>

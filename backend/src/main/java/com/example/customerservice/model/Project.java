@@ -42,6 +42,7 @@ public class Project {
     private LocalDateTime updatedAt;
 
     public enum ServiceType {
+        NEW,                // 신규
         MAINTENANCE,        // 유지보수
         DEFECT_REPAIR,      // 하자보수
         ETC                 // 기타

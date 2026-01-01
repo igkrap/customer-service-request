@@ -33,6 +33,7 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import UserProfile from './UserProfile';
 import axios from 'axios';
 import { getProfilePictureUrl } from '../services/api';
@@ -437,9 +438,9 @@ function DashboardHome() {
                   <TableCell>{project.companyName || '-'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={project.serviceType === 'MAINTENANCE' ? '유지보수' : project.serviceType === 'DEFECT_REPAIR' ? '하자보수' : '기타'}
+                      label={getServiceTypeLabel(project.serviceType)}
                       size="small"
-                      color={project.serviceType === 'MAINTENANCE' ? 'primary' : project.serviceType === 'DEFECT_REPAIR' ? 'secondary' : 'default'}
+                      color={project.serviceType === 'NEW' ? 'info' : project.serviceType === 'MAINTENANCE' ? 'primary' : project.serviceType === 'DEFECT_REPAIR' ? 'secondary' : 'default'}
                       variant="outlined"
                     />
                   </TableCell>
