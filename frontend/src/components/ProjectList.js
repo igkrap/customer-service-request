@@ -503,8 +503,8 @@ function ProjectList() {
           <DataGrid
             rows={projects}
             columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10, 25, 50]}
+            pagination={false}
+            hideFooterPagination
             disableSelectionOnClick
             autoHeight={false}
             slots={{

@@ -1502,12 +1502,8 @@ function ServiceRequestList() {
           <DataGrid
             rows={requests}
             columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10 },
-              },
-            }}
-            pageSizeOptions={[10, 25, 50]}
+            pagination={false}
+            hideFooterPagination
             disableRowSelectionOnClick
             onRowClick={handleRowClick}
             getRowId={(row) => row.id}

@@ -168,7 +168,6 @@ function Dashboard() {
     return null;
   };
 
-  const floatingOffset = drawerOpen ? drawerWidth : collapsedDrawerWidth;
 
   useEffect(() => {
     if (!user) {
@@ -428,10 +427,8 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          left: floatingOffset + 16,
-          right: 'auto',
+          right: 24,
           zIndex: 1000,
-          transition: 'left 0.3s ease',
         }}
       >
         <ChatIcon />
@@ -445,10 +442,8 @@ function Dashboard() {
         sx={{
           position: 'fixed',
           bottom: 96,
-          left: floatingOffset + 16,
-          right: 'auto',
+          right: 24,
           zIndex: 1000,
-          transition: 'left 0.3s ease',
         }}
       >
         <Badge
@@ -477,12 +472,10 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 24,
-            left: floatingOffset + 16,
-            right: 'auto',
+            right: 24,
             m: 0,
             maxHeight: '70vh',
             height: '600px',
-            transition: 'left 0.3s ease',
             borderRadius: 3,
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
@@ -528,12 +521,10 @@ function Dashboard() {
           sx: {
             position: 'fixed',
             bottom: 110,
-            left: floatingOffset + 16,
-            right: 'auto',
+            right: 24,
             m: 0,
             maxHeight: '60vh',
             height: '420px',
-            transition: 'left 0.3s ease',
             borderRadius: 3,
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
