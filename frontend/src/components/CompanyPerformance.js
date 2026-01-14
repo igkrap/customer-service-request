@@ -46,6 +46,13 @@ function CompanyPerformance() {
   const formatPercent = (value) => (Number.isFinite(Number(value)) ? `${Number(value)}%` : '-');
   const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value).toFixed(1) : '-');
 
+  console.log('[CompanyPerformance] render', {
+    selectedCompanyId,
+    loading,
+    error,
+    rowCount: rows.length
+  });
+
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
     { field: 'projectName', headerName: '프로젝트', flex: 1.2, minWidth: 180 },
