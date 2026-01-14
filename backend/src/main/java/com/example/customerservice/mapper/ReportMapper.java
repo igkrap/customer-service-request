@@ -12,7 +12,6 @@ import java.util.List;
 public interface ReportMapper {
 
     @Select("""
-            <script>
             SELECT
                 p.id AS id,
                 p.company_id AS company_id,
@@ -48,7 +47,6 @@ public interface ReportMapper {
             </where>
             GROUP BY p.id, p.company_id, c.company_name, p.project_name, p.contract_man_days
             ORDER BY c.company_name, p.project_name
-            </script>
             """)
     List<CompanyPerformanceDTO> findCompanyPerformance(@Param("companyId") Long companyId);
 
