@@ -98,6 +98,8 @@ function Dashboard() {
         return { label: '신규 요청', color: 'primary' };
       case 'SERVICE_REQUEST_STATUS_UPDATED':
         return { label: '상태 변경', color: 'info' };
+      case 'SERVICE_REQUEST_RESOLVED':
+        return { label: '처리 완료', color: 'success' };
       case 'MANAGER_ASSIGNED':
         return { label: '담당자 배정', color: 'success' };
       case 'ANNOUNCEMENT':
