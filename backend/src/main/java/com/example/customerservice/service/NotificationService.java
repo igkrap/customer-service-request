@@ -20,7 +20,7 @@ public class NotificationService {
         this.objectMapper = objectMapper;
     }
 
-    public void sendServiceRequestCreated(ServiceRequest serviceRequest) {
+    public void sendServiceRequestCreated(ServiceRequest serviceRequest, String recipientUserId) {
         String message = String.format("새 서비스 요청이 등록되었습니다: %s", serviceRequest.getTitle());
         NotificationMessage payload = new NotificationMessage(
                 "SERVICE_REQUEST_CREATED",
@@ -30,10 +30,10 @@ public class NotificationService {
                 message,
                 LocalDateTime.now()
         );
-        broadcast(payload);
+        sendToUser(recipientUserId, payload);
     }
 
-    public void sendServiceRequestStatusUpdated(ServiceRequest serviceRequest) {
+    public void sendServiceRequestStatusUpdated(ServiceRequest serviceRequest, String recipientUserId) {
         String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
         String message = String.format("서비스 요청 상태가 변경되었습니다: %s (%s)", serviceRequest.getTitle(), status);
         NotificationMessage payload = new NotificationMessage(
@@ -44,10 +44,10 @@ public class NotificationService {
             message,
             LocalDateTime.now()
         );
-        broadcast(payload);
+        sendToUser(recipientUserId, payload);
     }
 
-    public void sendManagerAssigned(ServiceRequest serviceRequest, String managerName) {
+    public void sendManagerAssigned(ServiceRequest serviceRequest, String recipientUserId, String managerName) {
         String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
         String message = String.format("담당자가 배정되었습니다: %s (%s)", serviceRequest.getTitle(), managerName);
         NotificationMessage payload = new NotificationMessage(
@@ -58,12 +58,15 @@ public class NotificationService {
             message,
             LocalDateTime.now()
         );
-        broadcast(payload);
+        sendToUser(recipientUserId, payload);
     }
 
-    private void broadcast(NotificationMessage payload) {
+    private void sendToUser(String recipientUserId, NotificationMessage payload) {
+        if (recipientUserId == null || recipientUserId.isBlank()) {
+            return;
+        }
         try {
-            webSocketHandler.broadcast(objectMapper.writeValueAsString(payload));
+            webSocketHandler.sendToUser(recipientUserId, objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException ignored) {
         }
     }

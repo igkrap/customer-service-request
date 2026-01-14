@@ -23,9 +23,19 @@ export const getWebSocketUrl = () => {
       parsed = new URL(parsed.origin);
     }
     const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${parsed.host}/ws/notifications`;
+    const wsUrl = new URL(`${protocol}//${parsed.host}/ws/notifications`);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      wsUrl.searchParams.set('token', token);
+    }
+    return wsUrl.toString();
   } catch (error) {
-    return 'ws://localhost:8080/ws/notifications';
+    const fallback = new URL('ws://localhost:8080/ws/notifications');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      fallback.searchParams.set('token', token);
+    }
+    return fallback.toString();
   }
 };
 

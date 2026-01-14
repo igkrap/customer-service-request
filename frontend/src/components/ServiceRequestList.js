@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { serviceRequestAPI, userAPI, projectAPI, attachmentAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
@@ -35,7 +35,9 @@ import {
   Pause as HoldIcon,
   PersonRemove as UnassignIcon,
   Download as DownloadIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Search as SearchIcon,
+  RestartAlt as RestartAltIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
@@ -89,7 +91,8 @@ const isProjectActive = (project) => {
 
 function ServiceRequestList() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +133,28 @@ function ServiceRequestList() {
 
   const [formData, setFormData] = useState(getInitialFormData());
   const [attachments, setAttachments] = useState([]);
+  const [filters, setFilters] = useState({
+    title: '',
+    status: '',
+    priority: '',
+    customerId: '',
+    managerId: '',
+    receivedFrom: '',
+    receivedTo: ''
+  });
+
+  const managerOptions = useMemo(() => {
+    const managerMap = new Map();
+    allRequests.forEach((request) => {
+      if (request.managerId && request.managerName) {
+        managerMap.set(request.managerId, request.managerName);
+      }
+    });
+    return Array.from(managerMap.entries()).map(([id, name]) => ({
+      id,
+      name
+    }));
+  }, [allRequests]);
 
   const filterAttachmentsByType = (items, type) => {
     if (!Array.isArray(items)) return [];
@@ -237,6 +262,52 @@ function ServiceRequestList() {
     }
   }, [formData.customerId, showForm, user?.id, user?.role]);
 
+  const applyFilters = (items, nextFilters = filters) => {
+    const normalizedTitle = nextFilters.title.trim().toLowerCase();
+    const fromDate = nextFilters.receivedFrom
+      ? formatDateToYYYYMMDD(nextFilters.receivedFrom)
+      : '';
+    const toDate = nextFilters.receivedTo
+      ? formatDateToYYYYMMDD(nextFilters.receivedTo)
+      : '';
+
+    const filtered = items.filter((request) => {
+      if (normalizedTitle && !request.title?.toLowerCase().includes(normalizedTitle)) {
+        return false;
+      }
+      if (nextFilters.status && request.status !== nextFilters.status) {
+        return false;
+      }
+      if (nextFilters.priority && request.priority !== nextFilters.priority) {
+        return false;
+      }
+      if (nextFilters.customerId && String(request.customerId) !== nextFilters.customerId) {
+        return false;
+      }
+      if (nextFilters.managerId && String(request.managerId || '') !== nextFilters.managerId) {
+        return false;
+      }
+      if (fromDate && (!request.receivedAt || request.receivedAt < fromDate)) {
+        return false;
+      }
+      if (toDate && (!request.receivedAt || request.receivedAt > toDate)) {
+        return false;
+      }
+      return true;
+    });
+
+    const sorted = filtered.sort((a, b) => {
+      const aDate = a.receivedAt || '';
+      const bDate = b.receivedAt || '';
+      if (aDate === bDate) {
+        return (b.id || 0) - (a.id || 0);
+      }
+      return aDate < bDate ? 1 : -1;
+    });
+
+    setFilteredRequests(sorted);
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -300,7 +371,8 @@ function ServiceRequestList() {
 
       setProjects(projectsForSelection);
       requestData = enrichRequestsWithProjectNames(requestData, projectsForLookup);
-      setRequests(requestData);
+      setAllRequests(requestData);
+      applyFilters(requestData);
       setError(null);
     } catch (err) {
       if (err.response?.status !== 403) {
@@ -309,6 +381,32 @@ function ServiceRequestList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFilterSearch = () => {
+    applyFilters([...allRequests]);
+  };
+
+  const handleFilterReset = () => {
+    const resetFilters = {
+      title: '',
+      status: '',
+      priority: '',
+      customerId: '',
+      managerId: '',
+      receivedFrom: '',
+      receivedTo: ''
+    };
+    setFilters(resetFilters);
+    applyFilters([...allRequests], resetFilters);
   };
 
   const handleInputChange = (e) => {
@@ -404,7 +502,7 @@ function ServiceRequestList() {
     const requestId = typeof request === 'object' ? request?.id : request;
     const targetRequest = typeof request === 'object'
       ? request
-      : requests.find((req) => req.id === requestId);
+      : allRequests.find((req) => req.id === requestId);
 
     setResolvingRequest(requestId);
     const editingCompleted = (targetRequest?.status || '') === 'RESOLVED';
@@ -1021,7 +1119,7 @@ function ServiceRequestList() {
   const handleExportToExcel = () => {
     const headers = ['요청 ID', '회사 명', '프로젝트 명', '요청자', '제목', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
 
-    const excelData = requests.map(req => [
+    const excelData = filteredRequests.map(req => [
       req.id,
       req.companyName || '-',
       req.projectName || '없음',
@@ -1144,6 +1242,137 @@ function ServiceRequestList() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+        <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            flexWrap="wrap"
+            sx={{ rowGap: 2, columnGap: 2 }}
+          >
+            <TextField
+              label="제목"
+              name="title"
+              value={filters.title}
+              onChange={handleFilterChange}
+              size="small"
+              sx={{ minWidth: 200 }}
+            />
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>상태</InputLabel>
+              <Select
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                label="상태"
+                size="small"
+              >
+                <MenuItem value="">전체</MenuItem>
+                {Object.keys(statusLabelMap).map((key) => (
+                  <MenuItem key={key} value={key}>
+                    {statusLabelMap[key]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>우선순위</InputLabel>
+              <Select
+                name="priority"
+                value={filters.priority}
+                onChange={handleFilterChange}
+                label="우선순위"
+                size="small"
+              >
+                <MenuItem value="">전체</MenuItem>
+                {Object.keys(priorityLabelMap).map((key) => (
+                  <MenuItem key={key} value={key}>
+                    {priorityLabelMap[key]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {user?.role === 'ROLE_ADMIN' && (
+              <FormControl sx={{ minWidth: 180 }}>
+                <InputLabel>요청자</InputLabel>
+                <Select
+                  name="customerId"
+                  value={filters.customerId}
+                  onChange={handleFilterChange}
+                  label="요청자"
+                  size="small"
+                >
+                  <MenuItem value="">전체</MenuItem>
+                  {customers.map((customer) => (
+                    <MenuItem key={customer.id} value={String(customer.id)}>
+                      {customer.username}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
+              <FormControl sx={{ minWidth: 180 }}>
+                <InputLabel>담당자</InputLabel>
+                <Select
+                  name="managerId"
+                  value={filters.managerId}
+                  onChange={handleFilterChange}
+                  label="담당자"
+                  size="small"
+                >
+                  <MenuItem value="">전체</MenuItem>
+                  {managerOptions.map((manager) => (
+                    <MenuItem key={manager.id} value={String(manager.id)}>
+                      {manager.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            <TextField
+              label="접수일자(시작)"
+              type="date"
+              name="receivedFrom"
+              value={filters.receivedFrom}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ minWidth: 170 }}
+            />
+            <TextField
+              label="접수일자(종료)"
+              type="date"
+              name="receivedTo"
+              value={filters.receivedTo}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ minWidth: 170 }}
+            />
+            <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, md: 'auto' } }}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<SearchIcon />}
+                onClick={handleFilterSearch}
+                sx={{ minWidth: 110 }}
+              >
+                조회
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                startIcon={<RestartAltIcon />}
+                onClick={handleFilterReset}
+                sx={{ minWidth: 110 }}
+              >
+                초기화
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
+
         {/* Create/Edit Form Dialog */}
         <Dialog open={showForm} onClose={handleCancel} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
           <form onSubmit={handleSubmit}>
@@ -1259,7 +1488,7 @@ function ServiceRequestList() {
                     label="관련 서비스 요청 (후속 요청인 경우)"
                   >
                     <MenuItem value="">없음 (새로운 요청)</MenuItem>
-                    {requests
+                    {allRequests
                       .filter(req => !editingRequest || req.id !== editingRequest.id)
                       .map(request => (
                         <MenuItem key={request.id} value={request.id}>
@@ -1750,7 +1979,7 @@ function ServiceRequestList() {
 
         <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
-            rows={requests}
+            rows={filteredRequests}
             columns={columns}
             pagination={false}
             hideFooterPagination
@@ -1758,6 +1987,11 @@ function ServiceRequestList() {
             disableRowSelectionOnClick
             onRowClick={(params) => handleDetailOpen(params.row)}
             getRowId={(row) => row.id}
+            initialState={{
+              sorting: {
+                sortModel: [{ field: 'receivedAt', sort: 'desc' }],
+              },
+            }}
             slots={{
               toolbar: CustomToolbar,
             }}

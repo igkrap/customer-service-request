@@ -177,11 +177,11 @@ public class ServiceRequestService {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
-        notificationService.sendServiceRequestCreated(serviceRequest);
+        notificationService.sendServiceRequestCreated(serviceRequest, customer.getUserId());
 
         return convertToDTO(serviceRequest);
     }
@@ -246,11 +246,11 @@ public class ServiceRequestService {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
-        notificationService.sendServiceRequestCreated(serviceRequest);
+        notificationService.sendServiceRequestCreated(serviceRequest, customer.getUserId());
 
         return convertToDTO(serviceRequest);
     }
@@ -352,7 +352,7 @@ public class ServiceRequestService {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
@@ -370,7 +370,10 @@ public class ServiceRequestService {
         }
 
         if (dto.getStatus() != oldStatus) {
-            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null) {
+                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+            }
         }
 
         if (dto.getStatus() != oldStatus) {
@@ -476,7 +479,10 @@ public class ServiceRequestService {
         }
 
         if (status != oldStatus) {
-            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null) {
+                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+            }
         }
 
         if (status != oldStatus) {
@@ -531,7 +537,7 @@ public class ServiceRequestService {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUsername());
+                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
@@ -549,7 +555,10 @@ public class ServiceRequestService {
         }
 
         if (status != oldStatus) {
-            notificationService.sendServiceRequestStatusUpdated(serviceRequest);
+            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+            if (customer != null) {
+                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+            }
         }
 
         if (status != oldStatus) {
