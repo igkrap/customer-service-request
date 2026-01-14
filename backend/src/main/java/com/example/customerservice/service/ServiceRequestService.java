@@ -170,18 +170,20 @@ public class ServiceRequestService {
             }
         }
 
+        String actorUserKey = getActorUserKey(userId);
+
         // Send email notification to manager if assigned
         if (dto.getManagerId() != null) {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
-            if (manager != null && !isActor(manager.getUserId(), userId)) {
+            if (manager != null && !isActor(manager.getUserId(), actorUserKey)) {
                 notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
-        if (!isActor(customer.getUserId(), userId)) {
+        if (!isActor(customer.getUserId(), actorUserKey)) {
             notificationService.sendServiceRequestCreated(serviceRequest, customer.getUserId());
         }
 
