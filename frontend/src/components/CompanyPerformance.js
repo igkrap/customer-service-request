@@ -38,6 +38,9 @@ function CompanyPerformance() {
     return normalized || 'UNKNOWN';
   };
   const normalizeId = (value) => (value === null || value === undefined ? null : String(value));
+  const normalizeProjectName = (value) => (
+    typeof value === 'string' && value.trim().length > 0 ? value.trim().toLowerCase() : null
+  );
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -107,11 +110,21 @@ function CompanyPerformance() {
         const projectMap = new Map(
           projectsResponse.data.map((project) => [normalizeId(project.id), project])
         );
+        const projectNameMap = new Map(
+          projectsResponse.data
+            .map((project) => [normalizeProjectName(project.projectName), project])
+            .filter(([name]) => name)
+        );
         const stats = new Map();
 
         requestsResponse.data.forEach((request) => {
           const projectKey = normalizeId(request.projectId);
-          const project = projectKey ? projectMap.get(projectKey) : null;
+          const projectNameKey = normalizeProjectName(request.projectName);
+          const project = projectKey
+            ? projectMap.get(projectKey)
+            : projectNameKey
+              ? projectNameMap.get(projectNameKey)
+              : null;
           if (!project) {
             return;
           }
@@ -123,7 +136,8 @@ function CompanyPerformance() {
           if (normalizedStatus === 'CANCELLED') {
             return;
           }
-          const entry = stats.get(projectKey) || {
+          const statsKey = normalizeId(project.id);
+          const entry = stats.get(statsKey) || {
             totalRequests: 0,
             resolvedRequests: 0,
             actualManDays: 0
@@ -136,7 +150,7 @@ function CompanyPerformance() {
               entry.actualManDays += hoursSpent;
             }
           }
-          stats.set(projectKey, entry);
+          stats.set(statsKey, entry);
         });
 
         const nextRows = projectsResponse.data.map((project) => {
