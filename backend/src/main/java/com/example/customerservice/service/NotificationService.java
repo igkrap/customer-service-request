@@ -35,7 +35,12 @@ public class NotificationService {
 
     public void sendServiceRequestStatusUpdated(ServiceRequest serviceRequest, String recipientUserId) {
         String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
-        String message = String.format("서비스 요청 상태가 변경되었습니다: %s (%s)", serviceRequest.getTitle(), status);
+        String message;
+        if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
+            message = String.format("%s%s이 처리되었습니다.", formatProjectPrefix(serviceRequest), serviceRequest.getTitle());
+        } else {
+            message = String.format("서비스 요청 상태가 변경되었습니다: %s (%s)", serviceRequest.getTitle(), status);
+        }
         NotificationMessage payload = new NotificationMessage(
             "SERVICE_REQUEST_STATUS_UPDATED",
             serviceRequest.getId(),
