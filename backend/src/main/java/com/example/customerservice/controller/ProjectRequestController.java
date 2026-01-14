@@ -17,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/project-requests")
-@CrossOrigin(origins = "http://localhost:3000")
 public class ProjectRequestController {
 
     @Autowired
