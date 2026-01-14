@@ -44,7 +44,6 @@ function CompanyPerformance() {
   const [error, setError] = useState(null);
 
   const formatPercent = (value) => (Number.isFinite(Number(value)) ? `${Number(value)}%` : '-');
-  const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value).toFixed(1) : '-');
 
   console.log('[CompanyPerformance] render', {
     selectedCompanyId,
@@ -59,14 +58,12 @@ function CompanyPerformance() {
     {
       field: 'plannedManDays',
       headerName: '계획 공수 (m/d)',
-      width: 150,
-      valueFormatter: ({ value }) => formatManDays(value)
+      width: 150
     },
     {
       field: 'actualManDays',
       headerName: '투입 공수 (m/d)',
-      width: 150,
-      valueFormatter: ({ value }) => formatManDays(value)
+      width: 150
     },
     {
       field: 'achievementRate',
