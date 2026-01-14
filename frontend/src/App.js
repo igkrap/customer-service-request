@@ -366,7 +366,7 @@ function Dashboard() {
                       fontWeight: 600,
                       fontSize: 11,
                       lineHeight: 1.2,
-                      px: drawerOpen ? 2.5 : 0.5,
+                      px: 1.5,
                       py: 0.75,
                       minHeight: 'auto',
                       width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
@@ -376,7 +376,7 @@ function Dashboard() {
                       overflow: 'visible',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: drawerOpen ? 'flex-start' : 'center',
+                      justifyContent: 'center',
                       mx: 'auto',
                       textAlign: 'center'
                     }}
@@ -385,9 +385,9 @@ function Dashboard() {
                       <Box
                         component="span"
                         sx={{
-                          fontSize: drawerOpen ? 11 : 10,
+                          fontSize: 11,
                           fontWeight: 700,
-                          letterSpacing: drawerOpen ? 0.2 : 0.8
+                          letterSpacing: 0.6
                         }}
                       >
                         {groupLabel}
