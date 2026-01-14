@@ -51,7 +51,6 @@ function MonthlyCompanyPerformance() {
         ]);
 
         const userMap = new Map(usersResponse.data.map((user) => [user.id, user]));
-        const companyMap = new Map(companiesResponse.data.map((company) => [company.id, company]));
         const stats = new Map();
 
         requestsResponse.data.forEach((request) => {
@@ -75,14 +74,17 @@ function MonthlyCompanyPerformance() {
           stats.set(customer.companyId, entry);
         });
 
-        const nextRows = Array.from(stats.entries()).map(([companyId, entry]) => {
-          const company = companyMap.get(companyId);
+        const nextRows = companiesResponse.data.map((company) => {
+          const entry = stats.get(company.id) || {
+            totalRequests: 0,
+            resolvedRequests: 0
+          };
           const completionRate = entry.totalRequests
             ? Math.round((entry.resolvedRequests / entry.totalRequests) * 100)
             : 0;
           return {
-            id: companyId,
-            companyName: company?.companyName || `회사 ${companyId}`,
+            id: company.id,
+            companyName: company?.companyName || `회사 ${company.id}`,
             totalRequests: entry.totalRequests,
             resolvedRequests: entry.resolvedRequests,
             completionRate

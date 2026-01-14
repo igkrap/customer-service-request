@@ -35,9 +35,9 @@ function AnnualManagerPerformance() {
     },
     {
       field: 'hoursSpent',
-      headerName: '투입 시간',
+      headerName: '투입 공수 (m/d)',
       width: 140,
-      valueFormatter: ({ value }) => `${(Number(value) || 0).toFixed(1)}h`
+      valueFormatter: ({ value }) => `${(Number(value) || 0).toFixed(1)}m/d`
     }
   ]), []);
 

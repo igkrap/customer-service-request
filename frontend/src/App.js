@@ -373,7 +373,9 @@ function Dashboard() {
                       overflow: 'hidden',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: drawerOpen ? 'flex-start' : 'center'
+                      justifyContent: drawerOpen ? 'flex-start' : 'center',
+                      mx: 'auto',
+                      textAlign: 'center'
                     }}
                   >
                     {group.label}
@@ -381,16 +383,16 @@ function Dashboard() {
                   {visibleItems.map((item) => (
                     <ListItem key={item.key} disablePadding>
                       <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
-                        <ListItemButton
-                          selected={activeTab === item.key}
-                          onClick={() => setActiveTab(item.key)}
-                          sx={{
-                            height: 48, // Fixed height
-                            px: drawerOpen ? 2.5 : 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: drawerOpen ? 'flex-start' : 'center',
-                            '&.Mui-selected': {
+                      <ListItemButton
+                        selected={activeTab === item.key}
+                        onClick={() => setActiveTab(item.key)}
+                        sx={{
+                          height: 48, // Fixed height
+                          px: drawerOpen ? 2.5 : 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: drawerOpen ? 'flex-start' : 'center',
+                          '&.Mui-selected': {
                               backgroundColor: 'primary.light',
                               color: 'primary.contrastText',
                               '&:hover': {
@@ -402,15 +404,15 @@ function Dashboard() {
                             },
                           }}
                         >
-                          <ListItemIcon
-                            sx={{
-                              minWidth: drawerOpen ? 40 : 0,
-                              width: 40,
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                            }}
-                          >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: drawerOpen ? 40 : 0,
+                            width: 40,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
                             {item.icon}
                           </ListItemIcon>
                           {drawerOpen && (
@@ -437,7 +439,7 @@ function Dashboard() {
             })}
             </List>
           </Box>
-          <Box sx={{ mt: 'auto', pb: 1 }}>
+          <Box sx={{ mt: 'auto', pb: 2 }}>
             <Divider />
             <List>
               <ListItem disablePadding>
