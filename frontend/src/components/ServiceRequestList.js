@@ -1259,7 +1259,18 @@ function ServiceRequestList() {
               sx={{ minWidth: 200 }}
             />
             <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>상태</InputLabel>
+              <InputLabel
+                sx={{
+                  top: '50%',
+                  transform: 'translate(14px, -50%) scale(1)',
+                  '&.MuiInputLabel-shrink': {
+                    top: 0,
+                    transform: 'translate(14px, -9px) scale(0.75)'
+                  }
+                }}
+              >
+                상태
+              </InputLabel>
               <Select
                 name="status"
                 value={filters.status}
@@ -1284,7 +1295,18 @@ function ServiceRequestList() {
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>우선순위</InputLabel>
+              <InputLabel
+                sx={{
+                  top: '50%',
+                  transform: 'translate(14px, -50%) scale(1)',
+                  '&.MuiInputLabel-shrink': {
+                    top: 0,
+                    transform: 'translate(14px, -9px) scale(0.75)'
+                  }
+                }}
+              >
+                우선순위
+              </InputLabel>
               <Select
                 name="priority"
                 value={filters.priority}
@@ -1310,7 +1332,18 @@ function ServiceRequestList() {
             </FormControl>
             {user?.role === 'ROLE_ADMIN' && (
               <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel>요청자</InputLabel>
+                <InputLabel
+                  sx={{
+                    top: '50%',
+                    transform: 'translate(14px, -50%) scale(1)',
+                    '&.MuiInputLabel-shrink': {
+                      top: 0,
+                      transform: 'translate(14px, -9px) scale(0.75)'
+                    }
+                  }}
+                >
+                  요청자
+                </InputLabel>
                 <Select
                   name="customerId"
                   value={filters.customerId}
@@ -1338,7 +1371,18 @@ function ServiceRequestList() {
             )}
             {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
               <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel>담당자</InputLabel>
+                <InputLabel
+                  sx={{
+                    top: '50%',
+                    transform: 'translate(14px, -50%) scale(1)',
+                    '&.MuiInputLabel-shrink': {
+                      top: 0,
+                      transform: 'translate(14px, -9px) scale(0.75)'
+                    }
+                  }}
+                >
+                  담당자
+                </InputLabel>
                 <Select
                   name="managerId"
                   value={filters.managerId}
