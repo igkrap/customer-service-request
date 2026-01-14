@@ -257,7 +257,7 @@ function Dashboard() {
             width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
             transition: 'width 0.3s ease',
-            overflowX: 'hidden',
+            overflow: 'hidden',
             position: 'fixed',
             height: '100vh',
             zIndex: 1200,
@@ -430,46 +430,49 @@ function Dashboard() {
             })}
             </List>
           </Box>
-          <List>
-            <ListItem disablePadding>
-              <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
-                <ListItemButton
-                  onClick={logout}
-                  sx={{
-                    height: 48, // Fixed height
-                    px: 2.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <ListItemIcon
+          <Box sx={{ mt: 'auto' }}>
+            <Divider />
+            <List>
+              <ListItem disablePadding>
+                <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
+                  <ListItemButton
+                    onClick={logout}
                     sx={{
-                      minWidth: 40, // Fixed width
+                      height: 48, // Fixed height
+                      px: 2.5,
                       display: 'flex',
-                      justifyContent: 'center',
                       alignItems: 'center',
                     }}
                   >
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  {drawerOpen && (
-                    <ListItemText
-                      primary="로그아웃"
+                    <ListItemIcon
                       sx={{
-                        ml: 1,
-                        '& .MuiTypography-root': {
-                          lineHeight: '24px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }
+                        minWidth: 40, // Fixed width
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                       }}
-                    />
-                  )}
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
-          </List>
+                    >
+                      <LogoutIcon />
+                    </ListItemIcon>
+                    {drawerOpen && (
+                      <ListItemText
+                        primary="로그아웃"
+                        sx={{
+                          ml: 1,
+                          '& .MuiTypography-root': {
+                            lineHeight: '24px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            </List>
+          </Box>
         </Box>
       </Drawer>
 
