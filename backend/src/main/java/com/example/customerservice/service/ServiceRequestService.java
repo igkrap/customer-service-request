@@ -172,6 +172,8 @@ public class ServiceRequestService {
 
         String actorUserKey = getActorUserKey(userId);
 
+        populateProjectName(serviceRequest);
+
         // Send email notification to manager if assigned
         if (dto.getManagerId() != null) {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
@@ -179,7 +181,7 @@ public class ServiceRequestService {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null && !isActor(manager.getUserId(), actorUserKey)) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
+                notificationService.sendServiceRequestCreated(serviceRequest, manager.getUserId());
             }
         }
 
@@ -247,6 +249,8 @@ public class ServiceRequestService {
             }
         }
 
+        populateProjectName(serviceRequest);
+
         // Send email notification to manager if assigned
         if (dto.getManagerId() != null) {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
@@ -254,7 +258,7 @@ public class ServiceRequestService {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
             if (manager != null) {
-                notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
+                notificationService.sendServiceRequestCreated(serviceRequest, manager.getUserId());
             }
         }
 
@@ -372,6 +376,7 @@ public class ServiceRequestService {
 
         // 2. If status changed, notify customer
         if (dto.getStatus() != oldStatus) {
+            populateProjectName(serviceRequest);
             User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
             if (customer != null && customer.getEmail() != null) {
                 if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
@@ -382,7 +387,11 @@ public class ServiceRequestService {
                 }
             }
             if (customer != null && !isActor(customer.getUserId(), actorUserKey)) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                if (dto.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                    notificationService.sendManagerAssigned(serviceRequest, customer.getUserId(), null);
+                } else {
+                    notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                }
             }
         }
 
@@ -478,6 +487,7 @@ public class ServiceRequestService {
         // Send email notification to customer if status changed
         String actorUserKey = getActorUserKey(actorUserId);
         if (status != oldStatus) {
+            populateProjectName(serviceRequest);
             User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
             if (customer != null && customer.getEmail() != null) {
                 if (status == ServiceRequest.RequestStatus.RESOLVED) {
@@ -488,7 +498,11 @@ public class ServiceRequestService {
                 }
             }
             if (customer != null && !isActor(customer.getUserId(), actorUserKey)) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                if (status == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                    notificationService.sendManagerAssigned(serviceRequest, customer.getUserId(), null);
+                } else {
+                    notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                }
             }
         }
 
@@ -552,6 +566,7 @@ public class ServiceRequestService {
 
         // 2. If status changed, notify customer
         if (status != oldStatus) {
+            populateProjectName(serviceRequest);
             User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
             if (customer != null && customer.getEmail() != null) {
                 if (status == ServiceRequest.RequestStatus.RESOLVED) {
@@ -562,7 +577,11 @@ public class ServiceRequestService {
                 }
             }
             if (customer != null && !isActor(customer.getUserId(), actorUserKey)) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                if (status == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                    notificationService.sendManagerAssigned(serviceRequest, customer.getUserId(), null);
+                } else {
+                    notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+                }
             }
         }
 
@@ -758,7 +777,22 @@ public class ServiceRequestService {
             if (actorUserKey != null && isActor(manager.getUserId(), actorUserKey)) {
                 continue;
             }
-            notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
+            notificationService.sendServiceRequestCreated(serviceRequest, manager.getUserId());
         }
+    }
+
+    private void populateProjectName(ServiceRequest serviceRequest) {
+        if (serviceRequest == null) {
+            return;
+        }
+        if (serviceRequest.getProjectName() != null && !serviceRequest.getProjectName().isBlank()) {
+            return;
+        }
+        if (serviceRequest.getProjectId() == null) {
+            return;
+        }
+        projectMapper.findById(serviceRequest.getProjectId())
+            .map(Project::getProjectName)
+            .ifPresent(serviceRequest::setProjectName);
     }
 }

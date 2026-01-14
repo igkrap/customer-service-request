@@ -21,7 +21,7 @@ public class NotificationService {
     }
 
     public void sendServiceRequestCreated(ServiceRequest serviceRequest, String recipientUserId) {
-        String message = String.format("새 서비스 요청이 등록되었습니다: %s", serviceRequest.getTitle());
+        String message = String.format("%s%s이 등록되었습니다.", formatProjectPrefix(serviceRequest), serviceRequest.getTitle());
         NotificationMessage payload = new NotificationMessage(
                 "SERVICE_REQUEST_CREATED",
                 serviceRequest.getId(),
@@ -49,7 +49,7 @@ public class NotificationService {
 
     public void sendManagerAssigned(ServiceRequest serviceRequest, String recipientUserId, String managerName) {
         String status = serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null;
-        String message = String.format("담당자가 배정되었습니다: %s (%s)", serviceRequest.getTitle(), managerName);
+        String message = String.format("%s%s이 접수되었습니다.", formatProjectPrefix(serviceRequest), serviceRequest.getTitle());
         NotificationMessage payload = new NotificationMessage(
             "MANAGER_ASSIGNED",
             serviceRequest.getId(),
@@ -82,5 +82,16 @@ public class NotificationService {
             webSocketHandler.sendToUser(recipientUserId, objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException ignored) {
         }
+    }
+
+    private String formatProjectPrefix(ServiceRequest serviceRequest) {
+        if (serviceRequest == null) {
+            return "";
+        }
+        String projectName = serviceRequest.getProjectName();
+        if (projectName == null || projectName.isBlank()) {
+            return "";
+        }
+        return String.format("[%s] ", projectName);
     }
 }
