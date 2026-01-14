@@ -94,6 +94,9 @@ public class SecurityConfig {
                         // Report endpoints - require ADMIN role
                         .requestMatchers("/api/reports/**").hasRole("ADMIN")
 
+                        // Notification endpoints - require ADMIN role
+                        .requestMatchers("/api/notifications/**").hasRole("ADMIN")
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 );

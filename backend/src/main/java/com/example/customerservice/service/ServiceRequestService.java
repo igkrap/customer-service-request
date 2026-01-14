@@ -170,18 +170,22 @@ public class ServiceRequestService {
             }
         }
 
+        String actorUserKey = getActorUserKey(userId);
+
         // Send email notification to manager if assigned
         if (dto.getManagerId() != null) {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendServiceRequestCreatedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
-            if (manager != null) {
+            if (manager != null && !isActor(manager.getUserId(), actorUserKey)) {
                 notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
 
-        notificationService.sendServiceRequestCreated(serviceRequest, customer.getUserId());
+        if (!isActor(customer.getUserId(), actorUserKey)) {
+            notificationService.sendServiceRequestCreated(serviceRequest, customer.getUserId());
+        }
 
         return convertToDTO(serviceRequest);
     }
@@ -345,13 +349,15 @@ public class ServiceRequestService {
         }
 
         // Send email notifications
+        String actorUserKey = getActorUserKey(actorUserId);
+
         // 1. If manager changed, notify new manager
         if (dto.getManagerId() != null && !dto.getManagerId().equals(oldManagerId)) {
             User manager = userMapper.findById(dto.getManagerId()).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
-            if (manager != null) {
+            if (manager != null && !isActor(manager.getUserId(), actorUserKey)) {
                 notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
@@ -366,13 +372,6 @@ public class ServiceRequestService {
                     emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
                         oldStatus != null ? oldStatus.name() : "UNKNOWN", dto.getStatus().name());
                 }
-            }
-        }
-
-        if (dto.getStatus() != oldStatus) {
-            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
-            if (customer != null) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
             }
         }
 
@@ -479,13 +478,6 @@ public class ServiceRequestService {
         }
 
         if (status != oldStatus) {
-            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
-            if (customer != null) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
-            }
-        }
-
-        if (status != oldStatus) {
             recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
                     oldStatus != null ? oldStatus.name() : null,
                     status != null ? status.name() : null,
@@ -530,13 +522,15 @@ public class ServiceRequestService {
         serviceRequestMapper.update(serviceRequest);
 
         // Send email notifications
+        String actorUserKey = getActorUserKey(actorUserId);
+
         // 1. If manager assigned, notify manager
         if (status == ServiceRequest.RequestStatus.IN_PROGRESS && oldStatus != ServiceRequest.RequestStatus.IN_PROGRESS && managerId != null) {
             User manager = userMapper.findById(managerId).orElse(null);
             if (manager != null && manager.getEmail() != null) {
                 emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
             }
-            if (manager != null) {
+            if (manager != null && !isActor(manager.getUserId(), actorUserKey)) {
                 notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
             }
         }
@@ -551,13 +545,6 @@ public class ServiceRequestService {
                     emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
                         oldStatus != null ? oldStatus.name() : "UNKNOWN", status.name());
                 }
-            }
-        }
-
-        if (status != oldStatus) {
-            User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
-            if (customer != null) {
-                notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
             }
         }
 
@@ -723,5 +710,21 @@ public class ServiceRequestService {
 
     private String getTodayDateString() {
         return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    }
+
+    private String getActorUserKey(Long actorUserId) {
+        if (actorUserId == null) {
+            return null;
+        }
+        return userMapper.findById(actorUserId)
+            .map(User::getUserId)
+            .orElse(null);
+    }
+
+    private boolean isActor(String recipientUserId, String actorUserId) {
+        if (recipientUserId == null || actorUserId == null) {
+            return false;
+        }
+        return recipientUserId.equals(actorUserId);
     }
 }

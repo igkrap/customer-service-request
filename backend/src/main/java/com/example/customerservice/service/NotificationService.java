@@ -61,6 +61,19 @@ public class NotificationService {
         sendToUser(recipientUserId, payload);
     }
 
+    public void sendAnnouncement(String recipientUserId, String title, String message) {
+        String resolvedTitle = title == null || title.isBlank() ? "공지" : title;
+        NotificationMessage payload = new NotificationMessage(
+            "ANNOUNCEMENT",
+            null,
+            resolvedTitle,
+            null,
+            message,
+            LocalDateTime.now()
+        );
+        sendToUser(recipientUserId, payload);
+    }
+
     private void sendToUser(String recipientUserId, NotificationMessage payload) {
         if (recipientUserId == null || recipientUserId.isBlank()) {
             return;
