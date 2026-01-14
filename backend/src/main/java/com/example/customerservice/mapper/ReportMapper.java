@@ -40,11 +40,7 @@ public interface ReportMapper {
             FROM projects p
             JOIN companies c ON p.company_id = c.id
             LEFT JOIN service_requests sr ON sr.project_id = p.id
-            <where>
-                <if test="companyId != null">
-                    p.company_id = #{companyId}
-                </if>
-            </where>
+            WHERE (#{companyId} IS NULL OR p.company_id = #{companyId})
             GROUP BY p.id, p.company_id, c.company_name, p.project_name, p.contract_man_days
             ORDER BY c.company_name, p.project_name
             """)
