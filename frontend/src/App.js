@@ -20,6 +20,7 @@ import RagManagement from './components/RagManagement';
 import AnnualManagerPerformance from './components/AnnualManagerPerformance';
 import CompanyPerformance from './components/CompanyPerformance';
 import OverallPerformance from './components/OverallPerformance';
+import AnnouncementCenter from './components/AnnouncementCenter';
 import {
   Box,
   Drawer,
@@ -99,6 +100,8 @@ function Dashboard() {
         return { label: '상태 변경', color: 'info' };
       case 'MANAGER_ASSIGNED':
         return { label: '담당자 배정', color: 'success' };
+      case 'ANNOUNCEMENT':
+        return { label: '공지', color: 'warning' };
       default:
         return { label: '알림', color: 'default' };
     }
@@ -174,6 +177,7 @@ function Dashboard() {
       items: [
         { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
         { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
+        { key: 'announcementcenter', label: '공지 알림 전송', icon: <NotificationsIcon />, show: isAdmin },
         { key: 'llmsettings', label: 'LLM 설정', icon: <SettingsIcon />, show: isAdmin },
         { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <KnowledgeIcon />, show: isAdmin }
       ]
@@ -193,6 +197,7 @@ function Dashboard() {
     if (activeTab === 'managerreport' && isAdmin) return <ManagerMonthlyReport />;
     if (activeTab === 'emailsettings' && isAdmin) return <EmailSettings />;
     if (activeTab === 'emailtemplates' && isAdmin) return <EmailTemplates />;
+    if (activeTab === 'announcementcenter' && isAdmin) return <AnnouncementCenter />;
     if (activeTab === 'llmsettings' && isAdmin) return <LlmSettings />;
     if (activeTab === 'ragmanagement' && isAdmin) return <RagManagement />;
     if (activeTab === 'annualmanagerperformance' && isAdmin) return <AnnualManagerPerformance />;

@@ -17,6 +17,23 @@ function AnnualManagerPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const normalizeNumber = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const normalizeRow = (row) => ({
+    id: row.id ?? row.managerId ?? row.manager_id,
+    managerName: row.managerName ?? row.manager_name ?? '',
+    totalRequests: normalizeNumber(row.totalRequests ?? row.total_requests),
+    resolvedRequests: normalizeNumber(row.resolvedRequests ?? row.resolved_requests),
+    completionRate: normalizeNumber(row.completionRate ?? row.completion_rate),
+    hoursSpent: normalizeNumber(row.hoursSpent ?? row.hours_spent)
+  });
+
   const columns = useMemo(() => ([
     { field: 'managerName', headerName: '매니저', flex: 1, minWidth: 160 },
     { field: 'totalRequests', headerName: '접수 건수', width: 140 },
@@ -25,13 +42,13 @@ function AnnualManagerPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueFormatter: ({ value }) => `${Number.isFinite(value) ? value : 0}%`
+      renderCell: (params) => (params.value === null || params.value === undefined ? '-' : `${params.value}%`)
     },
     {
       field: 'hoursSpent',
       headerName: '투입 공수 (m/d)',
       width: 140,
-      valueFormatter: ({ value }) => `${(Number(value) || 0).toFixed(1)}m/d`
+      renderCell: (params) => (params.value === null || params.value === undefined ? '-' : `${params.value}m/d`)
     }
   ]), []);
 
@@ -42,7 +59,8 @@ function AnnualManagerPerformance() {
       try {
         const yearNumber = Number(selectedYear);
         const response = await reportAPI.getAnnualManagerPerformance(yearNumber);
-        setRows(response.data || []);
+        const normalized = (response.data || []).map(normalizeRow);
+        setRows(normalized);
       } catch (err) {
         setError(`연간 매니저별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       } finally {
