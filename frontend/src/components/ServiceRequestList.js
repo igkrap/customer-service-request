@@ -1203,12 +1203,8 @@ function ServiceRequestList() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <Typography
             variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+            fontWeight={700}
+            color="text.primary"
           >
             {user?.role === 'ROLE_CUSTOMER' ? '서비스 요청 등록' :
              user?.role === 'ROLE_MANAGER' ? '서비스 요청 처리' :
@@ -1259,28 +1255,15 @@ function ServiceRequestList() {
               sx={{ minWidth: 200 }}
             />
             <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel
-                sx={{
-                  top: '50%',
-                  transform: 'translate(14px, -50%) scale(1)',
-                  '&.MuiInputLabel-shrink': {
-                    top: 0,
-                    transform: 'translate(14px, -9px) scale(0.75)'
-                  }
-                }}
-              >
-                상태
-              </InputLabel>
               <Select
                 name="status"
                 value={filters.status}
                 onChange={handleFilterChange}
-                label="상태"
                 size="small"
                 displayEmpty
                 renderValue={(selected) => {
                   if (!selected) {
-                    return <Typography color="text.secondary">전체</Typography>;
+                    return <Typography color="text.secondary">상태</Typography>;
                   }
                   return getStatusLabel(selected);
                 }}
@@ -1295,28 +1278,15 @@ function ServiceRequestList() {
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel
-                sx={{
-                  top: '50%',
-                  transform: 'translate(14px, -50%) scale(1)',
-                  '&.MuiInputLabel-shrink': {
-                    top: 0,
-                    transform: 'translate(14px, -9px) scale(0.75)'
-                  }
-                }}
-              >
-                우선순위
-              </InputLabel>
               <Select
                 name="priority"
                 value={filters.priority}
                 onChange={handleFilterChange}
-                label="우선순위"
                 size="small"
                 displayEmpty
                 renderValue={(selected) => {
                   if (!selected) {
-                    return <Typography color="text.secondary">전체</Typography>;
+                    return <Typography color="text.secondary">우선순위</Typography>;
                   }
                   return getPriorityLabel(selected);
                 }}
@@ -1332,28 +1302,15 @@ function ServiceRequestList() {
             </FormControl>
             {user?.role === 'ROLE_ADMIN' && (
               <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel
-                  sx={{
-                    top: '50%',
-                    transform: 'translate(14px, -50%) scale(1)',
-                    '&.MuiInputLabel-shrink': {
-                      top: 0,
-                      transform: 'translate(14px, -9px) scale(0.75)'
-                    }
-                  }}
-                >
-                  요청자
-                </InputLabel>
                 <Select
                   name="customerId"
                   value={filters.customerId}
                   onChange={handleFilterChange}
-                  label="요청자"
                   size="small"
                   displayEmpty
                   renderValue={(selected) => {
                     if (!selected) {
-                      return <Typography color="text.secondary">전체</Typography>;
+                      return <Typography color="text.secondary">요청자</Typography>;
                     }
                     const customer = customers.find((item) => String(item.id) === String(selected));
                     return customer?.username || '전체';
@@ -1371,28 +1328,15 @@ function ServiceRequestList() {
             )}
             {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MANAGER') && (
               <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel
-                  sx={{
-                    top: '50%',
-                    transform: 'translate(14px, -50%) scale(1)',
-                    '&.MuiInputLabel-shrink': {
-                      top: 0,
-                      transform: 'translate(14px, -9px) scale(0.75)'
-                    }
-                  }}
-                >
-                  담당자
-                </InputLabel>
                 <Select
                   name="managerId"
                   value={filters.managerId}
                   onChange={handleFilterChange}
-                  label="담당자"
                   size="small"
                   displayEmpty
                   renderValue={(selected) => {
                     if (!selected) {
-                      return <Typography color="text.secondary">전체</Typography>;
+                      return <Typography color="text.secondary">담당자</Typography>;
                     }
                     const manager = managerOptions.find((item) => String(item.id) === String(selected));
                     return manager?.name || '전체';

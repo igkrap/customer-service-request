@@ -35,7 +35,7 @@ function MonthlyCompanyPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueFormatter: ({ value }) => `${value}%`
+      valueFormatter: ({ value }) => `${Number.isFinite(value) ? value : 0}%`
     }
   ]), []);
 
