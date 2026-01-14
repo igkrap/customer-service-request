@@ -150,8 +150,8 @@ function Dashboard() {
 
   const menuGroups = [
     {
-      label: '기본 메뉴',
-      shortLabel: '기본',
+      label: '메인 메뉴',
+      shortLabel: '메인',
       items: [
         { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
         {
