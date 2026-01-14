@@ -20,6 +20,7 @@ import RagManagement from './components/RagManagement';
 import AnnualManagerPerformance from './components/AnnualManagerPerformance';
 import CompanyPerformance from './components/CompanyPerformance';
 import OverallPerformance from './components/OverallPerformance';
+import AnnouncementCenter from './components/AnnouncementCenter';
 import {
   Box,
   Drawer,
@@ -88,6 +89,7 @@ function Dashboard() {
   const [notification, setNotification] = useState({
     open: false,
     message: '',
+    createdAt: null,
   });
   const [notificationList, setNotificationList] = useState([]);
 
@@ -97,8 +99,12 @@ function Dashboard() {
         return { label: '신규 요청', color: 'primary' };
       case 'SERVICE_REQUEST_STATUS_UPDATED':
         return { label: '상태 변경', color: 'info' };
+      case 'SERVICE_REQUEST_RESOLVED':
+        return { label: '처리 완료', color: 'success' };
       case 'MANAGER_ASSIGNED':
         return { label: '담당자 배정', color: 'success' };
+      case 'ANNOUNCEMENT':
+        return { label: '공지', color: 'warning' };
       default:
         return { label: '알림', color: 'default' };
     }
@@ -109,6 +115,15 @@ function Dashboard() {
     if (isManager) return '매니저';
     if (isCustomer) return '유저';
     return '사용자';
+  };
+
+  const formatNotificationTime = (value) => {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    return date.toLocaleString('ko-KR');
   };
 
   const renderUnauthorized = () => (
@@ -174,6 +189,7 @@ function Dashboard() {
       items: [
         { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
         { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
+        { key: 'announcementcenter', label: '공지 알림 전송', icon: <NotificationsIcon />, show: isAdmin },
         { key: 'llmsettings', label: 'LLM 설정', icon: <SettingsIcon />, show: isAdmin },
         { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <KnowledgeIcon />, show: isAdmin }
       ]
@@ -193,6 +209,7 @@ function Dashboard() {
     if (activeTab === 'managerreport' && isAdmin) return <ManagerMonthlyReport />;
     if (activeTab === 'emailsettings' && isAdmin) return <EmailSettings />;
     if (activeTab === 'emailtemplates' && isAdmin) return <EmailTemplates />;
+    if (activeTab === 'announcementcenter' && isAdmin) return <AnnouncementCenter />;
     if (activeTab === 'llmsettings' && isAdmin) return <LlmSettings />;
     if (activeTab === 'ragmanagement' && isAdmin) return <RagManagement />;
     if (activeTab === 'annualmanagerperformance' && isAdmin) return <AnnualManagerPerformance />;
@@ -216,7 +233,7 @@ function Dashboard() {
         const message = payload.message || '새 알림이 도착했습니다.';
         const type = payload.type || 'GENERAL';
         const createdAt = payload.createdAt ? new Date(payload.createdAt) : new Date();
-        setNotification({ open: true, message });
+        setNotification({ open: true, message, createdAt });
         setNotificationList((prev) => [
           {
             id: `${createdAt.getTime()}-${prev.length}`,
@@ -227,13 +244,14 @@ function Dashboard() {
           ...prev,
         ]);
       } catch (error) {
-        setNotification({ open: true, message: '새 알림이 도착했습니다.' });
+        const createdAt = new Date();
+        setNotification({ open: true, message: '새 알림이 도착했습니다.', createdAt });
         setNotificationList((prev) => [
           {
             id: `${Date.now()}-${prev.length}`,
             message: '새 알림이 도착했습니다.',
             type: 'GENERAL',
-            createdAt: new Date(),
+            createdAt,
           },
           ...prev,
         ]);
@@ -677,10 +695,15 @@ function Dashboard() {
                       label={getNotificationTypeMeta(item.type).label}
                       color={getNotificationTypeMeta(item.type).color}
                       size="small"
+                      sx={{
+                        width: 96,
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
                     />
                     <ListItemText
                       primary={item.message}
-                      secondary={item.createdAt.toLocaleString('ko-KR')}
+                      secondary={formatNotificationTime(item.createdAt)}
                     />
                   </Box>
                 </ListItem>
@@ -701,7 +724,14 @@ function Dashboard() {
           severity="info"
           variant="filled"
         >
-          {notification.message}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="body2">{notification.message}</Typography>
+            {notification.createdAt && (
+              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                {formatNotificationTime(notification.createdAt)}
+              </Typography>
+            )}
+          </Box>
         </Alert>
       </Snackbar>
     </Box>

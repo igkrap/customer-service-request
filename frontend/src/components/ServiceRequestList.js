@@ -391,8 +391,8 @@ function ServiceRequestList() {
     }));
   };
 
-  const handleFilterSearch = () => {
-    applyFilters([...allRequests]);
+  const handleFilterSearch = async () => {
+    await fetchData();
   };
 
   const handleFilterReset = () => {

@@ -151,6 +151,11 @@ export const attachmentAPI = {
   delete: (id) => api.delete(`/attachments/${id}`),
 };
 
+// Notification API
+export const notificationAPI = {
+  sendAnnouncement: (payload) => api.post('/notifications/announcements', payload)
+};
+
 // Company API
 export const companyAPI = {
   getAll: () => api.get('/companies'),

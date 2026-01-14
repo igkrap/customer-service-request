@@ -2,7 +2,11 @@ package com.example.customerservice.config;
 
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.CorsRegistration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -29,16 +33,37 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         CorsRegistration registration = registry.addMapping("/**");
-        if (allowedOrigins.length > 0) {
-            registration.allowedOrigins(allowedOrigins);
-        }
-        if (allowedMethods.length > 0) {
-            registration.allowedMethods(allowedMethods);
-        }
-        if (allowedHeaders.length > 0) {
-            registration.allowedHeaders(allowedHeaders);
-        }
+        registration.allowedOrigins(resolveAllowedOrigins());
+        registration.allowedMethods(resolveAllowedMethods());
+        registration.allowedHeaders(resolveAllowedHeaders());
         registration.allowCredentials(allowCredentials);
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(resolveAllowedOrigins()));
+        configuration.setAllowedMethods(Arrays.asList(resolveAllowedMethods()));
+        configuration.setAllowedHeaders(Arrays.asList(resolveAllowedHeaders()));
+        configuration.setAllowCredentials(allowCredentials);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    private String[] resolveAllowedOrigins() {
+        return allowedOrigins.length > 0 ? allowedOrigins : new String[] { "http://localhost:3000" };
+    }
+
+    private String[] resolveAllowedMethods() {
+        return allowedMethods.length > 0
+                ? allowedMethods
+                : new String[] { "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS" };
+    }
+
+    private String[] resolveAllowedHeaders() {
+        return allowedHeaders.length > 0 ? allowedHeaders : new String[] { "*" };
     }
 
     private static String[] splitAndTrim(String value) {

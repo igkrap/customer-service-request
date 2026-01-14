@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -53,6 +54,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Allow CORS preflight requests
+                        .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
 
@@ -93,6 +96,9 @@ public class SecurityConfig {
 
                         // Report endpoints - require ADMIN role
                         .requestMatchers("/api/reports/**").hasRole("ADMIN")
+
+                        // Notification endpoints - require ADMIN role
+                        .requestMatchers("/api/notifications/**").hasRole("ADMIN")
 
                         // All other requests need authentication
                         .anyRequest().authenticated()
