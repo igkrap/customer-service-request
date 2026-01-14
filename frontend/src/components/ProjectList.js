@@ -507,7 +507,7 @@ function ProjectList() {
               toolbar: CustomToolbar,
             }}
             showToolbar
-            sx={{ height: '100%' }}
+            sx={{ height: '100%', scrollbarGutter: 'stable' }}
           />
         </Box>
       </Box>

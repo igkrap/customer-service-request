@@ -158,6 +158,7 @@ function OverallPerformance() {
           {!loading && !error && (
             <DataGrid
               autoHeight
+              sx={{ scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
               pageSizeOptions={[5, 10, 20]}
