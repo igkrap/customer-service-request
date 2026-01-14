@@ -363,9 +363,14 @@ function Dashboard() {
                       fontWeight: 600,
                       fontSize: 11,
                       lineHeight: 1.2,
-                      px: drawerOpen ? 2.5 : 1,
+                      px: 2.5,
                       py: 0.75,
                       minHeight: 'auto',
+                      width: drawerWidth,
+                      minWidth: drawerWidth,
+                      maxWidth: drawerWidth,
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: drawerOpen ? 'flex-start' : 'center'
@@ -381,9 +386,10 @@ function Dashboard() {
                           onClick={() => setActiveTab(item.key)}
                           sx={{
                             height: 48, // Fixed height
-                            px: 2.5,
+                            px: drawerOpen ? 2.5 : 0,
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: drawerOpen ? 'flex-start' : 'center',
                             '&.Mui-selected': {
                               backgroundColor: 'primary.light',
                               color: 'primary.contrastText',
@@ -398,7 +404,8 @@ function Dashboard() {
                         >
                           <ListItemIcon
                             sx={{
-                              minWidth: 40, // Fixed width
+                              minWidth: drawerOpen ? 40 : 0,
+                              width: 40,
                               display: 'flex',
                               justifyContent: 'center',
                               alignItems: 'center',
@@ -430,7 +437,7 @@ function Dashboard() {
             })}
             </List>
           </Box>
-          <Box sx={{ mt: 'auto' }}>
+          <Box sx={{ mt: 'auto', pb: 1 }}>
             <Divider />
             <List>
               <ListItem disablePadding>
@@ -519,8 +526,8 @@ function Dashboard() {
         onClick={() => setNotificationOpen(true)}
         sx={{
           position: 'fixed',
-          bottom: 24,
-          right: 96,
+          bottom: 96,
+          right: 24,
           zIndex: 1000,
         }}
       >
