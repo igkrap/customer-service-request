@@ -22,6 +22,12 @@ const calculateCompletionRate = (resolvedCount, totalCount) => {
   return Math.round(((Number(resolvedCount) || 0) / total) * 100);
 };
 
+const normalizeStatus = (status) => {
+  if (typeof status !== 'string') return 'UNKNOWN';
+  const normalized = status.trim().toUpperCase();
+  return normalized || 'UNKNOWN';
+};
+
 function AnnualManagerPerformance() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
@@ -65,7 +71,8 @@ function AnnualManagerPerformance() {
           if (requestYear !== yearNumber) {
             return;
           }
-          if (request.status === 'CANCELLED') {
+          const normalizedStatus = normalizeStatus(request.status);
+          if (normalizedStatus === 'CANCELLED') {
             return;
           }
           if (!request.managerId) {
@@ -77,11 +84,12 @@ function AnnualManagerPerformance() {
             hoursSpent: 0
           };
           entry.totalRequests += 1;
-          if (request.status === 'RESOLVED') {
+          if (normalizedStatus === 'RESOLVED') {
             entry.resolvedRequests += 1;
           }
-          if (typeof request.hoursSpent === 'number') {
-            entry.hoursSpent += request.hoursSpent;
+          const parsedHours = Number(request.hoursSpent);
+          if (Number.isFinite(parsedHours)) {
+            entry.hoursSpent += parsedHours;
           }
           stats.set(request.managerId, entry);
         });

@@ -26,6 +26,11 @@ function CompanyPerformance() {
     if (!total) return 0;
     return Math.round(((Number(resolvedCount) || 0) / total) * 100);
   };
+  const normalizeStatus = (status) => {
+    if (typeof status !== 'string') return 'UNKNOWN';
+    const normalized = status.trim().toUpperCase();
+    return normalized || 'UNKNOWN';
+  };
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -85,7 +90,8 @@ function CompanyPerformance() {
           if (!isAllCompanies && customer.companyId !== companyId) {
             return;
           }
-          if (request.status === 'CANCELLED') {
+          const normalizedStatus = normalizeStatus(request.status);
+          if (normalizedStatus === 'CANCELLED') {
             return;
           }
           const entry = stats.get(request.projectId) || {
@@ -93,7 +99,7 @@ function CompanyPerformance() {
             resolvedRequests: 0
           };
           entry.totalRequests += 1;
-          if (request.status === 'RESOLVED') {
+          if (normalizedStatus === 'RESOLVED') {
             entry.resolvedRequests += 1;
           }
           stats.set(request.projectId, entry);

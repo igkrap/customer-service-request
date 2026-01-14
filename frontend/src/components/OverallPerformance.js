@@ -30,6 +30,11 @@ function OverallPerformance() {
     if (!total) return 0;
     return Math.round(((Number(resolvedCount) || 0) / total) * 100);
   };
+  const normalizeStatus = (status) => {
+    if (typeof status !== 'string') return 'UNKNOWN';
+    const normalized = status.trim().toUpperCase();
+    return normalized || 'UNKNOWN';
+  };
 
   const columns = useMemo(() => ([
     {
@@ -59,11 +64,13 @@ function OverallPerformance() {
       try {
         const response = await serviceRequestAPI.getAll();
         const counts = response.data.reduce((acc, request) => {
-          const status = request.status || 'UNKNOWN';
+          const status = normalizeStatus(request.status);
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {});
-        const totalRequests = response.data.filter((request) => request.status !== 'CANCELLED').length;
+        const totalRequests = response.data.filter(
+          (request) => normalizeStatus(request.status) !== 'CANCELLED'
+        ).length;
         const resolvedRequests = counts.RESOLVED || 0;
         const completionRate = calculateCompletionRate(resolvedRequests, totalRequests);
 

@@ -355,6 +355,7 @@ function Dashboard() {
             {menuGroups.map((group) => {
               const visibleItems = group.items.filter((item) => item.show);
               if (visibleItems.length === 0) return null;
+              const groupLabel = group.shortLabel || group.label?.slice(0, 2) || '';
               return (
                 <Box key={group.label}>
                   <ListSubheader
@@ -380,7 +381,7 @@ function Dashboard() {
                       textAlign: 'center'
                     }}
                   >
-                    <Tooltip title={!drawerOpen ? group.label : ''} placement="right">
+                    <Tooltip title={group.label} placement="right">
                       <Box
                         component="span"
                         sx={{
@@ -389,7 +390,7 @@ function Dashboard() {
                           letterSpacing: drawerOpen ? 0.2 : 0.8
                         }}
                       >
-                        {drawerOpen ? group.label : (group.shortLabel || group.label)}
+                        {groupLabel}
                       </Box>
                     </Tooltip>
                   </ListSubheader>
