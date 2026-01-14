@@ -20,6 +20,28 @@ function CompanyPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const normalizeNumber = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const normalizeRow = (row) => ({
+    id: row.id
+      ?? row.project_id
+      ?? row.projectId
+      ?? `${row.companyId ?? row.company_id}-${row.projectName ?? row.project_name ?? 'unknown'}`,
+    companyName: row.companyName ?? row.company_name ?? '',
+    projectName: row.projectName ?? row.project_name ?? '',
+    plannedManDays: normalizeNumber(row.plannedManDays ?? row.planned_man_days),
+    actualManDays: normalizeNumber(row.actualManDays ?? row.actual_man_days),
+    totalRequests: normalizeNumber(row.totalRequests ?? row.total_requests),
+    resolvedRequests: normalizeNumber(row.resolvedRequests ?? row.resolved_requests),
+    achievementRate: normalizeNumber(row.achievementRate ?? row.achievement_rate),
+    completionRate: normalizeNumber(row.completionRate ?? row.completion_rate)
+  });
+
   const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
   const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(1);
   const formatNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -83,7 +105,8 @@ function CompanyPerformance() {
         const isAllCompanies = selectedCompanyId === 'all';
         const companyId = isAllCompanies ? null : Number(selectedCompanyId);
         const response = await reportAPI.getCompanyPerformance(companyId);
-        setRows(response.data || []);
+        const normalized = (response.data || []).map(normalizeRow);
+        setRows(normalized);
       } catch (err) {
         setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       } finally {
