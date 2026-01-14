@@ -82,9 +82,7 @@ function CompanyPerformance() {
       try {
         const response = await companyAPI.getAll();
         setCompanies(response.data || []);
-        if (process.env.NODE_ENV !== 'production') {
-          console.debug('[CompanyPerformance] company list response', response.data);
-        }
+        console.log('[CompanyPerformance] company list response', response.data);
       } catch (err) {
         setError(`회사 목록을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       }
@@ -107,15 +105,13 @@ function CompanyPerformance() {
         const companyId = isAllCompanies ? null : Number(selectedCompanyId);
         const response = await reportAPI.getCompanyPerformance(companyId);
         const normalized = (response.data || []).map(normalizeRow);
-        if (process.env.NODE_ENV !== 'production') {
-          console.debug('[CompanyPerformance] report request', {
-            selectedCompanyId,
-            isAllCompanies,
-            companyId
-          });
-          console.debug('[CompanyPerformance] report response', response.data);
-          console.debug('[CompanyPerformance] normalized rows', normalized);
-        }
+        console.log('[CompanyPerformance] report request', {
+          selectedCompanyId,
+          isAllCompanies,
+          companyId
+        });
+        console.log('[CompanyPerformance] report response', response.data);
+        console.log('[CompanyPerformance] normalized rows', normalized);
         setRows(normalized);
       } catch (err) {
         setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
