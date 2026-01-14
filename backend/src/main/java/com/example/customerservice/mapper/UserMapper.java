@@ -101,4 +101,8 @@ public interface UserMapper {
 
     @Select("SELECT user_id FROM user_projects WHERE project_id = #{projectId}")
     List<Long> getUserIdsByProjectId(Long projectId);
+
+    @Select("SELECT u.* FROM users u INNER JOIN user_projects up ON u.id = up.user_id " +
+            "WHERE up.project_id = #{projectId} AND u.role = 'ROLE_MANAGER'")
+    List<User> findManagersByProjectId(Long projectId);
 }
