@@ -170,6 +170,9 @@ function OverallPerformance() {
               sx={{ height: '100%', flex: 1, scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
+              pagination={false}
+              hideFooter
+              hideFooterPagination
               pageSizeOptions={[5, 10, 20]}
               initialState={{
                 pagination: { paginationModel: { pageSize: 10, page: 0 } }
