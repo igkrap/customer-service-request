@@ -156,7 +156,17 @@ function AnnualManagerPerformance() {
           연간 매니저별 실적 현황
         </Typography>
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3
+        }}
+      >
         <Paper sx={{ p: 3 }}>
           <TextField
             label="연도"
@@ -167,7 +177,7 @@ function AnnualManagerPerformance() {
             sx={{ width: 160 }}
           />
         </Paper>
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: 2, flex: 1, minHeight: 0, display: 'flex' }}>
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
@@ -176,8 +186,7 @@ function AnnualManagerPerformance() {
           {error && <Alert severity="error">{error}</Alert>}
           {!loading && !error && (
             <DataGrid
-              autoHeight
-              sx={{ scrollbarGutter: 'stable' }}
+              sx={{ height: '100%', flex: 1, scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
               pageSizeOptions={[5, 10, 20]}
