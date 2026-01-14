@@ -78,6 +78,7 @@ function CompanyPerformance() {
   ]), []);
 
   useEffect(() => {
+    console.log('[CompanyPerformance] mounted');
     const fetchCompanies = async () => {
       try {
         const response = await companyAPI.getAll();
@@ -93,7 +94,11 @@ function CompanyPerformance() {
 
   useEffect(() => {
     const fetchReport = async () => {
+      console.log('[CompanyPerformance] fetch report start', {
+        selectedCompanyId
+      });
       if (!selectedCompanyId) {
+        console.log('[CompanyPerformance] skipped report fetch (no selection)');
         setRows([]);
         return;
       }
