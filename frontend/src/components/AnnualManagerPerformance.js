@@ -31,6 +31,8 @@ const normalizeStatus = (status) => {
   return normalized || 'UNKNOWN';
 };
 
+const normalizeId = (value) => (value === null || value === undefined ? null : String(value));
+
 function AnnualManagerPerformance() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
@@ -78,10 +80,11 @@ function AnnualManagerPerformance() {
           if (normalizedStatus === 'CANCELLED') {
             return;
           }
-          if (!request.managerId) {
+          const managerKey = normalizeId(request.managerId);
+          if (!managerKey) {
             return;
           }
-          const entry = stats.get(request.managerId) || {
+          const entry = stats.get(managerKey) || {
             totalRequests: 0,
             resolvedRequests: 0,
             hoursSpent: 0
@@ -97,11 +100,11 @@ function AnnualManagerPerformance() {
               }
             }
           }
-          stats.set(request.managerId, entry);
+          stats.set(managerKey, entry);
         });
 
         const nextRows = managers.map((manager) => {
-          const entry = stats.get(manager.id) || {
+          const entry = stats.get(normalizeId(manager.id)) || {
             totalRequests: 0,
             resolvedRequests: 0,
             hoursSpent: 0

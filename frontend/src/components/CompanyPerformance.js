@@ -37,6 +37,7 @@ function CompanyPerformance() {
     const normalized = status.trim().toUpperCase();
     return normalized || 'UNKNOWN';
   };
+  const normalizeId = (value) => (value === null || value === undefined ? null : String(value));
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -103,22 +104,26 @@ function CompanyPerformance() {
         ]);
 
         const companyMap = new Map(companiesResponse.data.map((item) => [item.id, item.companyName]));
-        const projectMap = new Map(projectsResponse.data.map((project) => [project.id, project]));
+        const projectMap = new Map(
+          projectsResponse.data.map((project) => [normalizeId(project.id), project])
+        );
         const stats = new Map();
 
         requestsResponse.data.forEach((request) => {
-          const project = projectMap.get(request.projectId);
+          const projectKey = normalizeId(request.projectId);
+          const project = projectKey ? projectMap.get(projectKey) : null;
           if (!project) {
             return;
           }
-          if (!isAllCompanies && project.companyId !== companyId) {
+          const projectCompanyId = Number(project.companyId);
+          if (!isAllCompanies && projectCompanyId !== companyId) {
             return;
           }
           const normalizedStatus = normalizeStatus(request.status);
           if (normalizedStatus === 'CANCELLED') {
             return;
           }
-          const entry = stats.get(request.projectId) || {
+          const entry = stats.get(projectKey) || {
             totalRequests: 0,
             resolvedRequests: 0,
             actualManDays: 0
@@ -131,11 +136,11 @@ function CompanyPerformance() {
               entry.actualManDays += hoursSpent;
             }
           }
-          stats.set(request.projectId, entry);
+          stats.set(projectKey, entry);
         });
 
         const nextRows = projectsResponse.data.map((project) => {
-          const entry = stats.get(project.id) || {
+          const entry = stats.get(normalizeId(project.id)) || {
             totalRequests: 0,
             resolvedRequests: 0,
             actualManDays: 0
@@ -145,7 +150,7 @@ function CompanyPerformance() {
           const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
           return {
             id: isAllCompanies ? `${project.companyId}-${project.id}` : project.id,
-            companyName: companyMap.get(project.companyId) || `회사 ${project.companyId}`,
+            companyName: companyMap.get(Number(project.companyId)) || `회사 ${project.companyId}`,
             projectName: project.projectName,
             plannedManDays,
             actualManDays: entry.actualManDays,
