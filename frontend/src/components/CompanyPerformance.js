@@ -20,6 +20,8 @@ function CompanyPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
+
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
     { field: 'projectName', headerName: '프로젝트', flex: 1.2, minWidth: 180 },
@@ -29,7 +31,8 @@ function CompanyPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueFormatter: ({ value }) => `${Number.isFinite(value) ? value : 0}%`
+      valueGetter: (params) => Number(params.row?.completionRate ?? 0),
+      valueFormatter: ({ value }) => formatPercent(value)
     }
   ]), []);
 
@@ -56,22 +59,25 @@ function CompanyPerformance() {
       setLoading(true);
       setError(null);
       try {
+        const isAllCompanies = selectedCompanyId === 'all';
         const companyId = Number(selectedCompanyId);
         const [projectsResponse, usersResponse, requestsResponse, companiesResponse] = await Promise.all([
-          projectAPI.getByCompanyId(companyId),
+          isAllCompanies ? projectAPI.getAll() : projectAPI.getByCompanyId(companyId),
           userAPI.getAll(),
           serviceRequestAPI.getAll(),
           companyAPI.getAll()
         ]);
 
-        const company = companiesResponse.data.find((item) => item.id === companyId);
-        const companyName = company?.companyName || `회사 ${companyId}`;
+        const companyMap = new Map(companiesResponse.data.map((item) => [item.id, item.companyName]));
         const userMap = new Map(usersResponse.data.map((user) => [user.id, user]));
         const stats = new Map();
 
         requestsResponse.data.forEach((request) => {
           const customer = userMap.get(request.customerId);
-          if (!customer || customer.companyId !== companyId) {
+          if (!customer) {
+            return;
+          }
+          if (!isAllCompanies && customer.companyId !== companyId) {
             return;
           }
           const entry = stats.get(request.projectId) || {
@@ -94,8 +100,8 @@ function CompanyPerformance() {
             ? Math.round((entry.resolvedRequests / entry.totalRequests) * 100)
             : 0;
           return {
-            id: project.id,
-            companyName,
+            id: isAllCompanies ? `${project.companyId}-${project.id}` : project.id,
+            companyName: companyMap.get(project.companyId) || `회사 ${project.companyId}`,
             projectName: project.projectName,
             totalRequests: entry.totalRequests,
             resolvedRequests: entry.resolvedRequests,
@@ -115,47 +121,70 @@ function CompanyPerformance() {
   }, [selectedCompanyId]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        회사별 실적 처리 현황
-      </Typography>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <FormControl sx={{ minWidth: 240 }}>
-          <InputLabel>회사 선택</InputLabel>
-          <Select
-            value={selectedCompanyId}
-            onChange={(event) => setSelectedCompanyId(event.target.value)}
-            label="회사 선택"
-          >
-            <MenuItem value="">회사 선택</MenuItem>
-            {companies.map((companyItem) => (
-              <MenuItem key={companyItem.id} value={companyItem.id}>
-                {companyItem.companyName}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Paper>
-      <Paper sx={{ p: 2 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        )}
-        {error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && (
-          <DataGrid
-            autoHeight
-            rows={rows}
-            columns={columns}
-            pageSizeOptions={[5, 10, 20]}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 10, page: 0 } }
-            }}
-            localeText={{ noRowsLabel: '조회 결과가 없습니다.' }}
-          />
-        )}
-      </Paper>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: 72,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          회사별 실적 현황
+        </Typography>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Paper sx={{ p: 3 }}>
+          <FormControl sx={{ minWidth: 240 }}>
+            <InputLabel>회사 선택</InputLabel>
+            <Select
+              value={selectedCompanyId}
+              onChange={(event) => setSelectedCompanyId(event.target.value)}
+              label="회사 선택"
+            >
+              <MenuItem value="">회사 선택</MenuItem>
+              <MenuItem value="all">전체 회사</MenuItem>
+              {companies.map((companyItem) => (
+                <MenuItem key={companyItem.id} value={companyItem.id}>
+                  {companyItem.companyName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Paper>
+        <Paper sx={{ p: 2 }}>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
+          {!loading && !error && (
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              pageSizeOptions={[5, 10, 20]}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 10, page: 0 } }
+              }}
+              localeText={{ noRowsLabel: '조회 결과가 없습니다.' }}
+            />
+          )}
+        </Paper>
+      </Box>
     </Box>
   );
 }

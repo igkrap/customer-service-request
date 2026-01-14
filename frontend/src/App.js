@@ -136,6 +136,7 @@ function Dashboard() {
   const menuGroups = [
     {
       label: '기본 메뉴',
+      shortLabel: '기본',
       items: [
         { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
         {
@@ -149,6 +150,7 @@ function Dashboard() {
     },
     {
       label: '기준 정보',
+      shortLabel: '기준',
       items: [
         { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
         { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
@@ -158,15 +160,17 @@ function Dashboard() {
     },
     {
       label: '실적 현황',
+      shortLabel: '실적',
       items: [
         { key: 'managerreport', label: '월간 매니저별 실적 현황', icon: <AssessmentIcon />, show: isAdmin },
         { key: 'annualmanagerperformance', label: '연간 매니저별 실적 현황', icon: <TimelineIcon />, show: isAdmin },
-        { key: 'companyperformance', label: '회사별 실적 처리 현황', icon: <BusinessReportIcon />, show: isAdmin },
+        { key: 'companyperformance', label: '회사별 실적 현황', icon: <BusinessReportIcon />, show: isAdmin },
         { key: 'overallperformance', label: '전체 실적 처리 현황', icon: <InsightsIcon />, show: isAdmin }
       ]
     },
     {
       label: '시스템 설정',
+      shortLabel: '설정',
       items: [
         { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
         { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
@@ -376,7 +380,18 @@ function Dashboard() {
                       textAlign: 'center'
                     }}
                   >
-                    {group.label}
+                    <Tooltip title={!drawerOpen ? group.label : ''} placement="right">
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: drawerOpen ? 11 : 10,
+                          fontWeight: 700,
+                          letterSpacing: drawerOpen ? 0.2 : 0.8
+                        }}
+                      >
+                        {drawerOpen ? group.label : (group.shortLabel || group.label)}
+                      </Box>
+                    </Tooltip>
                   </ListSubheader>
                   {visibleItems.map((item) => (
                     <ListItem key={item.key} disablePadding>

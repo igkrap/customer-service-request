@@ -55,8 +55,7 @@ function AnnualManagerPerformance() {
         const managers = usersResponse.data.filter((user) => user.role === 'ROLE_MANAGER');
         const stats = new Map();
         requestsResponse.data.forEach((request) => {
-          const candidateDate = request.resolvedAt || request.updatedAt || request.createdAt;
-          const requestYear = getYearFromDate(candidateDate);
+          const requestYear = getYearFromDate(request.createdAt);
           if (requestYear !== yearNumber) {
             return;
           }
@@ -109,39 +108,61 @@ function AnnualManagerPerformance() {
   }, [selectedYear]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        연간 매니저별 실적 현황
-      </Typography>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <TextField
-          label="연도"
-          type="number"
-          value={selectedYear}
-          onChange={(event) => setSelectedYear(event.target.value)}
-          inputProps={{ min: 2000, max: 2100 }}
-          sx={{ width: 160 }}
-        />
-      </Paper>
-      <Paper sx={{ p: 2 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        )}
-        {error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && (
-          <DataGrid
-            autoHeight
-            rows={rows}
-            columns={columns}
-            pageSizeOptions={[5, 10, 20]}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 10, page: 0 } }
-            }}
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: 72,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          연간 매니저별 실적 현황
+        </Typography>
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Paper sx={{ p: 3 }}>
+          <TextField
+            label="연도"
+            type="number"
+            value={selectedYear}
+            onChange={(event) => setSelectedYear(event.target.value)}
+            inputProps={{ min: 2000, max: 2100 }}
+            sx={{ width: 160 }}
           />
-        )}
-      </Paper>
+        </Paper>
+        <Paper sx={{ p: 2 }}>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
+          {!loading && !error && (
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              pageSizeOptions={[5, 10, 20]}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 10, page: 0 } }
+              }}
+            />
+          )}
+        </Paper>
+      </Box>
     </Box>
   );
 }
