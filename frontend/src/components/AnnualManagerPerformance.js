@@ -16,6 +16,12 @@ const getYearFromDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.getFullYear();
 };
 
+const calculateCompletionRate = (resolvedCount, totalCount) => {
+  const total = Number(totalCount) || 0;
+  if (!total) return 0;
+  return Math.round(((Number(resolvedCount) || 0) / total) * 100);
+};
+
 function AnnualManagerPerformance() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
@@ -59,6 +65,9 @@ function AnnualManagerPerformance() {
           if (requestYear !== yearNumber) {
             return;
           }
+          if (request.status === 'CANCELLED') {
+            return;
+          }
           if (!request.managerId) {
             return;
           }
@@ -83,9 +92,7 @@ function AnnualManagerPerformance() {
             resolvedRequests: 0,
             hoursSpent: 0
           };
-          const completionRate = entry.totalRequests
-            ? Math.round((entry.resolvedRequests / entry.totalRequests) * 100)
-            : 0;
+          const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
           return {
             id: manager.id,
             managerName: manager.username,

@@ -21,6 +21,11 @@ function CompanyPerformance() {
   const [error, setError] = useState(null);
 
   const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
+  const calculateCompletionRate = (resolvedCount, totalCount) => {
+    const total = Number(totalCount) || 0;
+    if (!total) return 0;
+    return Math.round(((Number(resolvedCount) || 0) / total) * 100);
+  };
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -80,6 +85,9 @@ function CompanyPerformance() {
           if (!isAllCompanies && customer.companyId !== companyId) {
             return;
           }
+          if (request.status === 'CANCELLED') {
+            return;
+          }
           const entry = stats.get(request.projectId) || {
             totalRequests: 0,
             resolvedRequests: 0
@@ -96,9 +104,7 @@ function CompanyPerformance() {
             totalRequests: 0,
             resolvedRequests: 0
           };
-          const completionRate = entry.totalRequests
-            ? Math.round((entry.resolvedRequests / entry.totalRequests) * 100)
-            : 0;
+          const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
           return {
             id: isAllCompanies ? `${project.companyId}-${project.id}` : project.id,
             companyName: companyMap.get(project.companyId) || `회사 ${project.companyId}`,

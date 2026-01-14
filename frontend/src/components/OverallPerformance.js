@@ -25,6 +25,12 @@ function OverallPerformance() {
     UNKNOWN: { label: '알 수 없음', color: 'default' }
   }), []);
 
+  const calculateCompletionRate = (resolvedCount, totalCount) => {
+    const total = Number(totalCount) || 0;
+    if (!total) return 0;
+    return Math.round(((Number(resolvedCount) || 0) / total) * 100);
+  };
+
   const columns = useMemo(() => ([
     {
       field: 'status',
@@ -57,11 +63,9 @@ function OverallPerformance() {
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {});
-        const totalRequests = response.data.length;
+        const totalRequests = response.data.filter((request) => request.status !== 'CANCELLED').length;
         const resolvedRequests = counts.RESOLVED || 0;
-        const completionRate = totalRequests
-          ? Math.round((resolvedRequests / totalRequests) * 100)
-          : 0;
+        const completionRate = calculateCompletionRate(resolvedRequests, totalRequests);
 
         setSummary({
           totalRequests,
