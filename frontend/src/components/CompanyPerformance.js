@@ -13,6 +13,29 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { companyAPI, reportAPI } from '../services/api';
 
+const normalizeNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return 0;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const normalizeRow = (row) => ({
+  id: row.id
+    ?? row.project_id
+    ?? row.projectId
+    ?? `${row.companyId ?? row.company_id}-${row.projectName ?? row.project_name ?? 'unknown'}`,
+  companyName: row.companyName ?? row.company_name ?? '',
+  projectName: row.projectName ?? row.project_name ?? '',
+  plannedManDays: normalizeNumber(row.plannedManDays ?? row.planned_man_days),
+  actualManDays: normalizeNumber(row.actualManDays ?? row.actual_man_days),
+  totalRequests: normalizeNumber(row.totalRequests ?? row.total_requests),
+  resolvedRequests: normalizeNumber(row.resolvedRequests ?? row.resolved_requests),
+  achievementRate: normalizeNumber(row.achievementRate ?? row.achievement_rate),
+  completionRate: normalizeNumber(row.completionRate ?? row.completion_rate)
+});
+
 function CompanyPerformance() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
@@ -20,31 +43,8 @@ function CompanyPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const normalizeNumber = (value) => {
-    if (value === null || value === undefined || value === '') {
-      return 0;
-    }
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-  const normalizeRow = (row) => ({
-    id: row.id
-      ?? row.project_id
-      ?? row.projectId
-      ?? `${row.companyId ?? row.company_id}-${row.projectName ?? row.project_name ?? 'unknown'}`,
-    companyName: row.companyName ?? row.company_name ?? '',
-    projectName: row.projectName ?? row.project_name ?? '',
-    plannedManDays: normalizeNumber(row.plannedManDays ?? row.planned_man_days),
-    actualManDays: normalizeNumber(row.actualManDays ?? row.actual_man_days),
-    totalRequests: normalizeNumber(row.totalRequests ?? row.total_requests),
-    resolvedRequests: normalizeNumber(row.resolvedRequests ?? row.resolved_requests),
-    achievementRate: normalizeNumber(row.achievementRate ?? row.achievement_rate),
-    completionRate: normalizeNumber(row.completionRate ?? row.completion_rate)
-  });
-
   const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
   const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(1);
-  const formatNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -65,7 +65,6 @@ function CompanyPerformance() {
       field: 'achievementRate',
       headerName: '달성률',
       width: 120,
-      valueGetter: (params) => formatNumber(params.row?.achievementRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     },
     { field: 'totalRequests', headerName: '요청 수', width: 120 },
@@ -74,7 +73,6 @@ function CompanyPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueGetter: (params) => formatNumber(params.row?.completionRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     }
   ]), []);
