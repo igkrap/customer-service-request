@@ -13,6 +13,29 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { companyAPI, reportAPI } from '../services/api';
 
+const normalizeNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeRow = (row) => ({
+  id: row.id
+    ?? row.project_id
+    ?? row.projectId
+    ?? `${row.companyId ?? row.company_id}-${row.projectName ?? row.project_name ?? 'unknown'}`,
+  companyName: row.companyName ?? row.company_name ?? '',
+  projectName: row.projectName ?? row.project_name ?? '',
+  plannedManDays: normalizeNumber(row.plannedManDays ?? row.planned_man_days),
+  actualManDays: normalizeNumber(row.actualManDays ?? row.actual_man_days),
+  totalRequests: normalizeNumber(row.totalRequests ?? row.total_requests),
+  resolvedRequests: normalizeNumber(row.resolvedRequests ?? row.resolved_requests),
+  achievementRate: normalizeNumber(row.achievementRate ?? row.achievement_rate),
+  completionRate: normalizeNumber(row.completionRate ?? row.completion_rate)
+});
+
 function CompanyPerformance() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
@@ -20,9 +43,8 @@ function CompanyPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
-  const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(1);
-  const formatNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+  const formatPercent = (value) => (Number.isFinite(Number(value)) ? `${Number(value)}%` : '-');
+  const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value).toFixed(1) : '-');
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -43,7 +65,6 @@ function CompanyPerformance() {
       field: 'achievementRate',
       headerName: '달성률',
       width: 120,
-      valueGetter: (params) => formatNumber(params.row?.achievementRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     },
     { field: 'totalRequests', headerName: '요청 수', width: 120 },
@@ -52,16 +73,17 @@ function CompanyPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueGetter: (params) => formatNumber(params.row?.completionRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     }
   ]), []);
 
   useEffect(() => {
+    console.log('[CompanyPerformance] mounted');
     const fetchCompanies = async () => {
       try {
         const response = await companyAPI.getAll();
         setCompanies(response.data || []);
+        console.log('[CompanyPerformance] company list response', response.data);
       } catch (err) {
         setError(`회사 목록을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       }
@@ -72,7 +94,11 @@ function CompanyPerformance() {
 
   useEffect(() => {
     const fetchReport = async () => {
+      console.log('[CompanyPerformance] fetch report start', {
+        selectedCompanyId
+      });
       if (!selectedCompanyId) {
+        console.log('[CompanyPerformance] skipped report fetch (no selection)');
         setRows([]);
         return;
       }
@@ -83,7 +109,15 @@ function CompanyPerformance() {
         const isAllCompanies = selectedCompanyId === 'all';
         const companyId = isAllCompanies ? null : Number(selectedCompanyId);
         const response = await reportAPI.getCompanyPerformance(companyId);
-        setRows(response.data || []);
+        const normalized = (response.data || []).map(normalizeRow);
+        console.log('[CompanyPerformance] report request', {
+          selectedCompanyId,
+          isAllCompanies,
+          companyId
+        });
+        console.log('[CompanyPerformance] report response', response.data);
+        console.log('[CompanyPerformance] normalized rows', normalized);
+        setRows(normalized);
       } catch (err) {
         setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       } finally {
