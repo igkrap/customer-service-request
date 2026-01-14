@@ -18,8 +18,7 @@ import ChatBot from './components/ChatBot';
 import LlmSettings from './components/LlmSettings';
 import RagManagement from './components/RagManagement';
 import AnnualManagerPerformance from './components/AnnualManagerPerformance';
-import AnnualCompanyPerformance from './components/AnnualCompanyPerformance';
-import MonthlyCompanyPerformance from './components/MonthlyCompanyPerformance';
+import CompanyPerformance from './components/CompanyPerformance';
 import OverallPerformance from './components/OverallPerformance';
 import {
   Box,
@@ -66,7 +65,6 @@ import {
   Notifications as NotificationsIcon,
   Timeline as TimelineIcon,
   Business as BusinessReportIcon,
-  CalendarMonth as CalendarMonthIcon,
   Insights as InsightsIcon
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
@@ -163,8 +161,7 @@ function Dashboard() {
       items: [
         { key: 'managerreport', label: '월간 매니저별 실적 현황', icon: <AssessmentIcon />, show: isAdmin },
         { key: 'annualmanagerperformance', label: '연간 매니저별 실적 현황', icon: <TimelineIcon />, show: isAdmin },
-        { key: 'annualcompanyperformance', label: '연간 회사별 실적 처리 현황', icon: <BusinessReportIcon />, show: isAdmin },
-        { key: 'monthlycompanyperformance', label: '월간 회사별 실적 처리 현황', icon: <CalendarMonthIcon />, show: isAdmin },
+        { key: 'companyperformance', label: '회사별 실적 처리 현황', icon: <BusinessReportIcon />, show: isAdmin },
         { key: 'overallperformance', label: '전체 실적 처리 현황', icon: <InsightsIcon />, show: isAdmin }
       ]
     },
@@ -195,8 +192,7 @@ function Dashboard() {
     if (activeTab === 'llmsettings' && isAdmin) return <LlmSettings />;
     if (activeTab === 'ragmanagement' && isAdmin) return <RagManagement />;
     if (activeTab === 'annualmanagerperformance' && isAdmin) return <AnnualManagerPerformance />;
-    if (activeTab === 'annualcompanyperformance' && isAdmin) return <AnnualCompanyPerformance />;
-    if (activeTab === 'monthlycompanyperformance' && isAdmin) return <MonthlyCompanyPerformance />;
+    if (activeTab === 'companyperformance' && isAdmin) return <CompanyPerformance />;
     if (activeTab === 'overallperformance' && isAdmin) return <OverallPerformance />;
     if (activeTab === 'profile') return <UserProfile />;
     return null;
@@ -276,7 +272,9 @@ function Dashboard() {
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            mt: 4
+            pt: 4,
+            pb: 1,
+            boxSizing: 'border-box'
           }}
         >
           {/* User Info Section with Fixed Height */}

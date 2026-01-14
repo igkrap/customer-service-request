@@ -25,7 +25,7 @@ function AnnualManagerPerformance() {
 
   const columns = useMemo(() => ([
     { field: 'managerName', headerName: '매니저', flex: 1, minWidth: 160 },
-    { field: 'totalRequests', headerName: '요청 건수', width: 140 },
+    { field: 'totalRequests', headerName: '접수 건수', width: 140 },
     { field: 'resolvedRequests', headerName: '완료 건수', width: 140 },
     {
       field: 'completionRate',
