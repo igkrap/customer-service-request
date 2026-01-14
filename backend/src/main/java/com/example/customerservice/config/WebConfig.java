@@ -31,12 +31,18 @@ public class WebConfig implements WebMvcConfigurer {
         CorsRegistration registration = registry.addMapping("/**");
         if (allowedOrigins.length > 0) {
             registration.allowedOrigins(allowedOrigins);
+        } else {
+            registration.allowedOrigins("http://localhost:3000");
         }
         if (allowedMethods.length > 0) {
             registration.allowedMethods(allowedMethods);
+        } else {
+            registration.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
         }
         if (allowedHeaders.length > 0) {
             registration.allowedHeaders(allowedHeaders);
+        } else {
+            registration.allowedHeaders("*");
         }
         registration.allowCredentials(allowCredentials);
     }
