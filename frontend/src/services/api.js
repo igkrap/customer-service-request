@@ -23,9 +23,19 @@ export const getWebSocketUrl = () => {
       parsed = new URL(parsed.origin);
     }
     const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${parsed.host}/ws/notifications`;
+    const wsUrl = new URL(`${protocol}//${parsed.host}/ws/notifications`);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      wsUrl.searchParams.set('token', token);
+    }
+    return wsUrl.toString();
   } catch (error) {
-    return 'ws://localhost:8080/ws/notifications';
+    const fallback = new URL('ws://localhost:8080/ws/notifications');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      fallback.searchParams.set('token', token);
+    }
+    return fallback.toString();
   }
 };
 
@@ -169,6 +179,18 @@ export const projectRequestAPI = {
   approve: (id, approvalNotes) => api.post(`/project-requests/${id}/approve`, { approvalNotes }),
   reject: (id, approvalNotes) => api.post(`/project-requests/${id}/reject`, { approvalNotes }),
   delete: (id) => api.delete(`/project-requests/${id}`),
+};
+
+// Report API
+export const reportAPI = {
+  getCompanyPerformance: (companyId) =>
+    api.get('/reports/company-performance', {
+      params: companyId ? { companyId } : {},
+    }),
+  getAnnualManagerPerformance: (year) =>
+    api.get('/reports/annual-manager-performance', {
+      params: { year },
+    }),
 };
 
 export default api;

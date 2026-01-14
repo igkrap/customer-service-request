@@ -17,6 +17,9 @@ import EmailTemplates from './components/EmailTemplates';
 import ChatBot from './components/ChatBot';
 import LlmSettings from './components/LlmSettings';
 import RagManagement from './components/RagManagement';
+import AnnualManagerPerformance from './components/AnnualManagerPerformance';
+import CompanyPerformance from './components/CompanyPerformance';
+import OverallPerformance from './components/OverallPerformance';
 import {
   Box,
   Drawer,
@@ -37,7 +40,8 @@ import {
   DialogTitle,
   Snackbar,
   Alert,
-  Badge
+  Badge,
+  ListSubheader
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -58,7 +62,10 @@ import {
   Email as EmailIcon,
   Description as TemplateIcon,
   MenuBook as KnowledgeIcon,
-  Notifications as NotificationsIcon
+  Notifications as NotificationsIcon,
+  Timeline as TimelineIcon,
+  Business as BusinessReportIcon,
+  Insights as InsightsIcon
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
 import { getProfilePictureUrl, getWebSocketUrl } from './services/api';
@@ -126,19 +133,51 @@ function Dashboard() {
     </Box>
   );
 
-  const menuItems = [
-    { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
-    { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
-    { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
-    { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
-    { key: 'requests', label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리', icon: <RequestIcon />, show: hasKnownRole },
-    { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager },
-    { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin },
-    { key: 'managerreport', label: '매니저별 월간 처리 현황', icon: <AssessmentIcon />, show: isAdmin },
-    { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
-    { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
-    { key: 'llmsettings', label: 'LLM 설정', icon: <SettingsIcon />, show: isAdmin },
-    { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <KnowledgeIcon />, show: isAdmin },
+  const menuGroups = [
+    {
+      label: '기본 메뉴',
+      shortLabel: '기본',
+      items: [
+        { key: 'home', label: '홈', icon: <HomeIcon />, show: true },
+        {
+          key: 'requests',
+          label: isCustomer ? '서비스 요청 등록' : isManager ? '서비스 요청 처리' : '서비스 요청 관리',
+          icon: <RequestIcon />,
+          show: hasKnownRole
+        },
+        { key: 'myprojects', label: '프로젝트 조회', icon: <MyProjectIcon />, show: isCustomerOrManager }
+      ]
+    },
+    {
+      label: '기준 정보',
+      shortLabel: '기준',
+      items: [
+        { key: 'users', label: '사용자 관리', icon: <UsersIcon />, show: isAdmin },
+        { key: 'companies', label: '회사 관리', icon: <CompanyIcon />, show: isAdmin },
+        { key: 'projects', label: '프로젝트 관리', icon: <ProjectIcon />, show: isAdmin },
+        { key: 'userprojects', label: '사용자별 프로젝트 등록', icon: <MappingIcon />, show: isAdmin }
+      ]
+    },
+    {
+      label: '실적 현황',
+      shortLabel: '실적',
+      items: [
+        { key: 'managerreport', label: '월간 매니저별 실적 현황', icon: <AssessmentIcon />, show: isAdmin },
+        { key: 'annualmanagerperformance', label: '연간 매니저별 실적 현황', icon: <TimelineIcon />, show: isAdmin },
+        { key: 'companyperformance', label: '회사별 실적 현황', icon: <BusinessReportIcon />, show: isAdmin },
+        { key: 'overallperformance', label: '전체 실적 처리 현황', icon: <InsightsIcon />, show: isAdmin }
+      ]
+    },
+    {
+      label: '시스템 설정',
+      shortLabel: '설정',
+      items: [
+        { key: 'emailsettings', label: '이메일 서버 설정', icon: <EmailIcon />, show: isAdmin },
+        { key: 'emailtemplates', label: '이메일 템플릿 관리', icon: <TemplateIcon />, show: isAdmin },
+        { key: 'llmsettings', label: 'LLM 설정', icon: <SettingsIcon />, show: isAdmin },
+        { key: 'ragmanagement', label: 'RAG 지식베이스 관리', icon: <KnowledgeIcon />, show: isAdmin }
+      ]
+    }
   ];
 
   const renderContent = () => {
@@ -156,6 +195,9 @@ function Dashboard() {
     if (activeTab === 'emailtemplates' && isAdmin) return <EmailTemplates />;
     if (activeTab === 'llmsettings' && isAdmin) return <LlmSettings />;
     if (activeTab === 'ragmanagement' && isAdmin) return <RagManagement />;
+    if (activeTab === 'annualmanagerperformance' && isAdmin) return <AnnualManagerPerformance />;
+    if (activeTab === 'companyperformance' && isAdmin) return <CompanyPerformance />;
+    if (activeTab === 'overallperformance' && isAdmin) return <OverallPerformance />;
     if (activeTab === 'profile') return <UserProfile />;
     return null;
   };
@@ -215,7 +257,7 @@ function Dashboard() {
             width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
             transition: 'width 0.3s ease',
-            overflowX: 'hidden',
+            overflow: 'hidden',
             position: 'fixed',
             height: '100vh',
             zIndex: 1200,
@@ -229,7 +271,16 @@ function Dashboard() {
         onMouseEnter={() => setDrawerOpen(true)}
         onMouseLeave={() => setDrawerOpen(false)}
       >
-        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', mt: 4 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            pt: 4,
+            pb: 1,
+            boxSizing: 'border-box'
+          }}
+        >
           {/* User Info Section with Fixed Height */}
           <Box
             sx={{
@@ -293,28 +344,127 @@ function Dashboard() {
             </Box>
           </Box>
           <Divider />
-          <List>
-            {menuItems.filter(item => item.show).map((item) => (
-              <ListItem key={item.key} disablePadding>
-                <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: drawerOpen ? 'auto' : 'hidden',
+              overflowX: 'hidden'
+            }}
+          >
+            <List>
+            {menuGroups.map((group) => {
+              const visibleItems = group.items.filter((item) => item.show);
+              if (visibleItems.length === 0) return null;
+              const groupLabel = group.shortLabel || group.label?.slice(0, 2) || '';
+              return (
+                <Box key={group.label}>
+                  <ListSubheader
+                    disableSticky
+                    sx={{
+                      bgcolor: 'transparent',
+                      color: 'text.secondary',
+                      fontWeight: 600,
+                      fontSize: 11,
+                      lineHeight: 1.2,
+                      px: 1.5,
+                      py: 0.75,
+                      minHeight: 'auto',
+                      width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
+                      minWidth: drawerOpen ? drawerWidth : collapsedDrawerWidth,
+                      maxWidth: drawerOpen ? drawerWidth : collapsedDrawerWidth,
+                      boxSizing: 'border-box',
+                      overflow: 'visible',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <Tooltip title={group.label} placement="right">
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: 0.6
+                        }}
+                      >
+                        {groupLabel}
+                      </Box>
+                    </Tooltip>
+                  </ListSubheader>
+                  {visibleItems.map((item) => (
+                    <ListItem key={item.key} disablePadding>
+                      <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
+                      <ListItemButton
+                        selected={activeTab === item.key}
+                        onClick={() => setActiveTab(item.key)}
+                        sx={{
+                          height: 48, // Fixed height
+                          px: drawerOpen ? 2.5 : 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: drawerOpen ? 'flex-start' : 'center',
+                          '&.Mui-selected': {
+                              backgroundColor: 'primary.light',
+                              color: 'primary.contrastText',
+                              '&:hover': {
+                                backgroundColor: 'primary.main',
+                              },
+                              '& .MuiListItemIcon-root': {
+                                color: 'primary.contrastText',
+                              },
+                            },
+                          }}
+                        >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: drawerOpen ? 40 : 0,
+                            width: 40,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                            {item.icon}
+                          </ListItemIcon>
+                          {drawerOpen && (
+                            <ListItemText
+                              primary={item.label}
+                              sx={{
+                                ml: 1,
+                                '& .MuiTypography-root': {
+                                  lineHeight: '24px',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }
+                              }}
+                            />
+                          )}
+                        </ListItemButton>
+                      </Tooltip>
+                    </ListItem>
+                  ))}
+                  <Divider sx={{ my: 1 }} />
+                </Box>
+              );
+            })}
+            </List>
+          </Box>
+          <Box sx={{ mt: 'auto', pb: 2 }}>
+            <Divider />
+            <List>
+              <ListItem disablePadding>
+                <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
                   <ListItemButton
-                    selected={activeTab === item.key}
-                    onClick={() => setActiveTab(item.key)}
+                    onClick={logout}
                     sx={{
                       height: 48, // Fixed height
                       px: 2.5,
                       display: 'flex',
                       alignItems: 'center',
-                      '&.Mui-selected': {
-                        backgroundColor: 'primary.light',
-                        color: 'primary.contrastText',
-                        '&:hover': {
-                          backgroundColor: 'primary.main',
-                        },
-                        '& .MuiListItemIcon-root': {
-                          color: 'primary.contrastText',
-                        },
-                      },
                     }}
                   >
                     <ListItemIcon
@@ -325,11 +475,11 @@ function Dashboard() {
                         alignItems: 'center',
                       }}
                     >
-                      {item.icon}
+                      <LogoutIcon />
                     </ListItemIcon>
                     {drawerOpen && (
                       <ListItemText
-                        primary={item.label}
+                        primary="로그아웃"
                         sx={{
                           ml: 1,
                           '& .MuiTypography-root': {
@@ -344,49 +494,8 @@ function Dashboard() {
                   </ListItemButton>
                 </Tooltip>
               </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            <ListItem disablePadding>
-              <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
-                <ListItemButton
-                  onClick={logout}
-                  sx={{
-                    height: 48, // Fixed height
-                    px: 2.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 40, // Fixed width
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  {drawerOpen && (
-                    <ListItemText
-                      primary="로그아웃"
-                      sx={{
-                        ml: 1,
-                        '& .MuiTypography-root': {
-                          lineHeight: '24px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
-          </List>
+            </List>
+          </Box>
         </Box>
       </Drawer>
 

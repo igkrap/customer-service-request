@@ -466,7 +466,7 @@ function ManagerMonthlyReport() {
             WebkitTextFillColor: 'transparent',
           }}
         >
-          매니저별 월간 처리 현황
+          월간 매니저별 실적 현황
         </Typography>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
@@ -606,6 +606,7 @@ function ManagerMonthlyReport() {
                 pinnedColumns: { left: ['companyName', 'projectName', 'contractManDays'] },
               }}
               sx={{
+                scrollbarGutter: 'stable',
                 '& .MuiDataGrid-virtualScroller::-webkit-scrollbar': {
                   width: '8px',
                   height: '8px',
