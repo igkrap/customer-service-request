@@ -43,12 +43,12 @@ function CompanyPerformance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  console.log('[CompanyPerformance] render', {
-    selectedCompanyId,
-    loading,
-    error,
-    rowCount: rows.length
-  });
+  // console.log('[CompanyPerformance] render', {
+  //   selectedCompanyId,
+  //   loading,
+  //   error,
+  //   rowCount: rows.length
+  // });
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -80,12 +80,12 @@ function CompanyPerformance() {
   ]), []);
 
   useEffect(() => {
-    console.log('[CompanyPerformance] mounted');
+    // console.log('[CompanyPerformance] mounted');
     const fetchCompanies = async () => {
       try {
         const response = await companyAPI.getAll();
         setCompanies(response.data || []);
-        console.log('[CompanyPerformance] company list response', response.data);
+        // console.log('[CompanyPerformance] company list response', response.data);
       } catch (err) {
         setError(`회사 목록을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       }
@@ -96,11 +96,11 @@ function CompanyPerformance() {
 
   useEffect(() => {
     const fetchReport = async () => {
-      console.log('[CompanyPerformance] fetch report start', {
-        selectedCompanyId
-      });
+      // console.log('[CompanyPerformance] fetch report start', {
+      //   selectedCompanyId
+      // });
       if (!selectedCompanyId) {
-        console.log('[CompanyPerformance] skipped report fetch (no selection)');
+        // console.log('[CompanyPerformance] skipped report fetch (no selection)');
         setRows([]);
         return;
       }
@@ -112,13 +112,13 @@ function CompanyPerformance() {
         const companyId = isAllCompanies ? null : Number(selectedCompanyId);
         const response = await reportAPI.getCompanyPerformance(companyId);
         const normalized = (response.data || []).map(normalizeRow);
-        console.log('[CompanyPerformance] report request', {
-          selectedCompanyId,
-          isAllCompanies,
-          companyId
-        });
-        console.log('[CompanyPerformance] report response', response.data);
-        console.log('[CompanyPerformance] normalized rows', normalized);
+        // console.log('[CompanyPerformance] report request', {
+        //   selectedCompanyId,
+        //   isAllCompanies,
+        //   companyId
+        // });
+        // console.log('[CompanyPerformance] report response', response.data);
+        // console.log('[CompanyPerformance] normalized rows', normalized);
         setRows(normalized);
       } catch (err) {
         setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
