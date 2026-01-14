@@ -8,30 +8,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { serviceRequestAPI, userAPI } from '../services/api';
-
-const getYearFromDateValue = (value) => {
-  if (!value) return null;
-  if (typeof value === 'string' && /^\d{8}$/.test(value)) {
-    return Number(value.slice(0, 4));
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.getFullYear();
-};
-
-const calculateCompletionRate = (resolvedCount, totalCount) => {
-  const total = Number(totalCount) || 0;
-  if (!total) return 0;
-  return Math.round(((Number(resolvedCount) || 0) / total) * 100);
-};
-
-const normalizeStatus = (status) => {
-  if (typeof status !== 'string') return 'UNKNOWN';
-  const normalized = status.trim().toUpperCase();
-  return normalized || 'UNKNOWN';
-};
-
-const normalizeId = (value) => (value === null || value === undefined ? null : String(value));
+import { reportAPI } from '../services/api';
 
 function AnnualManagerPerformance() {
   const currentYear = new Date().getFullYear();
@@ -64,63 +41,8 @@ function AnnualManagerPerformance() {
       setError(null);
       try {
         const yearNumber = Number(selectedYear);
-        const [requestsResponse, usersResponse] = await Promise.all([
-          serviceRequestAPI.getAll(),
-          userAPI.getAll()
-        ]);
-
-        const managers = usersResponse.data.filter((user) => user.role === 'ROLE_MANAGER');
-        const stats = new Map();
-        requestsResponse.data.forEach((request) => {
-          const receivedYear = getYearFromDateValue(request.receivedAt || request.createdAt);
-          if (receivedYear !== yearNumber) {
-            return;
-          }
-          const normalizedStatus = normalizeStatus(request.status);
-          if (normalizedStatus === 'CANCELLED') {
-            return;
-          }
-          const managerKey = normalizeId(request.managerId);
-          if (!managerKey) {
-            return;
-          }
-          const entry = stats.get(managerKey) || {
-            totalRequests: 0,
-            resolvedRequests: 0,
-            hoursSpent: 0
-          };
-          entry.totalRequests += 1;
-          if (normalizedStatus === 'RESOLVED') {
-            const resolvedYear = getYearFromDateValue(request.resolvedAt || request.createdAt);
-            if (resolvedYear === yearNumber) {
-              entry.resolvedRequests += 1;
-              const parsedHours = Number(request.hoursSpent);
-              if (Number.isFinite(parsedHours)) {
-                entry.hoursSpent += parsedHours;
-              }
-            }
-          }
-          stats.set(managerKey, entry);
-        });
-
-        const nextRows = managers.map((manager) => {
-          const entry = stats.get(normalizeId(manager.id)) || {
-            totalRequests: 0,
-            resolvedRequests: 0,
-            hoursSpent: 0
-          };
-          const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
-          return {
-            id: manager.id,
-            managerName: manager.username,
-            totalRequests: entry.totalRequests,
-            resolvedRequests: entry.resolvedRequests,
-            completionRate,
-            hoursSpent: entry.hoursSpent
-          };
-        });
-
-        setRows(nextRows);
+        const response = await reportAPI.getAnnualManagerPerformance(yearNumber);
+        setRows(response.data || []);
       } catch (err) {
         setError(`연간 매니저별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       } finally {

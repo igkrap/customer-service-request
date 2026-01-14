@@ -11,7 +11,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { companyAPI, projectAPI, serviceRequestAPI } from '../services/api';
+import { companyAPI, reportAPI } from '../services/api';
 
 function CompanyPerformance() {
   const [companies, setCompanies] = useState([]);
@@ -22,25 +22,7 @@ function CompanyPerformance() {
 
   const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
   const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(1);
-  const calculateCompletionRate = (resolvedCount, totalCount) => {
-    const total = Number(totalCount) || 0;
-    if (!total) return 0;
-    return Math.round(((Number(resolvedCount) || 0) / total) * 100);
-  };
-  const calculateAchievementRate = (actualManDays, plannedManDays) => {
-    const planned = Number(plannedManDays) || 0;
-    if (!planned) return 0;
-    return Math.round(((Number(actualManDays) || 0) / planned) * 100);
-  };
-  const normalizeStatus = (status) => {
-    if (typeof status !== 'string') return 'UNKNOWN';
-    const normalized = status.trim().toUpperCase();
-    return normalized || 'UNKNOWN';
-  };
-  const normalizeId = (value) => (value === null || value === undefined ? null : String(value));
-  const normalizeProjectName = (value) => (
-    typeof value === 'string' && value.trim().length > 0 ? value.trim().toLowerCase() : null
-  );
+  const formatNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
@@ -61,7 +43,7 @@ function CompanyPerformance() {
       field: 'achievementRate',
       headerName: '달성률',
       width: 120,
-      valueGetter: (params) => Number(params.row?.achievementRate ?? 0),
+      valueGetter: (params) => formatNumber(params.row?.achievementRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     },
     { field: 'totalRequests', headerName: '요청 수', width: 120 },
@@ -70,7 +52,7 @@ function CompanyPerformance() {
       field: 'completionRate',
       headerName: '완료율',
       width: 120,
-      valueGetter: (params) => Number(params.row?.completionRate ?? 0),
+      valueGetter: (params) => formatNumber(params.row?.completionRate ?? 0),
       valueFormatter: ({ value }) => formatPercent(value)
     }
   ]), []);
@@ -99,83 +81,9 @@ function CompanyPerformance() {
       setError(null);
       try {
         const isAllCompanies = selectedCompanyId === 'all';
-        const companyId = Number(selectedCompanyId);
-        const [projectsResponse, requestsResponse, companiesResponse] = await Promise.all([
-          isAllCompanies ? projectAPI.getAll() : projectAPI.getByCompanyId(companyId),
-          serviceRequestAPI.getAll(),
-          companyAPI.getAll()
-        ]);
-
-        const companyMap = new Map(companiesResponse.data.map((item) => [item.id, item.companyName]));
-        const projectMap = new Map(
-          projectsResponse.data.map((project) => [normalizeId(project.id), project])
-        );
-        const projectNameMap = new Map(
-          projectsResponse.data
-            .map((project) => [normalizeProjectName(project.projectName), project])
-            .filter(([name]) => name)
-        );
-        const stats = new Map();
-
-        requestsResponse.data.forEach((request) => {
-          const projectKey = normalizeId(request.projectId);
-          const projectNameKey = normalizeProjectName(request.projectName);
-          const project = projectKey
-            ? projectMap.get(projectKey)
-            : projectNameKey
-              ? projectNameMap.get(projectNameKey)
-              : null;
-          if (!project) {
-            return;
-          }
-          const projectCompanyId = Number(project.companyId);
-          if (!isAllCompanies && projectCompanyId !== companyId) {
-            return;
-          }
-          const normalizedStatus = normalizeStatus(request.status);
-          if (normalizedStatus === 'CANCELLED') {
-            return;
-          }
-          const statsKey = normalizeId(project.id);
-          const entry = stats.get(statsKey) || {
-            totalRequests: 0,
-            resolvedRequests: 0,
-            actualManDays: 0
-          };
-          entry.totalRequests += 1;
-          if (normalizedStatus === 'RESOLVED') {
-            entry.resolvedRequests += 1;
-            const hoursSpent = Number(request.hoursSpent);
-            if (Number.isFinite(hoursSpent)) {
-              entry.actualManDays += hoursSpent;
-            }
-          }
-          stats.set(statsKey, entry);
-        });
-
-        const nextRows = projectsResponse.data.map((project) => {
-          const entry = stats.get(normalizeId(project.id)) || {
-            totalRequests: 0,
-            resolvedRequests: 0,
-            actualManDays: 0
-          };
-          const plannedManDays = Number(project.contractManDays) || 0;
-          const achievementRate = calculateAchievementRate(entry.actualManDays, plannedManDays);
-          const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
-          return {
-            id: isAllCompanies ? `${project.companyId}-${project.id}` : project.id,
-            companyName: companyMap.get(Number(project.companyId)) || `회사 ${project.companyId}`,
-            projectName: project.projectName,
-            plannedManDays,
-            actualManDays: entry.actualManDays,
-            achievementRate,
-            totalRequests: entry.totalRequests,
-            resolvedRequests: entry.resolvedRequests,
-            completionRate
-          };
-        });
-
-        setRows(nextRows);
+        const companyId = isAllCompanies ? null : Number(selectedCompanyId);
+        const response = await reportAPI.getCompanyPerformance(companyId);
+        setRows(response.data || []);
       } catch (err) {
         setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
       } finally {

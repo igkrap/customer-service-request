@@ -181,4 +181,16 @@ export const projectRequestAPI = {
   delete: (id) => api.delete(`/project-requests/${id}`),
 };
 
+// Report API
+export const reportAPI = {
+  getCompanyPerformance: (companyId) =>
+    api.get('/reports/company-performance', {
+      params: companyId ? { companyId } : {},
+    }),
+  getAnnualManagerPerformance: (year) =>
+    api.get('/reports/annual-manager-performance', {
+      params: { year },
+    }),
+};
+
 export default api;
