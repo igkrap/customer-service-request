@@ -1266,6 +1266,14 @@ function ServiceRequestList() {
                 onChange={handleFilterChange}
                 label="상태"
                 size="small"
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return <Typography color="text.secondary">전체</Typography>;
+                  }
+                  return getStatusLabel(selected);
+                }}
+                sx={{ display: 'flex', alignItems: 'center' }}
               >
                 <MenuItem value="">전체</MenuItem>
                 {Object.keys(statusLabelMap).map((key) => (
@@ -1283,6 +1291,14 @@ function ServiceRequestList() {
                 onChange={handleFilterChange}
                 label="우선순위"
                 size="small"
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return <Typography color="text.secondary">전체</Typography>;
+                  }
+                  return getPriorityLabel(selected);
+                }}
+                sx={{ display: 'flex', alignItems: 'center' }}
               >
                 <MenuItem value="">전체</MenuItem>
                 {Object.keys(priorityLabelMap).map((key) => (
@@ -1301,6 +1317,15 @@ function ServiceRequestList() {
                   onChange={handleFilterChange}
                   label="요청자"
                   size="small"
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) {
+                      return <Typography color="text.secondary">전체</Typography>;
+                    }
+                    const customer = customers.find((item) => String(item.id) === String(selected));
+                    return customer?.username || '전체';
+                  }}
+                  sx={{ display: 'flex', alignItems: 'center' }}
                 >
                   <MenuItem value="">전체</MenuItem>
                   {customers.map((customer) => (
@@ -1320,6 +1345,15 @@ function ServiceRequestList() {
                   onChange={handleFilterChange}
                   label="담당자"
                   size="small"
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) {
+                      return <Typography color="text.secondary">전체</Typography>;
+                    }
+                    const manager = managerOptions.find((item) => String(item.id) === String(selected));
+                    return manager?.name || '전체';
+                  }}
+                  sx={{ display: 'flex', alignItems: 'center' }}
                 >
                   <MenuItem value="">전체</MenuItem>
                   {managerOptions.map((manager) => (
