@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -48,7 +49,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http.cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
@@ -88,6 +90,9 @@ public class SecurityConfig {
                         // Email templates endpoints - require authentication
                         // Additional @PreAuthorize("hasRole('ADMIN')") on EmailTemplateController
                         .requestMatchers("/api/email-templates/**").authenticated()
+
+                        // Report endpoints - require ADMIN role
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
 
                         // All other requests need authentication
                         .anyRequest().authenticated()

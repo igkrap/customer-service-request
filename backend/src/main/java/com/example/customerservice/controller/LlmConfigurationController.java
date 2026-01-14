@@ -14,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/llm-configurations")
-@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 public class LlmConfigurationController {
 
