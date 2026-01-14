@@ -436,6 +436,7 @@ function ProjectRequestList() {
         {/* DataGrid */}
         <Box sx={{ flex: 1, width: '100%' }}>
           <DataGrid
+            sx={{ scrollbarGutter: 'stable' }}
             rows={requests}
             columns={columns}
             pagination={false}

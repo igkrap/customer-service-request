@@ -487,6 +487,7 @@ function ProjectRequestApproval() {
               toolbar: CustomToolbar,
             }}
             sx={{
+              scrollbarGutter: 'stable',
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'

@@ -606,6 +606,7 @@ function ManagerMonthlyReport() {
                 pinnedColumns: { left: ['companyName', 'projectName', 'contractManDays'] },
               }}
               sx={{
+                scrollbarGutter: 'stable',
                 '& .MuiDataGrid-virtualScroller::-webkit-scrollbar': {
                   width: '8px',
                   height: '8px',

@@ -11,7 +11,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { companyAPI, projectAPI, serviceRequestAPI, userAPI } from '../services/api';
+import { companyAPI, projectAPI, serviceRequestAPI } from '../services/api';
 
 function CompanyPerformance() {
   const [companies, setCompanies] = useState([]);
@@ -21,10 +21,16 @@ function CompanyPerformance() {
   const [error, setError] = useState(null);
 
   const formatPercent = (value) => `${Number.isFinite(Number(value)) ? Number(value) : 0}%`;
+  const formatManDays = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(1);
   const calculateCompletionRate = (resolvedCount, totalCount) => {
     const total = Number(totalCount) || 0;
     if (!total) return 0;
     return Math.round(((Number(resolvedCount) || 0) / total) * 100);
+  };
+  const calculateAchievementRate = (actualManDays, plannedManDays) => {
+    const planned = Number(plannedManDays) || 0;
+    if (!planned) return 0;
+    return Math.round(((Number(actualManDays) || 0) / planned) * 100);
   };
   const normalizeStatus = (status) => {
     if (typeof status !== 'string') return 'UNKNOWN';
@@ -35,6 +41,25 @@ function CompanyPerformance() {
   const columns = useMemo(() => ([
     { field: 'companyName', headerName: '회사', flex: 1, minWidth: 160 },
     { field: 'projectName', headerName: '프로젝트', flex: 1.2, minWidth: 180 },
+    {
+      field: 'plannedManDays',
+      headerName: '계획 공수 (m/d)',
+      width: 150,
+      valueFormatter: ({ value }) => formatManDays(value)
+    },
+    {
+      field: 'actualManDays',
+      headerName: '투입 공수 (m/d)',
+      width: 150,
+      valueFormatter: ({ value }) => formatManDays(value)
+    },
+    {
+      field: 'achievementRate',
+      headerName: '달성률',
+      width: 120,
+      valueGetter: (params) => Number(params.row?.achievementRate ?? 0),
+      valueFormatter: ({ value }) => formatPercent(value)
+    },
     { field: 'totalRequests', headerName: '요청 수', width: 120 },
     { field: 'resolvedRequests', headerName: '완료 건수', width: 120 },
     {
@@ -71,23 +96,22 @@ function CompanyPerformance() {
       try {
         const isAllCompanies = selectedCompanyId === 'all';
         const companyId = Number(selectedCompanyId);
-        const [projectsResponse, usersResponse, requestsResponse, companiesResponse] = await Promise.all([
+        const [projectsResponse, requestsResponse, companiesResponse] = await Promise.all([
           isAllCompanies ? projectAPI.getAll() : projectAPI.getByCompanyId(companyId),
-          userAPI.getAll(),
           serviceRequestAPI.getAll(),
           companyAPI.getAll()
         ]);
 
         const companyMap = new Map(companiesResponse.data.map((item) => [item.id, item.companyName]));
-        const userMap = new Map(usersResponse.data.map((user) => [user.id, user]));
+        const projectMap = new Map(projectsResponse.data.map((project) => [project.id, project]));
         const stats = new Map();
 
         requestsResponse.data.forEach((request) => {
-          const customer = userMap.get(request.customerId);
-          if (!customer) {
+          const project = projectMap.get(request.projectId);
+          if (!project) {
             return;
           }
-          if (!isAllCompanies && customer.companyId !== companyId) {
+          if (!isAllCompanies && project.companyId !== companyId) {
             return;
           }
           const normalizedStatus = normalizeStatus(request.status);
@@ -96,11 +120,16 @@ function CompanyPerformance() {
           }
           const entry = stats.get(request.projectId) || {
             totalRequests: 0,
-            resolvedRequests: 0
+            resolvedRequests: 0,
+            actualManDays: 0
           };
           entry.totalRequests += 1;
           if (normalizedStatus === 'RESOLVED') {
             entry.resolvedRequests += 1;
+            const hoursSpent = Number(request.hoursSpent);
+            if (Number.isFinite(hoursSpent)) {
+              entry.actualManDays += hoursSpent;
+            }
           }
           stats.set(request.projectId, entry);
         });
@@ -108,13 +137,19 @@ function CompanyPerformance() {
         const nextRows = projectsResponse.data.map((project) => {
           const entry = stats.get(project.id) || {
             totalRequests: 0,
-            resolvedRequests: 0
+            resolvedRequests: 0,
+            actualManDays: 0
           };
+          const plannedManDays = Number(project.contractManDays) || 0;
+          const achievementRate = calculateAchievementRate(entry.actualManDays, plannedManDays);
           const completionRate = calculateCompletionRate(entry.resolvedRequests, entry.totalRequests);
           return {
             id: isAllCompanies ? `${project.companyId}-${project.id}` : project.id,
             companyName: companyMap.get(project.companyId) || `회사 ${project.companyId}`,
             projectName: project.projectName,
+            plannedManDays,
+            actualManDays: entry.actualManDays,
+            achievementRate,
             totalRequests: entry.totalRequests,
             resolvedRequests: entry.resolvedRequests,
             completionRate
@@ -186,6 +221,7 @@ function CompanyPerformance() {
           {!loading && !error && (
             <DataGrid
               autoHeight
+              sx={{ scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
               pageSizeOptions={[5, 10, 20]}

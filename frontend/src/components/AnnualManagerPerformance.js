@@ -10,8 +10,11 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { serviceRequestAPI, userAPI } from '../services/api';
 
-const getYearFromDate = (value) => {
+const getYearFromDateValue = (value) => {
   if (!value) return null;
+  if (typeof value === 'string' && /^\d{8}$/.test(value)) {
+    return Number(value.slice(0, 4));
+  }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.getFullYear();
 };
@@ -67,8 +70,8 @@ function AnnualManagerPerformance() {
         const managers = usersResponse.data.filter((user) => user.role === 'ROLE_MANAGER');
         const stats = new Map();
         requestsResponse.data.forEach((request) => {
-          const requestYear = getYearFromDate(request.createdAt);
-          if (requestYear !== yearNumber) {
+          const receivedYear = getYearFromDateValue(request.receivedAt || request.createdAt);
+          if (receivedYear !== yearNumber) {
             return;
           }
           const normalizedStatus = normalizeStatus(request.status);
@@ -85,11 +88,14 @@ function AnnualManagerPerformance() {
           };
           entry.totalRequests += 1;
           if (normalizedStatus === 'RESOLVED') {
-            entry.resolvedRequests += 1;
-          }
-          const parsedHours = Number(request.hoursSpent);
-          if (Number.isFinite(parsedHours)) {
-            entry.hoursSpent += parsedHours;
+            const resolvedYear = getYearFromDateValue(request.resolvedAt || request.createdAt);
+            if (resolvedYear === yearNumber) {
+              entry.resolvedRequests += 1;
+              const parsedHours = Number(request.hoursSpent);
+              if (Number.isFinite(parsedHours)) {
+                entry.hoursSpent += parsedHours;
+              }
+            }
           }
           stats.set(request.managerId, entry);
         });
@@ -168,6 +174,7 @@ function AnnualManagerPerformance() {
           {!loading && !error && (
             <DataGrid
               autoHeight
+              sx={{ scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
               pageSizeOptions={[5, 10, 20]}

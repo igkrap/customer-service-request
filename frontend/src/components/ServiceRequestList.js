@@ -2026,6 +2026,7 @@ function ServiceRequestList() {
               height: '100%',
               minHeight: 500,
               flex: 1,
+              scrollbarGutter: 'stable',
               '& .MuiDataGrid-row:hover': {
                 cursor: 'pointer',
                 backgroundColor: 'action.hover'
