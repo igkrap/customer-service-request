@@ -37,7 +37,7 @@ function AnnualManagerPerformance() {
       field: 'hoursSpent',
       headerName: '투입 시간',
       width: 140,
-      valueFormatter: ({ value }) => `${value.toFixed(1)}h`
+      valueFormatter: ({ value }) => `${(Number(value) || 0).toFixed(1)}h`
     }
   ]), []);
 
