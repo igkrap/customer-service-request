@@ -114,7 +114,7 @@ public interface ReportMapper {
                                 ELSE 0
                             END), 0) * 100
                         )
-                    ELSE 0
+                    ELSE NULL
                 END AS completion_rate
             FROM users u
             LEFT JOIN service_requests sr ON sr.manager_id = u.id
