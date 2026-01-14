@@ -271,7 +271,14 @@ function Dashboard() {
         onMouseEnter={() => setDrawerOpen(true)}
         onMouseLeave={() => setDrawerOpen(false)}
       >
-        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', mt: 4 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            mt: 4
+          }}
+        >
           {/* User Info Section with Fixed Height */}
           <Box
             sx={{
@@ -335,28 +342,37 @@ function Dashboard() {
             </Box>
           </Box>
           <Divider />
-          <List>
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: drawerOpen ? 'auto' : 'hidden',
+              overflowX: 'hidden'
+            }}
+          >
+            <List>
             {menuGroups.map((group) => {
               const visibleItems = group.items.filter((item) => item.show);
               if (visibleItems.length === 0) return null;
               return (
                 <Box key={group.label}>
-                  {drawerOpen && (
-                    <ListSubheader
-                      disableSticky
-                      sx={{
-                        bgcolor: 'transparent',
-                        color: 'text.secondary',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        lineHeight: '24px',
-                        px: 2.5,
-                        py: 1
-                      }}
-                    >
-                      {group.label}
-                    </ListSubheader>
-                  )}
+                  <ListSubheader
+                    disableSticky
+                    sx={{
+                      bgcolor: 'transparent',
+                      color: 'text.secondary',
+                      fontWeight: 600,
+                      fontSize: 11,
+                      lineHeight: 1.2,
+                      px: drawerOpen ? 2.5 : 1,
+                      py: 0.75,
+                      minHeight: 'auto',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: drawerOpen ? 'flex-start' : 'center'
+                    }}
+                  >
+                    {group.label}
+                  </ListSubheader>
                   {visibleItems.map((item) => (
                     <ListItem key={item.key} disablePadding>
                       <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
@@ -412,7 +428,8 @@ function Dashboard() {
                 </Box>
               );
             })}
-          </List>
+            </List>
+          </Box>
           <List>
             <ListItem disablePadding>
               <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
