@@ -325,9 +325,15 @@ function CompanyPerformance() {
                   <TableRow>
                     {monthlyRows.map((item) => (
                       <React.Fragment key={`${item.projectId}-${item.yearMonth}-sub`}>
-                        <TableCell align="center">계획 공수</TableCell>
-                        <TableCell align="center">투입 공수</TableCell>
-                        <TableCell align="center">달성률</TableCell>
+                        <TableCell align="center" sx={{ minWidth: 110, whiteSpace: 'nowrap' }}>
+                          계획 공수
+                        </TableCell>
+                        <TableCell align="center" sx={{ minWidth: 110, whiteSpace: 'nowrap' }}>
+                          투입 공수
+                        </TableCell>
+                        <TableCell align="center" sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>
+                          달성률
+                        </TableCell>
                       </React.Fragment>
                     ))}
                   </TableRow>
