@@ -17,7 +17,12 @@ public interface ReportMapper {
                 p.company_id AS company_id,
                 c.company_name AS company_name,
                 p.project_name AS project_name,
-                p.contract_man_days AS planned_man_days,
+                p.contract_man_days
+                    * (
+                        DATE_PART('year', AGE(p.contract_end_date, p.contract_start_date)) * 12
+                        + DATE_PART('month', AGE(p.contract_end_date, p.contract_start_date))
+                        + 1
+                    ) AS planned_man_days,
                 COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0) AS actual_man_days,
                 COALESCE(SUM(CASE WHEN sr.status <> 'CANCELLED' THEN 1 ELSE 0 END), 0) AS total_requests,
                 COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN 1 ELSE 0 END), 0) AS resolved_requests,
@@ -25,7 +30,14 @@ public interface ReportMapper {
                     WHEN p.contract_man_days > 0
                         THEN ROUND(
                             COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0)
-                            / p.contract_man_days * 100
+                            / (
+                                p.contract_man_days
+                                * (
+                                    DATE_PART('year', AGE(p.contract_end_date, p.contract_start_date)) * 12
+                                    + DATE_PART('month', AGE(p.contract_end_date, p.contract_start_date))
+                                    + 1
+                                )
+                            ) * 100
                         )
                     ELSE 0
                 END AS achievement_rate,
@@ -42,7 +54,8 @@ public interface ReportMapper {
             LEFT JOIN service_requests sr ON sr.project_id = p.id
             WHERE (CAST(#{companyId} AS BIGINT) IS NULL
                 OR p.company_id = CAST(#{companyId} AS BIGINT))
-            GROUP BY p.id, p.company_id, c.company_name, p.project_name, p.contract_man_days
+            GROUP BY p.id, p.company_id, c.company_name, p.project_name, p.contract_man_days,
+                p.contract_start_date, p.contract_end_date
             ORDER BY c.company_name, p.project_name
             """)
     List<CompanyPerformanceDTO> findCompanyPerformance(@Param("companyId") Long companyId);
