@@ -8,9 +8,20 @@ import {
   Select,
   MenuItem,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import CloseIcon from '@mui/icons-material/Close';
 import { companyAPI, reportAPI } from '../services/api';
 
 const normalizeNumber = (value) => {
@@ -36,12 +47,30 @@ const normalizeRow = (row) => ({
   completionRate: normalizeNumber(row.completionRate ?? row.completion_rate)
 });
 
+const normalizeMonthlyRow = (row) => ({
+  projectId: row.projectId ?? row.project_id,
+  companyName: row.companyName ?? row.company_name ?? '',
+  projectName: row.projectName ?? row.project_name ?? '',
+  yearMonth: row.yearMonth ?? row.year_month ?? '',
+  plannedManDays: normalizeNumber(row.plannedManDays ?? row.planned_man_days),
+  actualManDays: normalizeNumber(row.actualManDays ?? row.actual_man_days),
+  achievementRate: normalizeNumber(row.achievementRate ?? row.achievement_rate)
+});
+
+const formatNumber = (value) => (value === null || value === undefined ? '-' : value);
+const formatPercent = (value) => (value === null || value === undefined ? '-' : `${value}%`);
+
 function CompanyPerformance() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [monthlyRows, setMonthlyRows] = useState([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState(null);
 
   // console.log('[CompanyPerformance] render', {
   //   selectedCompanyId,
@@ -130,6 +159,45 @@ function CompanyPerformance() {
     fetchReport();
   }, [selectedCompanyId]);
 
+  const handleRowClick = async (params) => {
+    const project = params.row;
+    if (!project?.id) {
+      return;
+    }
+    setSelectedProject(project);
+    setDialogOpen(true);
+    setMonthlyLoading(true);
+    setMonthlyError(null);
+    try {
+      const response = await reportAPI.getCompanyPerformanceMonthly(project.id);
+      const normalized = (response.data || []).map(normalizeMonthlyRow);
+      setMonthlyRows(normalized);
+    } catch (err) {
+      setMonthlyError(`월별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
+      setMonthlyRows([]);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedProject(null);
+    setMonthlyRows([]);
+    setMonthlyError(null);
+  };
+
+  const monthlyHeader = useMemo(() => {
+    if (monthlyRows.length === 0) {
+      return { companyName: '', projectName: '' };
+    }
+    const [first] = monthlyRows;
+    return {
+      companyName: first.companyName,
+      projectName: first.projectName
+    };
+  }, [monthlyRows]);
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box
@@ -204,10 +272,85 @@ function CompanyPerformance() {
                 pagination: { paginationModel: { pageSize: 10, page: 0 } }
               }}
               localeText={{ noRowsLabel: '조회 결과가 없습니다.' }}
+              onRowClick={handleRowClick}
             />
           )}
         </Paper>
       </Box>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary">
+                {monthlyHeader.companyName || selectedProject?.companyName || '회사명'}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {monthlyHeader.projectName || selectedProject?.projectName || '프로젝트명'}
+              </Typography>
+            </Box>
+            <IconButton onClick={handleCloseDialog}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Divider sx={{ mb: 2 }} />
+          {monthlyLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          )}
+          {monthlyError && <Alert severity="error">{monthlyError}</Alert>}
+          {!monthlyLoading && !monthlyError && monthlyRows.length > 0 && (
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table sx={{ minWidth: 600 }}>
+                <TableHead>
+                  <TableRow>
+                    {monthlyRows.map((item) => (
+                      <TableCell
+                        key={`${item.projectId}-${item.yearMonth}-header`}
+                        align="center"
+                        colSpan={3}
+                        sx={{ fontWeight: 700, bgcolor: 'grey.100' }}
+                      >
+                        {item.yearMonth}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    {monthlyRows.map((item) => (
+                      <React.Fragment key={`${item.projectId}-${item.yearMonth}-sub`}>
+                        <TableCell align="center">계획 공수</TableCell>
+                        <TableCell align="center">투입 공수</TableCell>
+                        <TableCell align="center">달성률</TableCell>
+                      </React.Fragment>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow>
+                    {monthlyRows.map((item) => (
+                      <React.Fragment key={`${item.projectId}-${item.yearMonth}-value`}>
+                        <TableCell align="center">{formatNumber(item.plannedManDays)}</TableCell>
+                        <TableCell align="center">{formatNumber(item.actualManDays)}</TableCell>
+                        <TableCell align="center">{formatPercent(item.achievementRate)}</TableCell>
+                      </React.Fragment>
+                    ))}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </Box>
+          )}
+          {!monthlyLoading && !monthlyError && monthlyRows.length === 0 && (
+            <Alert severity="info">표시할 월별 데이터가 없습니다.</Alert>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

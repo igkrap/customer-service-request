@@ -192,6 +192,10 @@ export const reportAPI = {
     api.get('/reports/company-performance', {
       params: companyId ? { companyId } : {},
     }),
+  getCompanyPerformanceMonthly: (projectId) =>
+    api.get('/reports/company-performance-monthly', {
+      params: { projectId },
+    }),
   getAnnualManagerPerformance: (year) =>
     api.get('/reports/annual-manager-performance', {
       params: { year },
