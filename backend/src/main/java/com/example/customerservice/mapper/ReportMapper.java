@@ -90,8 +90,9 @@ public interface ReportMapper {
             LEFT JOIN service_requests sr ON sr.project_id = p.id
                 AND date_trunc('month',
                     CASE
-                        WHEN sr.resolved_at IS NOT NULL AND LENGTH(TRIM(sr.resolved_at)) >= 7
-                            THEN TO_DATE(SUBSTRING(sr.resolved_at, 1, 7) || '-01', 'YYYY-MM-DD')
+                        WHEN sr.resolved_at IS NOT NULL
+                            AND TRIM(sr.resolved_at) ~ '^[0-9]{4}-(0[1-9]|1[0-2])'
+                            THEN TO_DATE(SUBSTRING(sr.resolved_at, 1, 7), 'YYYY-MM')
                         ELSE sr.created_at
                     END
                 ) = months.month_start
