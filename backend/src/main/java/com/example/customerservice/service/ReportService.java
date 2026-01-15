@@ -2,6 +2,7 @@ package com.example.customerservice.service;
 
 import com.example.customerservice.dto.AnnualManagerPerformanceDTO;
 import com.example.customerservice.dto.CompanyPerformanceDTO;
+import com.example.customerservice.dto.CompanyPerformanceMonthlyDTO;
 import com.example.customerservice.mapper.ReportMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,10 @@ public class ReportService {
 
     public List<CompanyPerformanceDTO> getCompanyPerformance(Long companyId) {
         return reportMapper.findCompanyPerformance(companyId);
+    }
+
+    public List<CompanyPerformanceMonthlyDTO> getCompanyPerformanceMonthly(Long projectId) {
+        return reportMapper.findCompanyPerformanceMonthly(projectId);
     }
 
     public List<AnnualManagerPerformanceDTO> getAnnualManagerPerformance(int year) {

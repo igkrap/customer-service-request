@@ -2,6 +2,7 @@ package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.AnnualManagerPerformanceDTO;
 import com.example.customerservice.dto.CompanyPerformanceDTO;
+import com.example.customerservice.dto.CompanyPerformanceMonthlyDTO;
 import com.example.customerservice.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,13 @@ public class ReportController {
             @RequestParam(required = false) Long companyId
     ) {
         return reportService.getCompanyPerformance(companyId);
+    }
+
+    @GetMapping("/company-performance-monthly")
+    public List<CompanyPerformanceMonthlyDTO> getCompanyPerformanceMonthly(
+            @RequestParam Long projectId
+    ) {
+        return reportService.getCompanyPerformanceMonthly(projectId);
     }
 
     @GetMapping("/annual-manager-performance")
