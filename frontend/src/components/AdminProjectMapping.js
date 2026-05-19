@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  FormControl,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+} from '@mui/material';
+import { Save as SaveIcon, Search as SearchIcon } from '@mui/icons-material';
 import { projectAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
-import {
-  Box,
-  Paper,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  Button,
-  Alert,
-  CircularProgress,
-  Divider,
-  Grid
-} from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import PageHeader, { PageActionButton } from './common/PageHeader';
+import { EmptyState, PageBody, RecordListItem, SectionPanel } from './common/WorkspaceLayout';
 
 function AdminProjectMapping() {
   const { user: currentUser } = useAuth();
@@ -27,116 +27,125 @@ function AdminProjectMapping() {
   const [projects, setProjects] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedProjects, setSelectedProjects] = useState([]);
+  const [projectQuery, setProjectQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [searched, setSearched] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchData();
-    }
-  }, [currentUser]);
+  const formatDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('ko-KR');
+  };
 
-  useEffect(() => {
-    if (selectedUserId) {
-      fetchUserProjects();
-    } else {
-      setSelectedProjects([]);
-    }
-  }, [selectedUserId]);
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
 
-  const fetchData = async () => {
     try {
+      setSearched(true);
       setLoading(true);
+      setError(null);
 
-      // Get all users
       const usersResponse = await userAPI.getAll();
-      setUsers(usersResponse.data);
+      setUsers(usersResponse.data || []);
 
-      // Get projects based on role
-      if (currentUser?.role === 'ROLE_MANAGER') {
-        // For managers, only fetch their assigned projects
+      if (currentUser.role === 'ROLE_MANAGER') {
         const assignedProjectIdsResponse = await userAPI.getProjects(currentUser.id);
-        const assignedProjectIds = assignedProjectIdsResponse.data;
+        const assignedProjectIds = assignedProjectIdsResponse.data || [];
         if (assignedProjectIds.length > 0) {
           const allProjectsResponse = await projectAPI.getAll();
-          const filteredProjects = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
-          setProjects(filteredProjects);
+          setProjects((allProjectsResponse.data || []).filter((project) => assignedProjectIds.includes(project.id)));
         } else {
           setProjects([]);
         }
       } else {
-        // For admins, get all projects
         const projectsResponse = await projectAPI.getAll();
-        setProjects(projectsResponse.data);
+        setProjects(projectsResponse.data || []);
       }
-
-      setError(null);
     } catch (err) {
-      setError('데이터 가져오기 실패: ' + (err.response?.data || err.message));
+      setError(`데이터를 불러오지 못했습니다: ${err.response?.data || err.message}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
-  const fetchUserProjects = async () => {
+  const fetchUserProjects = useCallback(async () => {
+    if (!selectedUserId) {
+      setSelectedProjects([]);
+      return;
+    }
+
     try {
       const userProjectsResponse = await userAPI.getProjects(selectedUserId);
-      setSelectedProjects(userProjectsResponse.data);
+      setSelectedProjects(userProjectsResponse.data || []);
     } catch (err) {
       setSelectedProjects([]);
     }
-  };
+  }, [selectedUserId]);
+
+  useEffect(() => {
+    fetchUserProjects();
+  }, [fetchUserProjects]);
+
+  const selectedUser = users.find((user) => user.id === Number(selectedUserId));
+
+  const filteredProjects = useMemo(() => {
+    if (!selectedUserId || !selectedUser) return [];
+
+    if (selectedUser.role === 'ROLE_CUSTOMER') {
+      return projects.filter((project) => project.companyId === selectedUser.companyId);
+    }
+
+    return projects;
+  }, [projects, selectedUser, selectedUserId]);
+
+  const visibleProjects = useMemo(() => {
+    const query = projectQuery.trim().toLowerCase();
+    if (!query) return filteredProjects;
+
+    return filteredProjects.filter((project) => (
+      [project.projectName, project.companyName, getServiceTypeLabel(project.serviceType)]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    ));
+  }, [filteredProjects, projectQuery]);
 
   const handleUserChange = (event) => {
     setSelectedUserId(event.target.value);
+    setProjectQuery('');
     setSuccess(null);
+    setError(null);
   };
 
   const handleToggle = (projectId) => {
-    setSelectedProjects(prev => {
-      if (prev.includes(projectId)) {
-        return prev.filter(id => id !== projectId);
-      } else {
-        return [...prev, projectId];
-      }
-    });
+    setSelectedProjects((prev) => (
+      prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId]
+    ));
   };
 
   const handleSave = async () => {
     if (!selectedUserId) {
-      setError('먼저 사용자를 선택하세요');
+      setError('먼저 사용자를 선택하세요.');
       return;
     }
 
     try {
       setSaving(true);
       await userAPI.assignProjects(selectedUserId, selectedProjects);
-      setSuccess('프로젝트가 성공적으로 할당되었습니다!');
+      setSuccess('프로젝트 할당이 저장되었습니다.');
       setError(null);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('프로젝트 할당 실패: ' + (err.response?.data || err.message));
+      setError(`프로젝트 할당 저장에 실패했습니다: ${err.response?.data || err.message}`);
       setSuccess(null);
     } finally {
       setSaving(false);
     }
-  };
-
-  const getFilteredProjects = () => {
-    if (!selectedUserId) return [];
-
-    const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
-    if (!selectedUser) return [];
-
-    // If user is a customer, only show projects from their company
-    if (selectedUser.role === 'ROLE_CUSTOMER') {
-      return projects.filter(p => p.companyId === selectedUser.companyId);
-    }
-
-    // If user is a manager or admin, show all projects
-    return projects;
   };
 
   if (loading) {
@@ -147,204 +156,154 @@ function AdminProjectMapping() {
     );
   }
 
-  const filteredProjects = getFilteredProjects();
-  const selectedUser = users.find(u => u.id === parseInt(selectedUserId));
+  const canEdit = currentUser?.role === 'ROLE_ADMIN';
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+      <PageHeader
+        title="사용자별 프로젝트 등록"
+        subtitle="사용자와 프로젝트의 할당 관계를 관리합니다."
+        actions={<PageActionButton action="search" onClick={fetchData} />}
+      />
+      <PageBody>
+        {error && <Alert severity="error">{error}</Alert>}
+        {success && <Alert severity="success">{success}</Alert>}
+
+        {!canEdit ? (
+          <SectionPanel
+            title="할당 프로젝트 조회"
+            subtitle="프로젝트 할당 변경은 관리자에게 요청하세요."
+            actions={<Chip label={`${projects.length}건`} size="small" color="primary" variant="outlined" />}
           >
-            사용자별 프로젝트 등록
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
-
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-
-        {currentUser?.role !== 'ROLE_ADMIN' && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            이 페이지는 조회 전용입니다. 프로젝트 할당을 변경하려면 관리자에게 문의하세요.
-          </Alert>
-        )}
-
-        {currentUser?.role === 'ROLE_ADMIN' && (
-          <>
-            <Alert severity="info" sx={{ mb: 3 }}>
-              사용자를 선택하고 프로젝트를 할당하세요. 유저는 자신의 회사 프로젝트만 할당할 수 있으며, 매니저는 모든 프로젝트를 할당받을 수 있습니다.
-            </Alert>
-
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControl fullWidth sx={{ minWidth: 300, maxWidth: 600 }}>
-                  <InputLabel>사용자 선택</InputLabel>
-                  <Select
-                    value={selectedUserId}
-                    onChange={handleUserChange}
-                    label="사용자 선택"
-                    MenuProps={{
-                      PaperProps: {
-                        style: {
-                          maxHeight: 400,
-                          width: 600
-                        }
-                      }
-                    }}
-                  >
-                    <MenuItem value="">
-                      <em>사용자를 선택하세요...</em>
-                    </MenuItem>
-                    {users.map(user => (
-                      <MenuItem key={user.id} value={user.id} sx={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                        {user.username} - {user.email} ({user.role})
-                        {user.companyName && ` - ${user.companyName}`}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-
-                {selectedUserId ? (
-                  <>
-                    {selectedUser && (
-                      <Alert severity="info" sx={{ mb: 2 }}>
-                        프로젝트 관리 대상: <strong>{selectedUser.username}</strong> ({selectedUser.role})
-                        {selectedUser.companyName && ` - ${selectedUser.companyName}`}
-                      </Alert>
-                    )}
-
-                    {filteredProjects.length === 0 ? (
-                      <Typography color="text.secondary">
-                        이 사용자에게 사용 가능한 프로젝트가 없습니다.
-                      </Typography>
-                    ) : (
-                      <>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                          사용 가능한 프로젝트 ({filteredProjects.length})
-                        </Typography>
-
-                        <FormGroup>
-                          {filteredProjects.map(project => (
-                            <FormControlLabel
-                              key={project.id}
-                              control={
-                                <Checkbox
-                                  checked={selectedProjects.includes(project.id)}
-                                  onChange={() => handleToggle(project.id)}
-                                  disabled={saving}
-                                />
-                              }
-                              label={
-                                <Box>
-                                  <Typography variant="body1">
-                                    {project.projectName}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
-                                    계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                    m/d: {project.contractManDays}
-                                  </Typography>
-                                </Box>
-                              }
-                            />
-                          ))}
-                        </FormGroup>
-
-                        <Divider sx={{ my: 3 }} />
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {selectedProjects.length}개 프로젝트 선택됨
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            startIcon={<SaveIcon />}
-                            onClick={handleSave}
-                            disabled={saving}
-                          >
-                            {saving ? '저장 중...' : '프로젝트 할당 저장'}
-                          </Button>
-                        </Box>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <Box>
-                    <Alert severity="info" sx={{ mb: 3 }}>
-                      위에서 사용자를 선택하면 해당 사용자에게 프로젝트를 할당할 수 있습니다.
-                    </Alert>
-
-                    {projects.length > 0 && (
-                      <>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                          전체 프로젝트 목록 ({projects.length})
-                        </Typography>
-                        <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-                          {projects.map(project => (
-                            <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                                {project.projectName}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
-                                계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                                m/d: {project.contractManDays}
-                              </Typography>
-                            </Box>
-                          ))}
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                )}
-              </Grid>
-            </Grid>
-          </>
-        )}
-
-        {currentUser?.role !== 'ROLE_ADMIN' && (
-          <>
-            {projects.length > 0 ? (
-              <>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  할당된 프로젝트 목록 ({projects.length})
-                </Typography>
-                <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-                  {projects.map(project => (
-                    <Box key={project.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {project.projectName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
-                        계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()} |
-                        m/d: {project.contractManDays}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </>
+            {projects.length === 0 ? (
+              <EmptyState title={searched ? '할당된 프로젝트가 없습니다' : '조회 버튼을 눌러 데이터를 조회하세요'} />
             ) : (
-              <Alert severity="info">
-                할당된 프로젝트가 없습니다.
-              </Alert>
+              <Stack spacing={1.25}>
+                {projects.map((project) => (
+                  <RecordListItem
+                    key={project.id}
+                    primary={project.projectName}
+                    secondary={project.companyName || '회사 정보 없음'}
+                    meta={[
+                      <Chip key="type" label={getServiceTypeLabel(project.serviceType)} size="small" />,
+                      <Chip
+                        key="period"
+                        label={`${formatDate(project.contractStartDate)} - ${formatDate(project.contractEndDate)}`}
+                        size="small"
+                        variant="outlined"
+                      />,
+                      project.contractManDays !== undefined && (
+                        <Chip key="md" label={`${project.contractManDays} M/D`} size="small" variant="outlined" />
+                      ),
+                    ].filter(Boolean)}
+                  />
+                ))}
+              </Stack>
             )}
+          </SectionPanel>
+        ) : (
+          <>
+            <SectionPanel
+              title="사용자 선택"
+              subtitle="고객은 소속 회사 프로젝트만, 매니저와 관리자는 전체 프로젝트를 할당할 수 있습니다."
+            >
+              <FormControl fullWidth sx={{ maxWidth: 680 }}>
+                <InputLabel>사용자 선택</InputLabel>
+                <Select
+                  value={selectedUserId}
+                  onChange={handleUserChange}
+                  label="사용자 선택"
+                  MenuProps={{
+                    PaperProps: {
+                      style: { maxHeight: 420 },
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>사용자를 선택하세요</em>
+                  </MenuItem>
+                  {users.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
+                      {user.username} - {user.email} ({user.role})
+                      {user.companyName && ` - ${user.companyName}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </SectionPanel>
+
+            <SectionPanel
+              title="프로젝트 할당"
+              subtitle={selectedUser ? `${selectedUser.username} 사용자에게 연결할 프로젝트를 선택합니다.` : '사용자를 선택하면 할당 가능한 프로젝트가 표시됩니다.'}
+              actions={(
+                <>
+                  <Chip label={`${selectedProjects.length}건 선택`} size="small" color="primary" variant="outlined" />
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSave}
+                    disabled={saving || !selectedUserId}
+                  >
+                    {saving ? '저장 중...' : '할당 저장'}
+                  </Button>
+                </>
+              )}
+              contentSx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+            >
+              <TextField
+                value={projectQuery}
+                onChange={(event) => setProjectQuery(event.target.value)}
+                placeholder="프로젝트명, 회사, 유형 검색"
+                size="small"
+                disabled={!selectedUserId}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {!selectedUserId ? (
+                <EmptyState
+                  title={searched ? '사용자를 먼저 선택하세요' : '조회 버튼을 눌러 데이터를 조회하세요'}
+                  description={searched ? '선택한 사용자의 역할과 회사에 맞춰 프로젝트 목록이 제한됩니다.' : '사용자와 프로젝트 목록은 조회 후 표시됩니다.'}
+                />
+              ) : visibleProjects.length === 0 ? (
+                <EmptyState title="할당 가능한 프로젝트가 없습니다" description="검색어 또는 사용자 회사 정보를 확인하세요." />
+              ) : (
+                <Stack spacing={1.25}>
+                  {visibleProjects.map((project) => {
+                    const isSelected = selectedProjects.includes(project.id);
+                    return (
+                      <RecordListItem
+                        key={project.id}
+                        selected={isSelected}
+                        leading={<Checkbox checked={isSelected} onChange={() => handleToggle(project.id)} disabled={saving} />}
+                        primary={project.projectName}
+                        secondary={project.companyName || '회사 정보 없음'}
+                        meta={[
+                          <Chip key="type" label={getServiceTypeLabel(project.serviceType)} size="small" />,
+                          <Chip
+                            key="period"
+                            label={`${formatDate(project.contractStartDate)} - ${formatDate(project.contractEndDate)}`}
+                            size="small"
+                            variant="outlined"
+                          />,
+                          project.contractManDays !== undefined && (
+                            <Chip key="md" label={`${project.contractManDays} M/D`} size="small" variant="outlined" />
+                          ),
+                        ].filter(Boolean)}
+                      />
+                    );
+                  })}
+                </Stack>
+              )}
+            </SectionPanel>
           </>
         )}
-      </Box>
+      </PageBody>
     </Box>
   );
 }

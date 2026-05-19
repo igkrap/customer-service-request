@@ -18,6 +18,7 @@ import {
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { attachmentAPI } from '../services/api';
+import { showError } from '../utils/alerts';
 
 const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
@@ -38,7 +39,7 @@ const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false })
       onAttachmentsChange([...attachments, ...uploadedFiles]);
     } catch (error) {
       console.error('File upload failed:', error);
-      alert('파일 업로드 실패: ' + (error.response?.data?.message || error.message));
+      showError('파일 업로드 실패', error.response?.data?.message || error.message);
     } finally {
       setUploading(false);
     }
@@ -61,7 +62,7 @@ const FileUpload = ({ attachments = [], onAttachmentsChange, disabled = false })
       link.remove();
     } catch (error) {
       console.error('File download failed:', error);
-      alert('파일 다운로드 실패');
+      showError('파일 다운로드 실패', '첨부파일을 다운로드하지 못했습니다.');
     }
   };
 

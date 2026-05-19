@@ -268,20 +268,25 @@ public class DataInitializer implements CommandLineRunner {
             - 필요시 첨부파일을 추가할 수 있습니다
             - 프로젝트를 선택합니다 (배정된 프로젝트 중 선택)
 
-            ## 2. 담당자 배정
-            - 시스템이 자동으로 담당 매니저를 배정합니다
-            - 매니저에게 이메일 알림이 전송됩니다
+            ## 2. 접수 및 담당자 배정
+            - 관리자가 접수 검토 후 담당 매니저를 배정합니다
+            - 매니저는 미배정 요청을 직접 가져올 수 있습니다
 
             ## 3. 진행 상태
-            - OPEN: 새로 등록된 상태
-            - IN_PROGRESS: 처리 중인 상태
-            - RESOLVED: 완료된 상태
-            - ON_HOLD: 대기 중인 상태
-            - CANCELLED: 취소된 상태
+            - OPEN: 신규 접수 대기
+            - TRIAGE: 접수 검토 중
+            - ASSIGNED: 담당자 배정 완료
+            - IN_PROGRESS: 처리 중
+            - WAITING_CUSTOMER: 고객 응답 대기
+            - HOLD: 내부 보류
+            - RESOLVED: 완료보고, 고객 확인 대기
+            - REOPENED: 고객 반려 후 재처리
+            - CLOSED: 고객 확인 완료
+            - CANCELLED: 취소
 
             ## 4. 완료 처리
-            - 매니저가 문제를 해결하면 RESOLVED 상태로 변경됩니다
-            - 고객에게 완료 알림이 전송됩니다
+            - 매니저가 완료보고를 등록하면 RESOLVED 상태가 됩니다
+            - 고객이 확인하면 CLOSED로 종료되고, 반려하면 REOPENED로 재처리됩니다
             """,
             "FAQ",
             admin.getId()

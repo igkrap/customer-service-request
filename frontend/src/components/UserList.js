@@ -1,32 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CircularProgress,
-  Typography,
   Alert,
   IconButton,
   Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download';
 import { userAPI, companyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
+import { confirmAction } from '../utils/alerts';
 
 function UserList() {
   const { user } = useAuth();
@@ -35,7 +32,8 @@ function UserList() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompanies, setSelectedCompanies] = useState({});
   const [selectedRoles, setSelectedRoles] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -46,12 +44,9 @@ function UserList() {
     companyId: ''
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const fetchUsers = async () => {
     try {
+      setSearched(true);
       setLoading(true);
       const [usersResponse, companiesResponse] = await Promise.all([
         userAPI.getAll(),
@@ -129,14 +124,22 @@ function UserList() {
       return;
     }
 
-    if (window.confirm('이 사용자를 삭제하시겠습니까?')) {
-      try {
-        await userAPI.delete(id);
-        fetchUsers();
-        setError(null);
-      } catch (err) {
-        setError('사용자 삭제 실패: ' + err.message);
-      }
+    const confirmed = await confirmAction({
+      title: '사용자 삭제',
+      text: '이 사용자를 삭제하시겠습니까?',
+      confirmButtonText: '삭제',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await userAPI.delete(id);
+      fetchUsers();
+      setError(null);
+    } catch (err) {
+      setError('사용자 삭제 실패: ' + err.message);
     }
   };
 
@@ -200,14 +203,22 @@ function UserList() {
   };
 
   const handleReject = async (userId) => {
-    if (window.confirm('이 사용자를 거부하시겠습니까?')) {
-      try {
-        await userAPI.reject(userId);
-        fetchUsers();
-        setError(null);
-      } catch (err) {
-        setError('사용자 거부 실패: ' + (err.response?.data || err.message));
-      }
+    const confirmed = await confirmAction({
+      title: '사용자 거부',
+      text: '이 사용자를 거부하시겠습니까?',
+      confirmButtonText: '거부',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await userAPI.reject(userId);
+      fetchUsers();
+      setError(null);
+    } catch (err) {
+      setError('사용자 거부 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -436,58 +447,38 @@ function UserList() {
   };
 
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          사용자 관리
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="사용자 관리"
+        actions={
+          <PageActions>
+            <PageActionButton action="search" onClick={fetchUsers} />
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={users.length === 0} />
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column' }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Dialog open={showEditForm && editingUser !== null} onClose={handleCancel} maxWidth="sm" fullWidth>
-          <DialogTitle>사용자 수정: {editingUser?.username}</DialogTitle>
-          <form onSubmit={handleSubmit}>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        {showEditForm && editingUser !== null && (
+          <InlineEditorPanel
+            title={`사용자 수정: ${editingUser?.username}`}
+            subtitle="이메일, 비밀번호, 역할, 고객 회사를 한 화면에서 수정합니다."
+            onClose={handleCancel}
+          >
+            <Box component="form" onSubmit={handleSubmit}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 2,
+                }}
+              >
                 <TextField
                   fullWidth
                   required
@@ -542,17 +533,17 @@ function UserList() {
                   </FormControl>
                 )}
               </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancel}>취소</Button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
+              <Button type="button" onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained" color="primary">
                 변경사항 저장
               </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           <DataGrid
             rows={users}
             columns={columns}
@@ -566,6 +557,7 @@ function UserList() {
             }}
             showToolbar
             sx={{ height: '100%', scrollbarGutter: 'stable' }}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
           />
         </Box>
       </Box>

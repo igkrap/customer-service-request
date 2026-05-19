@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Switch,
   FormControlLabel,
@@ -25,18 +20,17 @@ import {
 } from '@mui/material';
 import {
   Edit as EditIcon,
-  Email as EmailIcon,
-  Save as SaveIcon,
-  Close as CloseIcon
+  Save as SaveIcon
 } from '@mui/icons-material';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../services/api';
+import PageHeader from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
 
 function EmailTemplates() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editDialog, setEditDialog] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
@@ -59,11 +53,9 @@ function EmailTemplates() {
 
   const handleEdit = (template) => {
     setCurrentTemplate({ ...template });
-    setEditDialog(true);
   };
 
   const handleCloseEdit = () => {
-    setEditDialog(false);
     setCurrentTemplate(null);
   };
 
@@ -118,96 +110,42 @@ function EmailTemplates() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          이메일 템플릿 관리
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+      <PageHeader title="이메일 템플릿 관리" subtitle="알림 메일 문구와 변수를 관리합니다." />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-        <Alert severity="info" sx={{ mb: 3 }}>
+        <Alert severity="info" sx={{ mb: 0, borderRadius: 0 }}>
           각 이메일 템플릿을 편집할 수 있습니다. 변수는 {'{{'} 와 {'}}'}로 감싸서 사용합니다. (예: {'{{'} username {'}}'})
         </Alert>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>템플릿 이름</TableCell>
-                <TableCell>코드</TableCell>
-                <TableCell>제목</TableCell>
-                <TableCell>사용 변수</TableCell>
-                <TableCell>상태</TableCell>
-                <TableCell>작업</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {templates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell>{template.templateName}</TableCell>
-                  <TableCell>
-                    <Chip label={template.templateCode} size="small" />
-                  </TableCell>
-                  <TableCell>{template.subject}</TableCell>
-                  <TableCell>
-                    <Typography variant="caption" color="text.secondary">
-                      {template.variables}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={template.enabled ? '활성' : '비활성'}
-                      color={template.enabled ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleEdit(template)} color="primary" size="small">
-                      <EditIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialog} onClose={handleCloseEdit} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">템플릿 편집</Typography>
-            <IconButton onClick={handleCloseEdit} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          {currentTemplate && (
+        {currentTemplate && (
+          <InlineEditorPanel
+            title="템플릿 편집"
+            subtitle={`${currentTemplate.templateName} 템플릿의 제목, 본문, 변수를 수정합니다.`}
+            onClose={handleCloseEdit}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="템플릿 이름"
-                value={currentTemplate.templateName}
-                onChange={handleChange('templateName')}
-                fullWidth
-              />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 2,
+                }}
+              >
+                <TextField
+                  label="템플릿 이름"
+                  value={currentTemplate.templateName}
+                  onChange={handleChange('templateName')}
+                  fullWidth
+                />
 
-              <TextField
-                label="코드"
-                value={currentTemplate.templateCode}
-                disabled
-                fullWidth
-                helperText="템플릿 코드는 변경할 수 없습니다"
-              />
+                <TextField
+                  label="코드"
+                  value={currentTemplate.templateCode}
+                  disabled
+                  fullWidth
+                  helperText="템플릿 코드는 변경할 수 없습니다"
+                />
+              </Box>
 
               <TextField
                 label="제목"
@@ -217,7 +155,7 @@ function EmailTemplates() {
                 helperText="변수 사용 가능 (예: {{username}})"
               />
 
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   본문 (HTML 에디터)
                 </Typography>
@@ -260,16 +198,66 @@ function EmailTemplates() {
                 }
                 label="템플릿 활성화"
               />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button onClick={handleCloseEdit}>취소</Button>
+                <Button onClick={handleSave} variant="contained" startIcon={<SaveIcon />}>
+                  저장
+                </Button>
+              </Box>
             </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEdit}>취소</Button>
-          <Button onClick={handleSave} variant="contained" startIcon={<SaveIcon />}>
-            저장
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </InlineEditorPanel>
+        )}
+
+        <TableContainer
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderTop: 0,
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>템플릿 이름</TableCell>
+                <TableCell>코드</TableCell>
+                <TableCell>제목</TableCell>
+                <TableCell>사용 변수</TableCell>
+                <TableCell>상태</TableCell>
+                <TableCell>작업</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {templates.map((template) => (
+                <TableRow key={template.id}>
+                  <TableCell>{template.templateName}</TableCell>
+                  <TableCell>
+                    <Chip label={template.templateCode} size="small" />
+                  </TableCell>
+                  <TableCell>{template.subject}</TableCell>
+                  <TableCell>
+                    <Typography variant="caption" color="text.secondary">
+                      {template.variables}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={template.enabled ? '활성' : '비활성'}
+                      color={template.enabled ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleEdit(template)} color="primary" size="small">
+                      <EditIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
       <Snackbar
         open={snackbar.open}

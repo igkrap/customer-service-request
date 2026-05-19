@@ -5,10 +5,6 @@ import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   TextField,
   Select,
@@ -27,22 +23,19 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
-  Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  PlayArrow as StartIcon,
   Check as CompleteIcon,
-  Pause as HoldIcon,
   PersonRemove as UnassignIcon,
-  Download as DownloadIcon,
-  Close as CloseIcon,
-  Search as SearchIcon,
-  RestartAlt as RestartAltIcon
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
 import FileUpload from './FileUpload';
 import RichTextEditor from './RichTextEditor';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
+import { confirmAction, showError } from '../utils/alerts';
 
 // 날짜 형식 변환 함수
 const formatDateToYYYYMMDD = (dateString) => {
@@ -94,9 +87,11 @@ function ServiceRequestList() {
   const [allRequests, setAllRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searched, setSearched] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -106,6 +101,13 @@ function ServiceRequestList() {
   const [showResolutionDialog, setShowResolutionDialog] = useState(false);
   const [resolvingRequest, setResolvingRequest] = useState(null);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
+  const [workflowAction, setWorkflowAction] = useState(null);
+  const [workflowRequest, setWorkflowRequest] = useState(null);
+  const [workflowData, setWorkflowData] = useState({
+    managerId: '',
+    note: '',
+    reason: ''
+  });
   const [resolutionData, setResolutionData] = useState({
     hoursSpent: '',
     resolutionNotes: ''
@@ -174,11 +176,6 @@ function ServiceRequestList() {
 
   const selectedRequestAttachments = filterAttachmentsByType(selectedAttachments, 'REQUEST');
   const selectedResolutionAttachments = filterAttachmentsByType(selectedAttachments, 'RESOLUTION');
-
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const enrichRequestsWithProjectNames = (items, availableProjects) => {
     if (!Array.isArray(items) || !Array.isArray(availableProjects)) return items;
@@ -310,6 +307,7 @@ function ServiceRequestList() {
 
   const fetchData = async () => {
     try {
+      setSearched(true);
       setLoading(true);
       const requestsResponse = await serviceRequestAPI.getAll();
       let requestData = requestsResponse.data || [];
@@ -319,11 +317,17 @@ function ServiceRequestList() {
       // Fetch all users (customers) if admin
       if (user?.role === 'ROLE_ADMIN') {
         try {
-          const usersResponse = await userAPI.getAll();
+          const [usersResponse, managersResponse] = await Promise.all([
+            userAPI.getAll(),
+            userAPI.getAllManagers()
+          ]);
           setCustomers(usersResponse.data.filter(u => u.role === 'ROLE_CUSTOMER'));
+          setManagers(managersResponse.data || []);
         } catch (err) {
           // Error handling without console
         }
+      } else if (user?.role === 'ROLE_MANAGER') {
+        setManagers([user]);
       }
 
       // Fetch projects based on user's role
@@ -483,13 +487,21 @@ function ServiceRequestList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('이 서비스 요청을 삭제하시겠습니까?')) {
-      try {
-        await serviceRequestAPI.delete(id);
-        fetchData();
-      } catch (err) {
-        setError('Failed to delete service request: ' + err.message);
-      }
+    const confirmed = await confirmAction({
+      title: '서비스 요청 삭제',
+      text: '이 서비스 요청을 삭제하시겠습니까?',
+      confirmButtonText: '삭제',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await serviceRequestAPI.delete(id);
+      fetchData();
+    } catch (err) {
+      setError('Failed to delete service request: ' + err.message);
     }
   };
 
@@ -521,24 +533,6 @@ function ServiceRequestList() {
     setShowResolutionDialog(true);
   };
 
-  const handleStatusChange = async (request, newStatus) => {
-    const requestId = typeof request === 'object' ? request.id : request;
-
-    // If changing to RESOLVED, show dialog to collect hours and notes
-    if (newStatus === 'RESOLVED') {
-      await openResolutionDialog(request);
-      return;
-    }
-
-    try {
-      await serviceRequestAPI.updateStatus(requestId, newStatus);
-      fetchData();
-      setError(null);
-    } catch (err) {
-      setError('Failed to update status: ' + (err.response?.data || err.message));
-    }
-  };
-
   const handleResolve = async () => {
     if (!resolutionData.hoursSpent || !resolutionData.resolutionNotes) {
       setError('소요시간과 처리 내용을 모두 입력해주세요.');
@@ -546,13 +540,12 @@ function ServiceRequestList() {
     }
 
     try {
-      await serviceRequestAPI.updateStatus(
-        resolvingRequest,
-        'RESOLVED',
-        parseFloat(resolutionData.hoursSpent),
-        resolutionData.resolutionNotes,
-        resolutionAttachments
-      );
+      await serviceRequestAPI.resolve(resolvingRequest, {
+        hoursSpent: parseFloat(resolutionData.hoursSpent),
+        resolutionNotes: resolutionData.resolutionNotes,
+        attachments: resolutionAttachments,
+        note: isEditingResolution ? '완료보고 수정' : '완료보고'
+      });
       setShowResolutionDialog(false);
       setResolvingRequest(null);
       setResolutionData({ hoursSpent: '', resolutionNotes: '' });
@@ -561,7 +554,7 @@ function ServiceRequestList() {
       fetchData();
       setError(null);
     } catch (err) {
-      setError('완료 처리 실패: ' + (err.response?.data || err.message));
+      setError('완료보고 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -574,7 +567,13 @@ function ServiceRequestList() {
   };
 
   const handleUnassign = async (requestId) => {
-    if (!window.confirm('이 요청의 할당을 취소하시겠습니까? 상태가 OPEN으로 변경됩니다.')) {
+    const confirmed = await confirmAction({
+      title: '할당 취소',
+      text: '이 요청의 할당을 취소하시겠습니까? 상태가 OPEN으로 변경됩니다.',
+      confirmButtonText: '할당 취소',
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -643,33 +642,142 @@ function ServiceRequestList() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('File download failed:', error);
-      alert('파일 다운로드 실패');
+      showError('파일 다운로드 실패', '첨부파일을 다운로드하지 못했습니다.');
     }
   };
 
   const canEditRequest = (request) => {
     if (user?.role === 'ROLE_ADMIN') return true;
-    if (user?.role === 'ROLE_CUSTOMER' && request.customerId === user?.id) return true;
+    if (
+      user?.role === 'ROLE_CUSTOMER' &&
+      request.customerId === user?.id &&
+      ['OPEN', 'TRIAGE', 'WAITING_CUSTOMER', 'REOPENED'].includes(request.status)
+    ) return true;
     return false;
   };
 
-  const canChangeStatus = (request) => {
-    if (user?.role === 'ROLE_ADMIN') return true;
-    if (user?.role === 'ROLE_MANAGER') {
-      // Manager can change status if:
-      // 1. Request is assigned to them (managerId equals their ID)
-      // 2. Request is not assigned to anyone yet (managerId is null) - they can take it
-      // 3. Request is NOT assigned to another manager
-      return request.managerId === user?.id || request.managerId === null;
+  const canDeleteRequest = (request) => user?.role === 'ROLE_ADMIN' && request.status !== 'CLOSED';
+
+  const isAssignedToMe = (request) => request.managerId === user?.id;
+  const canManagerTake = (request) => user?.role === 'ROLE_MANAGER' && (!request.managerId || request.managerId === user?.id);
+  const isActiveWorkflow = (request) => !['CLOSED', 'CANCELLED'].includes(request.status);
+
+  const openWorkflowPanel = (request, action) => {
+    setWorkflowRequest(request);
+    setWorkflowAction(action);
+    setWorkflowData({
+      managerId: request.managerId ? String(request.managerId) : (user?.role === 'ROLE_MANAGER' ? String(user.id) : ''),
+      note: '',
+      reason: ''
+    });
+  };
+
+  const closeWorkflowPanel = () => {
+    setWorkflowAction(null);
+    setWorkflowRequest(null);
+    setWorkflowData({ managerId: '', note: '', reason: '' });
+  };
+
+  const workflowActionMeta = {
+    triage: {
+      title: '접수 처리',
+      submitLabel: '접수',
+      noteLabel: '접수 메모',
+      notePlaceholder: '접수 검토 내용을 입력하세요.'
+    },
+    assign: {
+      title: '담당자 배정',
+      submitLabel: '배정',
+      noteLabel: '배정 메모',
+      notePlaceholder: '배정 사유나 참고사항을 입력하세요.'
+    },
+    start: {
+      title: '처리 시작',
+      submitLabel: '시작',
+      noteLabel: '처리 메모',
+      notePlaceholder: '처리 시작 내용을 입력하세요.'
+    },
+    hold: {
+      title: '내부 보류',
+      submitLabel: '보류',
+      noteLabel: '보류 사유',
+      notePlaceholder: '보류 사유를 입력하세요.'
+    },
+    waitCustomer: {
+      title: '고객 응답 대기',
+      submitLabel: '고객대기',
+      noteLabel: '요청 내용',
+      notePlaceholder: '고객에게 확인이 필요한 내용을 입력하세요.'
+    },
+    close: {
+      title: '완료 확인',
+      submitLabel: '종료',
+      noteLabel: '확인 메모',
+      notePlaceholder: '완료 확인 메모를 입력하세요.'
+    },
+    rejectResolution: {
+      title: '완료보고 반려',
+      submitLabel: '반려',
+      reasonLabel: '반려 사유',
+      reasonPlaceholder: '반려 사유를 입력하세요.'
+    },
+    cancel: {
+      title: '요청 취소',
+      submitLabel: '취소',
+      reasonLabel: '취소 사유',
+      reasonPlaceholder: '취소 사유를 입력하세요.'
     }
-    return false;
+  };
+
+  const getWorkflowActionMeta = () => workflowActionMeta[workflowAction] || {
+    title: '업무 처리',
+    submitLabel: '처리',
+    noteLabel: '처리 메모',
+    notePlaceholder: '처리 내용을 입력하세요.'
+  };
+
+  const submitWorkflowAction = async (event) => {
+    event.preventDefault();
+    if (!workflowRequest || !workflowAction) return;
+    if (['assign', 'start'].includes(workflowAction) && user?.role === 'ROLE_ADMIN' && !workflowData.managerId) {
+      setError('담당자를 선택해주세요.');
+      return;
+    }
+
+    const id = workflowRequest.id;
+    const payload = {
+      note: workflowData.note || undefined,
+      reason: workflowData.reason || undefined,
+      managerId: workflowData.managerId ? parseInt(workflowData.managerId, 10) : undefined,
+    };
+
+    try {
+      if (workflowAction === 'triage') await serviceRequestAPI.triage(id, payload);
+      if (workflowAction === 'assign') await serviceRequestAPI.assign(id, payload);
+      if (workflowAction === 'start') await serviceRequestAPI.start(id, payload);
+      if (workflowAction === 'hold') await serviceRequestAPI.hold(id, payload);
+      if (workflowAction === 'waitCustomer') await serviceRequestAPI.waitCustomer(id, payload);
+      if (workflowAction === 'close') await serviceRequestAPI.close(id, payload);
+      if (workflowAction === 'rejectResolution') await serviceRequestAPI.rejectResolution(id, payload);
+      if (workflowAction === 'cancel') await serviceRequestAPI.cancel(id, payload);
+      closeWorkflowPanel();
+      await fetchData();
+      setError(null);
+    } catch (err) {
+      setError('워크플로우 처리 실패: ' + (err.response?.data || err.message));
+    }
   };
 
   const statusLabelMap = {
-    'OPEN': '대기',
+    'OPEN': '신규',
+    'TRIAGE': '접수검토',
+    'ASSIGNED': '배정완료',
     'IN_PROGRESS': '진행중',
-    'RESOLVED': '완료',
+    'WAITING_CUSTOMER': '고객응답대기',
     'HOLD': '보류',
+    'RESOLVED': '완료보고',
+    'REOPENED': '재처리',
+    'CLOSED': '종료',
     'CANCELLED': '취소'
   };
 
@@ -686,12 +794,39 @@ function ServiceRequestList() {
   const getStatusChip = (status) => {
     const colorMap = {
       'OPEN': 'primary',
+      'TRIAGE': 'secondary',
+      'ASSIGNED': 'info',
       'IN_PROGRESS': 'info',
-      'RESOLVED': 'success',
+      'WAITING_CUSTOMER': 'warning',
       'HOLD': 'warning',
+      'RESOLVED': 'success',
+      'REOPENED': 'error',
+      'CLOSED': 'default',
       'CANCELLED': 'error'
     };
     return <Chip label={getStatusLabel(status)} color={colorMap[status] || 'default'} size="small" />;
+  };
+
+  const workflowBuckets = [
+    { key: '', label: '전체' },
+    { key: 'OPEN', label: '신규' },
+    { key: 'TRIAGE', label: '접수검토' },
+    { key: 'ASSIGNED', label: '배정' },
+    { key: 'IN_PROGRESS', label: '처리중' },
+    { key: 'WAITING_CUSTOMER', label: '고객대기' },
+    { key: 'RESOLVED', label: '완료확인' },
+    { key: 'CLOSED', label: '종료' }
+  ];
+
+  const getWorkflowBucketCount = (status) => {
+    if (!status) return allRequests.length;
+    return allRequests.filter((request) => request.status === status).length;
+  };
+
+  const handleWorkflowBucketClick = (status) => {
+    const nextFilters = { ...filters, status };
+    setFilters(nextFilters);
+    applyFilters([...allRequests], nextFilters);
   };
 
   const getPriorityChip = (priority) => {
@@ -704,102 +839,110 @@ function ServiceRequestList() {
     return <Chip label={getPriorityLabel(priority)} color={colorMap[priority] || 'default'} size="small" />;
   };
 
+  const renderWorkflowButton = (label, action, request, color = 'inherit') => (
+    <Button
+      size="small"
+      color={color}
+      variant="outlined"
+      onClick={(e) => {
+        e.stopPropagation();
+        openWorkflowPanel(request, action);
+      }}
+      sx={{ minWidth: 'auto', px: 0.75, height: 28, fontSize: 12, fontWeight: 700 }}
+    >
+      {label}
+    </Button>
+  );
+
   const renderActionButtons = (request) => (
-    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      {canEditRequest(request) && (
+    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'center', height: '100%', flexWrap: 'wrap' }}>
+      {canDeleteRequest(request) && (
+        <IconButton
+          size="small"
+          color="primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit(request);
+          }}
+          title="수정"
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      )}
+      {user?.role === 'ROLE_ADMIN' && isActiveWorkflow(request) && (
         <>
-          <IconButton
-            size="small"
-            color="primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(request);
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            color="error"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(request.id);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          {['OPEN', 'REOPENED'].includes(request.status) && renderWorkflowButton('접수', 'triage', request)}
+          {['OPEN', 'TRIAGE', 'REOPENED', 'HOLD', 'WAITING_CUSTOMER'].includes(request.status) && renderWorkflowButton('배정', 'assign', request)}
+          {['ASSIGNED', 'REOPENED', 'HOLD', 'WAITING_CUSTOMER', 'TRIAGE'].includes(request.status) && renderWorkflowButton('시작', 'start', request)}
+          {renderWorkflowButton('취소', 'cancel', request, 'error')}
         </>
       )}
-      {canChangeStatus(request) && user?.role === 'ROLE_MANAGER' && (
+      {user?.role === 'ROLE_MANAGER' && isActiveWorkflow(request) && (
         <>
-          {request.status !== 'IN_PROGRESS' && request.status !== 'RESOLVED' && (
+          {['OPEN', 'REOPENED'].includes(request.status) && canManagerTake(request) && renderWorkflowButton('접수', 'triage', request)}
+          {['OPEN', 'TRIAGE', 'ASSIGNED', 'REOPENED', 'HOLD', 'WAITING_CUSTOMER'].includes(request.status) && canManagerTake(request) && renderWorkflowButton(request.managerId ? '시작' : '가져오기', 'start', request, 'success')}
+          {isAssignedToMe(request) && ['IN_PROGRESS', 'REOPENED'].includes(request.status) && renderWorkflowButton('고객응답', 'waitCustomer', request, 'warning')}
+          {isAssignedToMe(request) && ['IN_PROGRESS', 'REOPENED', 'WAITING_CUSTOMER'].includes(request.status) && renderWorkflowButton('보류', 'hold', request, 'warning')}
+          {isAssignedToMe(request) && ['IN_PROGRESS', 'REOPENED', 'HOLD', 'WAITING_CUSTOMER'].includes(request.status) && (
             <IconButton
               size="small"
               color="success"
               onClick={(e) => {
                 e.stopPropagation();
-                handleStatusChange(request, 'IN_PROGRESS');
+                openResolutionDialog(request);
               }}
-              title="시작"
+              title="완료보고"
             >
-              <StartIcon fontSize="small" />
+              <CompleteIcon fontSize="small" />
             </IconButton>
           )}
-          {request.status === 'RESOLVED' && (
-            <IconButton
+          {isAssignedToMe(request) && request.status === 'RESOLVED' && (
+            <Button
               size="small"
-              color="info"
+              variant="outlined"
+              color="success"
               onClick={(e) => {
                 e.stopPropagation();
-                handleStatusChange(request, 'RESOLVED');
+                openResolutionDialog(request);
               }}
-              title="완료 내용 수정"
+              sx={{ minWidth: 'auto', px: 0.75, height: 28, fontSize: 12, fontWeight: 700 }}
             >
-              <EditIcon fontSize="small" />
+              완료수정
+            </Button>
+          )}
+          {isAssignedToMe(request) && (
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUnassign(request.id);
+              }}
+              title="할당 취소"
+            >
+              <UnassignIcon fontSize="small" />
             </IconButton>
           )}
-          {request.managerId === user?.id && (
-            <>
-              {request.status !== 'RESOLVED' && (
-                <IconButton
-                  size="small"
-                  color="info"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusChange(request, 'RESOLVED');
-                  }}
-                  title="완료"
-                >
-                  <CompleteIcon fontSize="small" />
-                </IconButton>
-              )}
-              {request.status === 'IN_PROGRESS' && (
-                <IconButton
-                  size="small"
-                  color="warning"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusChange(request, 'HOLD');
-                  }}
-                  title="보류"
-                >
-                  <HoldIcon fontSize="small" />
-                </IconButton>
-              )}
-              <IconButton
-                size="small"
-                color="error"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleUnassign(request.id);
-                }}
-                title="할당 취소"
-              >
-                <UnassignIcon fontSize="small" />
-              </IconButton>
-            </>
-          )}
         </>
+      )}
+      {user?.role === 'ROLE_CUSTOMER' && request.customerId === user?.id && request.status === 'RESOLVED' && (
+        <>
+          {renderWorkflowButton('확인', 'close', request, 'success')}
+          {renderWorkflowButton('반려', 'rejectResolution', request, 'error')}
+        </>
+      )}
+      {canEditRequest(request) && (
+        <IconButton
+          size="small"
+          color="error"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(request.id);
+          }}
+          title="삭제"
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
       )}
     </Box>
   );
@@ -1035,20 +1178,31 @@ function ServiceRequestList() {
     },
     {
       field: 'resolvedAt',
-      headerName: '완료일자',
+      headerName: '완료보고일',
       flex: 1,
       minWidth: 110,
       valueFormatter: (value) => {
         if (!value) return '';
         return formatDateForDisplay(value);
       },
-      renderHeader: () => renderHeaderTooltip('완료일자', '요청 완료일')
+      renderHeader: () => renderHeaderTooltip('완료보고일', '매니저 완료보고일')
+    },
+    {
+      field: 'closedAt',
+      headerName: '종료일',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (value) => {
+        if (!value) return '';
+        return formatDateForDisplay(value);
+      },
+      renderHeader: () => renderHeaderTooltip('종료일', '고객 확인 종료일')
     },
     {
       field: 'actions',
       headerName: '작업버튼',
-      flex: 1.1,
-      minWidth: 120,
+      flex: 1.4,
+      minWidth: 220,
       sortable: false,
       align: 'center',
       headerAlign: 'center',
@@ -1064,9 +1218,6 @@ function ServiceRequestList() {
       : request.createdAt
         ? new Date(request.createdAt)
         : null;
-    const resolvedDate = request.resolvedAt
-      ? new Date(formatDateFromYYYYMMDD(request.resolvedAt))
-      : null;
     const entries = [
       {
         key: 'created',
@@ -1081,33 +1232,40 @@ function ServiceRequestList() {
       },
     ];
 
-    if (request.managerName && request.managerName !== '미할당') {
+    const pushDateEntry = (key, label, value, detail = null) => {
+      if (!value) return;
+      entries.push({
+        key,
+        label,
+        detail,
+        date: new Date(formatDateFromYYYYMMDD(value)),
+        dateLabel: formatDateForDisplay(value),
+      });
+    };
+
+    if (request.managerName && request.managerName !== '미할당' && request.assignedAt) {
       entries.push({
         key: 'manager',
-        label: '담당자 배정',
+        label: '담당자 배정 완료',
         detail: request.managerName,
-        date: request.updatedAt ? new Date(request.updatedAt) : null,
-        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
+        date: new Date(formatDateFromYYYYMMDD(request.assignedAt)),
+        dateLabel: formatDateForDisplay(request.assignedAt),
       });
     }
 
-    if (request.status && request.status !== 'OPEN') {
+    pushDateEntry('started', '처리 시작', request.startedAt, request.managerName || null);
+    pushDateEntry('resolved', '완료보고', request.resolvedAt);
+    pushDateEntry('reopened', '반려 후 재처리', request.reopenedAt);
+    pushDateEntry('closed', '고객 확인 종료', request.closedAt);
+    pushDateEntry('cancelled', '요청 취소', request.cancelledAt);
+
+    if (request.status && request.status !== 'OPEN' && request.updatedAt) {
       entries.push({
         key: 'status',
-        label: '상태 변경',
+        label: '현재 상태',
         detail: getStatusLabel(request.status),
-        date: request.updatedAt ? new Date(request.updatedAt) : null,
-        dateLabel: request.updatedAt ? formatDateTime(request.updatedAt) : '',
-      });
-    }
-
-    if (request.resolvedAt) {
-      entries.push({
-        key: 'resolved',
-        label: '해결 완료',
-        detail: null,
-        date: resolvedDate,
-        dateLabel: formatDateForDisplay(request.resolvedAt),
+        date: new Date(request.updatedAt),
+        dateLabel: formatDateTime(request.updatedAt),
       });
     }
 
@@ -1117,7 +1275,7 @@ function ServiceRequestList() {
   };
 
   const handleExportToExcel = () => {
-    const headers = ['요청 ID', '회사 명', '프로젝트 명', '요청자', '제목', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료일자'];
+    const headers = ['요청 ID', '회사 명', '프로젝트 명', '요청자', '제목', '상태', '우선순위', '담당자', '접수일자', '마감일자', '완료보고일', '종료일'];
 
     const excelData = filteredRequests.map(req => [
       req.id,
@@ -1130,7 +1288,8 @@ function ServiceRequestList() {
       (req.managerName && req.managerName.trim() !== '') ? req.managerName : '-',
       req.receivedAt ? formatDateForDisplay(req.receivedAt) : '',
       req.dueDate ? formatDateForDisplay(req.dueDate) : '',
-      req.resolvedAt ? formatDateForDisplay(req.resolvedAt) : ''
+      req.resolvedAt ? formatDateForDisplay(req.resolvedAt) : '',
+      req.closedAt ? formatDateForDisplay(req.closedAt) : ''
     ]);
 
     const worksheetData = [headers, ...excelData];
@@ -1147,7 +1306,8 @@ function ServiceRequestList() {
       { wch: 15 }, // 담당자
       { wch: 14 }, // 접수일자
       { wch: 12 }, // 마감일자
-      { wch: 12 }  // 완료일자
+      { wch: 12 }, // 완료보고일
+      { wch: 12 }  // 종료일
     ];
     worksheet['!cols'] = columnWidths;
 
@@ -1159,32 +1319,7 @@ function ServiceRequestList() {
   };
 
   function CustomToolbar() {
-    return (
-      <Box
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </Box>
-    );
+    return null;
   }
 
   if (loading) {
@@ -1199,56 +1334,58 @@ function ServiceRequestList() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            {user?.role === 'ROLE_CUSTOMER' ? '서비스 요청 등록' :
-             user?.role === 'ROLE_MANAGER' ? '서비스 요청 처리' :
-             '서비스 요청 관리'}
-          </Typography>
-          {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                resetFormState();
-                setShowForm(true);
-              }}
-            >
-              새 요청 생성
-            </Button>
-          )}
-        </Box>
-      </Box>
+      <PageHeader
+        title={
+          user?.role === 'ROLE_CUSTOMER' ? '서비스 요청 등록' :
+          user?.role === 'ROLE_MANAGER' ? '서비스 요청 처리' :
+          '서비스 요청 관리'
+        }
+        subtitle="요청 현황을 필터링하고 처리 이력을 확인합니다."
+        actions={
+          <PageActions>
+            <PageActionButton action="reset" onClick={handleFilterReset} />
+            <PageActionButton action="search" onClick={handleFilterSearch} />
+            {!showForm && (user?.role === 'ROLE_CUSTOMER' || user?.role === 'ROLE_ADMIN') && (
+              <PageActionButton
+                action="create"
+                onClick={() => {
+                  resetFormState();
+                  setShowForm(true);
+                }}
+              />
+            )}
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={filteredRequests.length === 0} />
+          </PageActions>
+        }
+      />
       <Box
         sx={{
           flexGrow: 1,
           overflow: 'hidden',
-          p: 3,
+          p: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: 0,
           minHeight: 0
         }}
       >
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1.5,
+            borderRadius: 0,
+            bgcolor: 'background.paper',
+          }}
+        >
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={1.5}
             alignItems={{ xs: 'stretch', md: 'center' }}
             flexWrap="wrap"
-            sx={{ rowGap: 2, columnGap: 2 }}
+            sx={{ rowGap: 1.5, columnGap: 1.5 }}
           >
             <TextField
               label="제목"
@@ -1376,37 +1513,57 @@ function ServiceRequestList() {
               size="small"
               sx={{ minWidth: 170 }}
             />
-            <Stack direction="row" spacing={1} sx={{ ml: { xs: 0, md: 'auto' } }}>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<SearchIcon />}
-                onClick={handleFilterSearch}
-                sx={{ minWidth: 110 }}
-              >
-                조회
-              </Button>
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<RestartAltIcon />}
-                onClick={handleFilterReset}
-                sx={{ minWidth: 110 }}
-              >
-                초기화
-              </Button>
-            </Stack>
           </Stack>
         </Paper>
 
-        {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <form onSubmit={handleSubmit}>
-            <DialogTitle>
-              {editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            borderRadius: 0,
+            borderTop: 0,
+            bgcolor: 'background.paper',
+            px: 1.5,
+            py: 1
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ overflowX: 'auto', pb: 0.25 }}>
+            {workflowBuckets.map((bucket) => {
+              const selected = filters.status === bucket.key;
+              return (
+                <Button
+                  key={bucket.key || 'all'}
+                  size="small"
+                  variant={selected ? 'contained' : 'outlined'}
+                  color={selected ? 'primary' : 'inherit'}
+                  onClick={() => handleWorkflowBucketClick(bucket.key)}
+                  sx={{
+                    flexShrink: 0,
+                    minWidth: 'auto',
+                    height: 32,
+                    px: 1.25,
+                    borderRadius: 1,
+                    fontWeight: 700
+                  }}
+                >
+                  {bucket.label}
+                  <Typography component="span" variant="caption" sx={{ ml: 0.75, opacity: 0.75, fontWeight: 700 }}>
+                    {getWorkflowBucketCount(bucket.key)}
+                  </Typography>
+                </Button>
+              );
+            })}
+          </Stack>
+        </Paper>
+
+        {showForm && (
+          <InlineEditorPanel
+            title={editingRequest ? '서비스 요청 수정' : '새 서비스 요청 생성'}
+            subtitle="요청 기본 정보, 일정, 첨부파일을 한 번에 관리합니다."
+            onClose={handleCancel}
+            width={720}
+          >
+            <Box component="form" onSubmit={handleSubmit}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {user?.role === 'ROLE_ADMIN' && customers.length > 0 && (
                   <FormControl fullWidth required>
                     <InputLabel>요청자</InputLabel>
@@ -1471,11 +1628,11 @@ function ServiceRequestList() {
                       onChange={handleInputChange}
                       label="상태"
                     >
-                      <MenuItem value="OPEN">열림</MenuItem>
-                      <MenuItem value="IN_PROGRESS">진행중</MenuItem>
-                      <MenuItem value="RESOLVED">해결됨</MenuItem>
-                      <MenuItem value="HOLD">보류</MenuItem>
-                      <MenuItem value="CANCELLED">취소됨</MenuItem>
+                      {Object.entries(statusLabelMap).map(([key, label]) => (
+                        <MenuItem key={key} value={key}>
+                          {label}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 )}
@@ -1562,7 +1719,7 @@ function ServiceRequestList() {
                     <TextField
                       fullWidth
                       type="date"
-                      label="해결일자"
+                      label="완료보고일"
                       name="resolvedAt"
                       value={formData.resolvedAt}
                       onChange={handleInputChange}
@@ -1580,37 +1737,81 @@ function ServiceRequestList() {
                   onAttachmentsChange={setAttachments}
                 />
               </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancel}>취소</Button>
-              <Button type="submit" variant="contained">
-                {editingRequest ? '수정' : '생성'}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
+                <Button onClick={handleCancel}>취소</Button>
+                <Button type="submit" variant="contained">
+                  {editingRequest ? '수정' : '생성'}
+                </Button>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
-        {/* Detail View Dialog */}
-        <Dialog
-          open={showDetailDialog}
-          onClose={handleCloseDetail}
-          maxWidth="lg"
-          fullWidth
-          PaperProps={{ sx: { borderRadius: 2 } }}
-        >
-          <DialogTitle sx={{ pr: 6 }}>
-            서비스 요청 상세정보
-            <IconButton
-              onClick={handleCloseDetail}
-              sx={{ position: 'absolute', right: 12, top: 12 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            {selectedRequest && (
+        {workflowAction && workflowRequest && (
+          <InlineEditorPanel
+            title={getWorkflowActionMeta().title}
+            subtitle={`#${workflowRequest.id} ${workflowRequest.title}`}
+            onClose={closeWorkflowPanel}
+            width={520}
+          >
+            <Box component="form" onSubmit={submitWorkflowAction} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {['assign', 'start'].includes(workflowAction) && user?.role === 'ROLE_ADMIN' && (
+                <FormControl fullWidth required>
+                  <InputLabel>담당자</InputLabel>
+                  <Select
+                    value={workflowData.managerId}
+                    label="담당자"
+                    onChange={(event) => setWorkflowData((prev) => ({ ...prev, managerId: event.target.value }))}
+                  >
+                    <MenuItem value="">담당자 선택</MenuItem>
+                    {managers.map((manager) => (
+                      <MenuItem key={manager.id} value={String(manager.id)}>
+                        {manager.username || manager.name || manager.email}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {['cancel', 'rejectResolution'].includes(workflowAction) ? (
+                <TextField
+                  label={getWorkflowActionMeta().reasonLabel}
+                  value={workflowData.reason}
+                  onChange={(event) => setWorkflowData((prev) => ({ ...prev, reason: event.target.value }))}
+                  placeholder={getWorkflowActionMeta().reasonPlaceholder}
+                  multiline
+                  minRows={5}
+                  fullWidth
+                />
+              ) : (
+                <TextField
+                  label={getWorkflowActionMeta().noteLabel}
+                  value={workflowData.note}
+                  onChange={(event) => setWorkflowData((prev) => ({ ...prev, note: event.target.value }))}
+                  placeholder={getWorkflowActionMeta().notePlaceholder}
+                  multiline
+                  minRows={5}
+                  fullWidth
+                />
+              )}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button onClick={closeWorkflowPanel}>취소</Button>
+                <Button type="submit" variant="contained">
+                  {getWorkflowActionMeta().submitLabel}
+                </Button>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
+
+        {showDetailDialog && selectedRequest && (
+          <InlineEditorPanel
+            title="서비스 요청 상세정보"
+            subtitle={`#${selectedRequest.id} ${selectedRequest.title}`}
+            onClose={handleCloseDetail}
+            width={860}
+          >
               <Stack spacing={2}>
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                   <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                     기본 정보
                   </Typography>
@@ -1623,30 +1824,13 @@ function ServiceRequestList() {
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">상태</Typography>
                       <Box sx={{ mt: 0.5 }}>
-                        <Chip
-                          label={selectedRequest.status === 'OPEN' ? '열림' :
-                                 selectedRequest.status === 'IN_PROGRESS' ? '진행중' :
-                                 selectedRequest.status === 'RESOLVED' ? '해결됨' :
-                                 selectedRequest.status === 'HOLD' ? '보류' : '취소됨'}
-                          color={selectedRequest.status === 'OPEN' ? 'primary' :
-                                 selectedRequest.status === 'IN_PROGRESS' ? 'info' :
-                                 selectedRequest.status === 'RESOLVED' ? 'success' :
-                                 selectedRequest.status === 'HOLD' ? 'warning' : 'default'}
-                          size="small"
-                        />
+                        {getStatusChip(selectedRequest.status)}
                       </Box>
                     </Box>
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
                       <Typography variant="caption" color="text.secondary">우선순위</Typography>
                       <Box sx={{ mt: 0.5 }}>
-                        <Chip
-                          label={selectedRequest.priority === 'LOW' ? '낮음' :
-                                 selectedRequest.priority === 'MEDIUM' ? '보통' :
-                                 selectedRequest.priority === 'HIGH' ? '높음' : '긴급'}
-                          color={selectedRequest.priority === 'URGENT' ? 'error' :
-                                 selectedRequest.priority === 'HIGH' ? 'warning' : 'default'}
-                          size="small"
-                        />
+                        {getPriorityChip(selectedRequest.priority)}
                       </Box>
                     </Box>
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
@@ -1676,10 +1860,18 @@ function ServiceRequestList() {
                       </Typography>
                     </Box>
                     <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
-                      <Typography variant="caption" color="text.secondary">해결일자</Typography>
+                      <Typography variant="caption" color="text.secondary">완료보고일</Typography>
                       <Typography variant="body1" sx={{ mt: 0.5 }}>
                         {selectedRequest.resolvedAt
                           ? formatDateForDisplay(selectedRequest.resolvedAt)
+                          : '-'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 1.25, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
+                      <Typography variant="caption" color="text.secondary">종료일</Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {selectedRequest.closedAt
+                          ? formatDateForDisplay(selectedRequest.closedAt)
                           : '-'}
                       </Typography>
                     </Box>
@@ -1687,7 +1879,7 @@ function ServiceRequestList() {
                 </Paper>
 
                 {user?.role === 'ROLE_ADMIN' && timelineEntries.length > 0 && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       요청 이력
                     </Typography>
@@ -1725,7 +1917,7 @@ function ServiceRequestList() {
                 )}
 
                 {user?.role === 'ROLE_ADMIN' && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       변경 기록
                     </Typography>
@@ -1778,7 +1970,7 @@ function ServiceRequestList() {
                 )}
 
                 {selectedRequest.description && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       설명
                     </Typography>
@@ -1795,7 +1987,7 @@ function ServiceRequestList() {
                 )}
 
                 {selectedRequest.resolutionNotes && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       처리 내용
                     </Typography>
@@ -1817,7 +2009,7 @@ function ServiceRequestList() {
                 )}
 
                 {(selectedRequestAttachments.length > 0 || selectedResolutionAttachments.length > 0) && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       첨부파일
                     </Typography>
@@ -1901,7 +2093,7 @@ function ServiceRequestList() {
                 )}
 
                 {selectedFollowUps.length > 0 && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                       후속 요청
                     </Typography>
@@ -1922,14 +2114,7 @@ function ServiceRequestList() {
                             <Typography variant="body2" fontWeight="bold">
                               #{followUp.id} - {followUp.title}
                             </Typography>
-                            <Chip
-                              label={followUp.status === 'OPEN' ? '열림' :
-                                     followUp.status === 'IN_PROGRESS' ? '진행중' :
-                                     followUp.status === 'RESOLVED' ? '해결됨' : followUp.status}
-                              size="small"
-                              color={followUp.status === 'RESOLVED' ? 'success' :
-                                     followUp.status === 'IN_PROGRESS' ? 'info' : 'default'}
-                            />
+                            {getStatusChip(followUp.status)}
                           </Box>
                           {followUp.description && (
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -1942,17 +2127,16 @@ function ServiceRequestList() {
                   </Paper>
                 )}
               </Stack>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDetail}>닫기</Button>
-          </DialogActions>
-        </Dialog>
+          </InlineEditorPanel>
+        )}
 
-        {/* Resolution Dialog */}
-        <Dialog open={showResolutionDialog} onClose={handleCancelResolve} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-          <DialogTitle>{isEditingResolution ? '완료 내용 수정' : '서비스 요청 완료'}</DialogTitle>
-          <DialogContent>
+        {showResolutionDialog && (
+          <InlineEditorPanel
+            title={isEditingResolution ? '완료 내용 수정' : '완료보고'}
+            subtitle="처리 시간, 완료 내용, 산출물을 등록합니다."
+            onClose={handleCancelResolve}
+            width={760}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Alert severity="info">
                 {isEditingResolution
@@ -1989,8 +2173,7 @@ function ServiceRequestList() {
                 onAttachmentsChange={setResolutionAttachments}
               />
             </Box>
-          </DialogContent>
-          <DialogActions>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
             <Button onClick={handleCancelResolve}>취소</Button>
             <Button
               onClick={handleResolve}
@@ -1998,10 +2181,11 @@ function ServiceRequestList() {
               color="success"
               disabled={!resolutionData.hoursSpent || !resolutionData.resolutionNotes}
             >
-              완료 처리
+              완료보고
             </Button>
-          </DialogActions>
-        </Dialog>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
         <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex' }}>
           <DataGrid
@@ -2013,6 +2197,7 @@ function ServiceRequestList() {
             disableRowSelectionOnClick
             onRowClick={(params) => handleDetailOpen(params.row)}
             getRowId={(row) => row.id}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
             initialState={{
               sorting: {
                 sortModel: [{ field: 'receivedAt', sort: 'desc' }],

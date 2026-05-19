@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
+  Stack,
   Typography,
-  Grid,
   Card,
   CardContent,
   CardHeader,
@@ -17,28 +17,43 @@ import {
   TableRow,
   IconButton,
   Tooltip,
-  Badge,
   Fade,
 } from '@mui/material';
 import {
-  CalendarMonth as CalendarIcon,
-  People as UsersIcon,
-  Business as CompanyIcon,
-  Work as ProjectIcon,
   Assignment as RequestIcon,
-  Folder as MyProjectIcon,
   HourglassEmpty as PendingIcon,
   Pause as OnHoldIcon,
   CheckCircle as CompletedIcon,
   Settings as SettingsIcon,
+  PriorityHigh as PriorityIcon,
+  Schedule as ScheduleIcon,
+  FactCheck as SummaryIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import UserProfile from './UserProfile';
 import axios from 'axios';
 import { getProfilePictureUrl } from '../services/api';
+import PageHeader from './common/PageHeader';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip as ChartTooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -51,6 +66,69 @@ const getRoleLabel = (role) => {
   };
   return roleMap[role] || role?.replace('ROLE_', '');
 };
+
+const STATUS_META = {
+  OPEN: { label: '접수 대기', color: '#64748b' },
+  TRIAGE: { label: '접수검토', color: '#7c3aed' },
+  ASSIGNED: { label: '배정완료', color: '#0ea5e9' },
+  IN_PROGRESS: { label: '진행중', color: '#2563eb' },
+  WAITING_CUSTOMER: { label: '고객응답대기', color: '#d97706' },
+  HOLD: { label: '보류', color: '#d97706' },
+  RESOLVED: { label: '고객확인대기', color: '#059669' },
+  REOPENED: { label: '재처리', color: '#dc2626' },
+  CLOSED: { label: '종료', color: '#334155' },
+  CANCELLED: { label: '취소', color: '#94a3b8' },
+};
+
+const PRIORITY_META = {
+  URGENT: { label: '긴급', color: '#dc2626' },
+  HIGH: { label: '높음', color: '#ea580c' },
+  MEDIUM: { label: '보통', color: '#2563eb' },
+  LOW: { label: '낮음', color: '#64748b' },
+};
+
+const ROLE_ORDER = ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_CUSTOMER'];
+const STATUS_ORDER = ['OPEN', 'TRIAGE', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'HOLD', 'RESOLVED', 'REOPENED', 'CLOSED', 'CANCELLED'];
+const PRIORITY_ORDER = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+const CHART_AXIS_COLOR = '#94a3b8';
+const CHART_GRID_COLOR = '#e2e8f0';
+
+const getStatusLabel = (status) => STATUS_META[status]?.label || status || '-';
+const getPriorityLabel = (priority) => PRIORITY_META[priority]?.label || priority || '-';
+
+const parseDashboardDate = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string' && /^\d{8}$/.test(value)) {
+    const year = Number(value.slice(0, 4));
+    const month = Number(value.slice(4, 6)) - 1;
+    const day = Number(value.slice(6, 8));
+    return new Date(year, month, day);
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getRequestBaseDate = (request) => (
+  parseDashboardDate(request?.receivedAt)
+  || parseDashboardDate(request?.createdAt)
+  || parseDashboardDate(request?.updatedAt)
+  || parseDashboardDate(request?.dueDate)
+);
+
+const formatDashboardDate = (value) => {
+  const date = parseDashboardDate(value);
+  if (!date) return '-';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
+};
+
+const isTerminalRequest = (request) => ['CLOSED', 'CANCELLED'].includes(request?.status);
+const isActiveRequest = (request) => !isTerminalRequest(request);
+const isCompletedRequest = (request) => ['CLOSED', 'RESOLVED'].includes(request?.status);
+const isUnassignedRequest = (request) => !request?.managerId || !request?.managerName || request?.managerName === '미배정';
 
 function DashboardHome() {
   const { user } = useAuth();
@@ -92,10 +170,10 @@ function DashboardHome() {
         ]);
 
         const dashboardData = {
-          users: usersRes.data.slice(0, 5),
-          companies: companiesRes.data.slice(0, 5),
-          projects: projectsRes.data.slice(0, 5),
-          requests: requestsRes.data.slice(0, 5),
+          users: usersRes.data,
+          companies: companiesRes.data,
+          projects: projectsRes.data,
+          requests: requestsRes.data,
           allRequests: requestsRes.data,
         };
 
@@ -112,10 +190,11 @@ function DashboardHome() {
 
         const allRequests = requestsRes.data;
         const dashboardData = {
-          myProjects: projectsRes.data.slice(0, 5),
-          unassignedRequests: allRequests.filter(r => !r.managerName || r.managerName === '미배정').slice(0, 5),
-          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
+          myProjects: projectsRes.data,
+          unassignedRequests: allRequests.filter(r => !r.managerName || r.managerName === '미배정'),
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS'),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD'),
+          completedRequests: allRequests.filter(r => r.status === 'CLOSED'),
           allRequests: allRequests,
         };
 
@@ -140,10 +219,10 @@ function DashboardHome() {
         }
 
         const dashboardData = {
-          myProjects: myProjects.slice(0, 5),
-          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS').slice(0, 5),
-          onHoldRequests: allRequests.filter(r => r.status === 'HOLD').slice(0, 5),
-          completedRequests: allRequests.filter(r => r.status === 'RESOLVED').slice(0, 5),
+          myProjects: myProjects,
+          pendingRequests: allRequests.filter(r => r.status === 'IN_PROGRESS'),
+          onHoldRequests: allRequests.filter(r => r.status === 'HOLD'),
+          completedRequests: allRequests.filter(r => r.status === 'CLOSED'),
           allRequests: allRequests,
         };
 
@@ -181,6 +260,35 @@ function DashboardHome() {
   const [hoveredDate, setHoveredDate] = useState(null);
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const dashboardGridSx = {
+    height: '100%',
+    minWidth: 1120,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
+    borderTop: '1px solid',
+    borderLeft: '1px solid',
+    borderColor: 'divider',
+  };
+  const dashboardTileSx = {
+    minWidth: 0,
+    minHeight: 0,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: 0,
+    boxShadow: 'none',
+    borderRight: '1px solid',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+  };
+  const cardAvatarSx = {
+    bgcolor: 'background.paper',
+    color: 'text.secondary',
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 1,
+  };
 
   useEffect(() => {
     fetchWeatherData();
@@ -297,8 +405,7 @@ function DashboardHome() {
     return data.allRequests.filter(req => {
       if (!req.dueDate) return false;
       // dueDate가 yyyyMMdd 형식이므로 직접 비교
-      // 완료되지 않은 요청만 표시 (RESOLVED, CANCELLED 제외)
-      return req.dueDate === targetDate && req.status !== 'RESOLVED' && req.status !== 'CANCELLED';
+      return req.dueDate === targetDate && isActiveRequest(req);
     });
   };
 
@@ -335,260 +442,760 @@ function DashboardHome() {
     return null;
   };
 
-  const renderUserGrid = (users, title, icon) => {
+  const metrics = useMemo(() => {
+    const allRequests = data.allRequests || [];
+    const users = data.users || [];
+    const companies = data.companies || [];
+    const projects = data.projects || [];
+    const myProjects = data.myProjects || [];
+    const activeRequests = allRequests.filter(isActiveRequest);
+    const managerAssignedRequests = allRequests.filter(
+      (request) => request.managerId === user?.id || request.managerName === user?.username
+    );
+    const managerScopeRequests = managerAssignedRequests.length > 0 ? managerAssignedRequests : allRequests;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const dueLimit = new Date(now);
+    dueLimit.setDate(dueLimit.getDate() + 14);
+
+    const countBy = (items, field) => items.reduce((acc, item) => {
+      const key = item?.[field] || 'UNKNOWN';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    const buildRows = (items, order, meta, field) => {
+      const counts = countBy(items, field);
+      const orderedRows = order.map((key) => ({
+        key,
+        label: meta[key]?.label || key,
+        value: counts[key] || 0,
+        color: meta[key]?.color || '#64748b',
+      }));
+      Object.entries(counts)
+        .filter(([key]) => !order.includes(key))
+        .forEach(([key, value]) => {
+          orderedRows.push({ key, label: key, value, color: '#64748b' });
+        });
+      return orderedRows;
+    };
+
+    const buildMonthlyRows = (items) => {
+      const buckets = [];
+      for (let index = 5; index >= 0; index -= 1) {
+        const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        buckets.push({ key, label: `${date.getMonth() + 1}월`, value: 0, color: '#2563eb' });
+      }
+
+      items.forEach((request) => {
+        const date = getRequestBaseDate(request);
+        if (!date) return;
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const bucket = buckets.find((item) => item.key === key);
+        if (bucket) bucket.value += 1;
+      });
+
+      return buckets;
+    };
+
+    const sortRecent = (items) => [...items]
+      .sort((a, b) => (getRequestBaseDate(b)?.getTime() || 0) - (getRequestBaseDate(a)?.getTime() || 0));
+
+    const buildDueSoonRequests = (items) => items
+      .filter(isActiveRequest)
+      .map((request) => ({ ...request, dueDateValue: parseDashboardDate(request.dueDate) }))
+      .filter((request) => request.dueDateValue && request.dueDateValue >= now && request.dueDateValue <= dueLimit)
+      .sort((a, b) => a.dueDateValue - b.dueDateValue);
+
+    const buildOverdueRequests = (items) => items
+      .filter(isActiveRequest)
+      .map((request) => ({ ...request, dueDateValue: parseDashboardDate(request.dueDate) }))
+      .filter((request) => request.dueDateValue && request.dueDateValue < now)
+      .sort((a, b) => a.dueDateValue - b.dueDateValue);
+
+    const dueSoonRequests = buildDueSoonRequests(allRequests);
+    const managerDueSoonRequests = buildDueSoonRequests(managerScopeRequests);
+    const overdueRequests = buildOverdueRequests(allRequests);
+    const managerOverdueRequests = buildOverdueRequests(managerScopeRequests);
+
+    const urgentRequests = activeRequests
+      .filter((request) => request.priority === 'URGENT' || request.priority === 'HIGH')
+      .sort((a, b) => {
+        const priorityDiff = PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority);
+        if (priorityDiff !== 0) return priorityDiff;
+        return (parseDashboardDate(a.dueDate)?.getTime() || Number.MAX_SAFE_INTEGER)
+          - (parseDashboardDate(b.dueDate)?.getTime() || Number.MAX_SAFE_INTEGER);
+      });
+
+    const managerRankMap = new Map();
+    allRequests.filter((request) => !isUnassignedRequest(request)).forEach((request) => {
+      const key = request.managerId || request.managerName;
+      const current = managerRankMap.get(key) || {
+        key,
+        label: request.managerName || '담당자',
+        value: 0,
+        total: 0,
+        color: '#2563eb',
+      };
+      current.total += 1;
+      if (isCompletedRequest(request)) current.value += 1;
+      managerRankMap.set(key, current);
+    });
+
+    const serviceTypeCounts = projects.reduce((acc, project) => {
+      const key = project.serviceType || 'UNKNOWN';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    const roleCounts = countBy(users, 'role');
+    const nonCancelledRequests = allRequests.filter((request) => request.status !== 'CANCELLED');
+    const resolvedCount = allRequests.filter(isCompletedRequest).length;
+    const managerNonCancelledRequests = managerScopeRequests.filter((request) => request.status !== 'CANCELLED');
+    const managerResolvedCount = managerScopeRequests.filter(isCompletedRequest).length;
+
+    const statusRows = buildRows(allRequests, STATUS_ORDER, STATUS_META, 'status');
+    const managerStatusRows = buildRows(managerScopeRequests, STATUS_ORDER, STATUS_META, 'status');
+    const priorityRows = buildRows(allRequests, PRIORITY_ORDER, PRIORITY_META, 'priority');
+    const managerPriorityRows = buildRows(managerScopeRequests, PRIORITY_ORDER, PRIORITY_META, 'priority');
+    const monthlyRows = buildMonthlyRows(allRequests);
+    const managerMonthlyRows = buildMonthlyRows(managerScopeRequests);
+
+    const openRequests = allRequests.filter((request) => request.status === 'OPEN');
+    const assignmentWaitingRequests = allRequests.filter((request) => ['OPEN', 'TRIAGE'].includes(request.status) && isUnassignedRequest(request));
+    const inProgressRequests = allRequests.filter((request) => request.status === 'IN_PROGRESS');
+    const customerConfirmRequests = allRequests.filter((request) => request.status === 'RESOLVED');
+    const reopenedRequests = allRequests.filter((request) => request.status === 'REOPENED');
+    const closedRequests = allRequests.filter((request) => request.status === 'CLOSED');
+
+    const managerOpenRequests = managerScopeRequests.filter((request) => request.status === 'OPEN');
+    const managerAssignmentWaitingRequests = managerScopeRequests.filter((request) => ['OPEN', 'TRIAGE'].includes(request.status) && isUnassignedRequest(request));
+    const managerInProgressRequests = managerScopeRequests.filter((request) => request.status === 'IN_PROGRESS');
+    const managerCustomerConfirmRequests = managerScopeRequests.filter((request) => request.status === 'RESOLVED');
+    const managerReopenedRequests = managerScopeRequests.filter((request) => request.status === 'REOPENED');
+    const managerClosedRequests = managerScopeRequests.filter((request) => request.status === 'CLOSED');
+
+    const buildWorkflowRows = (scope) => [
+      { key: 'OPEN', label: '접수 대기', value: scope.open.length, color: STATUS_META.OPEN.color },
+      { key: 'ASSIGN', label: '배정 대기', value: scope.assignment.length, color: STATUS_META.ASSIGNED.color },
+      { key: 'IN_PROGRESS', label: '처리 중', value: scope.progress.length, color: STATUS_META.IN_PROGRESS.color },
+      { key: 'RESOLVED', label: '확인 대기', value: scope.confirm.length, color: STATUS_META.RESOLVED.color },
+      { key: 'REOPENED', label: '재처리', value: scope.reopened.length, color: STATUS_META.REOPENED.color },
+      { key: 'CLOSED', label: '종료', value: scope.closed.length, color: STATUS_META.CLOSED.color },
+    ];
+
+    const buildSlaRows = (active, dueSoon, overdue) => [
+      { key: 'normal', label: '정상', value: Math.max(active.length - dueSoon.length - overdue.length, 0), color: '#2563eb' },
+      { key: 'dueSoon', label: '임박', value: dueSoon.length, color: '#d97706' },
+      { key: 'overdue', label: '지연', value: overdue.length, color: '#dc2626' },
+    ];
+
+    const mergeUniqueRequests = (...groups) => {
+      const map = new Map();
+      groups.flat().forEach((request) => {
+        if (request?.id && !map.has(request.id)) {
+          map.set(request.id, request);
+        }
+      });
+      return sortRecent(Array.from(map.values()));
+    };
+
+    const workflowRows = buildWorkflowRows({
+      open: openRequests,
+      assignment: assignmentWaitingRequests,
+      progress: inProgressRequests,
+      confirm: customerConfirmRequests,
+      reopened: reopenedRequests,
+      closed: closedRequests,
+    });
+
+    const managerWorkflowRows = buildWorkflowRows({
+      open: managerOpenRequests,
+      assignment: managerAssignmentWaitingRequests,
+      progress: managerInProgressRequests,
+      confirm: managerCustomerConfirmRequests,
+      reopened: managerReopenedRequests,
+      closed: managerClosedRequests,
+    });
+
+    const slaRows = buildSlaRows(activeRequests, dueSoonRequests, overdueRequests);
+    const managerActiveRequests = managerScopeRequests.filter(isActiveRequest);
+    const managerSlaRows = buildSlaRows(managerActiveRequests, managerDueSoonRequests, managerOverdueRequests);
+    const criticalRequests = mergeUniqueRequests(overdueRequests, reopenedRequests, urgentRequests);
+    const managerCriticalRequests = mergeUniqueRequests(managerOverdueRequests, managerReopenedRequests, managerScopeRequests.filter((request) => ['URGENT', 'HIGH'].includes(request.priority)));
+
+    return {
+      allRequests,
+      activeRequests,
+      managerScopeRequests,
+      users,
+      companies,
+      projects,
+      myProjects,
+      statusRows,
+      managerStatusRows,
+      priorityRows,
+      managerPriorityRows,
+      monthlyRows,
+      managerMonthlyRows,
+      workflowRows,
+      managerWorkflowRows,
+      slaRows,
+      managerSlaRows,
+      dueSoonRequests,
+      managerDueSoonRequests,
+      overdueRequests,
+      managerOverdueRequests,
+      criticalRequests,
+      managerCriticalRequests,
+      urgentRequests,
+      unassignedRequests: activeRequests.filter(isUnassignedRequest),
+      openRequests,
+      assignmentWaitingRequests,
+      inProgressRequests,
+      customerConfirmRequests,
+      reopenedRequests,
+      closedRequests,
+      managerOpenRequests,
+      managerAssignmentWaitingRequests,
+      managerInProgressRequests,
+      managerCustomerConfirmRequests,
+      managerReopenedRequests,
+      managerClosedRequests,
+      pendingRequests: allRequests.filter((request) => request.status === 'IN_PROGRESS'),
+      onHoldRequests: allRequests.filter((request) => request.status === 'HOLD'),
+      managerPendingRequests: managerScopeRequests.filter((request) => request.status === 'IN_PROGRESS'),
+      managerOnHoldRequests: managerScopeRequests.filter((request) => request.status === 'HOLD'),
+      completedRequests: allRequests.filter((request) => request.status === 'CLOSED'),
+      recentRequests: sortRecent(allRequests),
+      managerRecentRequests: sortRecent(managerScopeRequests),
+      managerRankRows: Array.from(managerRankMap.values())
+        .sort((a, b) => b.value - a.value || b.total - a.total)
+        .slice(0, 5)
+        .map((row) => ({ ...row, subLabel: `전체 ${row.total}건` })),
+      serviceTypeRows: Object.entries(serviceTypeCounts).map(([key, value]) => ({
+        key,
+        label: getServiceTypeLabel(key),
+        value,
+        color: '#475569',
+      })),
+      roleRows: ROLE_ORDER.map((role) => ({
+        key: role,
+        label: getRoleLabel(role),
+        value: roleCounts[role] || 0,
+        color: role === 'ROLE_ADMIN' ? '#1e293b' : role === 'ROLE_MANAGER' ? '#2563eb' : '#64748b',
+      })),
+      completionRate: nonCancelledRequests.length > 0
+        ? Math.round((resolvedCount / nonCancelledRequests.length) * 100)
+        : 0,
+      managerCompletionRate: managerNonCancelledRequests.length > 0
+        ? Math.round((managerResolvedCount / managerNonCancelledRequests.length) * 100)
+        : 0,
+    };
+  }, [data, user]);
+
+  const renderEmptyState = (message = '표시할 데이터가 없습니다') => (
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'text.secondary',
+      }}
+    >
+      <Typography variant="body2">{message}</Typography>
+    </Box>
+  );
+
+  const visibleChartRows = (rows) => (rows || []).filter((row) => Number(row.value) > 0);
+
+  const renderChartTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const item = payload[0]?.payload || {};
     return (
-      <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-        <CardHeader
-          avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
-          title={title}
-          titleTypographyProps={{ variant: 'h6' }}
-        />
-        <CardContent sx={{ flex: 1, overflow: 'auto' }}>
-          {!users || users.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-              데이터가 없습니다
-            </Typography>
-          ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>사용자ID</TableCell>
-                    <TableCell>사용자명</TableCell>
-                    <TableCell>역할</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.userId}</TableCell>
-                      <TableCell>{user.username}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getRoleLabel(user.role)}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
+      <Box
+        sx={{
+          px: 1.25,
+          py: 0.75,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 2,
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          {item.label || label || item.name}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+          {item.value ?? payload[0].value}건
+        </Typography>
+      </Box>
     );
   };
 
-  const renderCompanyGrid = (companies, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-      <CardHeader
-        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
-        title={title}
-        titleTypographyProps={{ variant: 'h6' }}
-      />
-      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>회사코드</TableCell>
-                <TableCell>회사명</TableCell>
-                <TableCell>사업자번호</TableCell>
+  const renderChartLegend = (rows, { maxItems = 6 } = {}) => {
+    const visibleRows = visibleChartRows(rows).slice(0, maxItems);
+    return (
+      <Stack spacing={0.75} sx={{ minWidth: 118 }}>
+        {visibleRows.map((row) => (
+          <Box key={row.key || row.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+            <Box sx={{ width: 8, height: 8, bgcolor: row.color || '#64748b', flexShrink: 0 }} />
+            <Typography variant="caption" noWrap sx={{ flex: 1, color: 'text.secondary' }}>
+              {row.label}
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 800 }}>
+              {row.value}
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
+    );
+  };
+
+  const renderDonutChart = (rows, { centerLabel = '전체', maxLegendItems = 6 } = {}) => {
+    const visibleRows = visibleChartRows(rows);
+    if (visibleRows.length === 0) return renderEmptyState();
+    const total = visibleRows.reduce((sum, row) => sum + row.value, 0);
+
+    return (
+      <Box sx={{ height: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ height: '100%', minHeight: 0, position: 'relative' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={visibleRows}
+                dataKey="value"
+                nameKey="label"
+                innerRadius="58%"
+                outerRadius="82%"
+                paddingAngle={2}
+                stroke="#fff"
+                strokeWidth={2}
+              >
+                {visibleRows.map((row) => (
+                  <Cell key={row.key || row.label} fill={row.color || '#64748b'} />
+                ))}
+              </Pie>
+              <ChartTooltip content={renderChartTooltip} />
+            </PieChart>
+          </ResponsiveContainer>
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              flexDirection: 'column',
+            }}
+          >
+            <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1 }}>
+              {total}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {centerLabel}
+            </Typography>
+          </Box>
+        </Box>
+        {renderChartLegend(visibleRows, { maxItems: maxLegendItems })}
+      </Box>
+    );
+  };
+
+  const renderHorizontalBarChart = (rows, { maxItems = 6 } = {}) => {
+    const visibleRows = visibleChartRows(rows).slice(0, maxItems);
+    if (visibleRows.length === 0) return renderEmptyState();
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={visibleRows} layout="vertical" margin={{ top: 6, right: 22, bottom: 6, left: 8 }}>
+          <CartesianGrid stroke={CHART_GRID_COLOR} horizontal={false} />
+          <XAxis type="number" allowDecimals={false} tick={{ fill: CHART_AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={76}
+            tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <ChartTooltip content={renderChartTooltip} />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={14}>
+            {visibleRows.map((row) => (
+              <Cell key={row.key || row.label} fill={row.color || '#2563eb'} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderColumnChart = (rows) => {
+    const visibleRows = visibleChartRows(rows);
+    if (visibleRows.length === 0) return renderEmptyState();
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={visibleRows} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+          <CartesianGrid stroke={CHART_GRID_COLOR} vertical={false} />
+          <XAxis dataKey="label" tick={{ fill: CHART_AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fill: CHART_AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+          <ChartTooltip content={renderChartTooltip} />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={34}>
+            {visibleRows.map((row) => (
+              <Cell key={row.key || row.label} fill={row.color || '#2563eb'} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderMonthlyTrend = (rows) => {
+    const visibleRows = rows || [];
+    if (visibleRows.every((row) => !row.value)) return renderEmptyState();
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={visibleRows} margin={{ top: 8, right: 12, bottom: 0, left: -20 }}>
+          <defs>
+            <linearGradient id="dashboardTrendFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0.03} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke={CHART_GRID_COLOR} vertical={false} />
+          <XAxis dataKey="label" tick={{ fill: CHART_AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fill: CHART_AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+          <ChartTooltip content={renderChartTooltip} />
+          <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2.5} fill="url(#dashboardTrendFill)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderCompletionGauge = ({ rate, total, active, closed }) => (
+    <Box sx={{ height: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 132px', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ height: '100%', minHeight: 0, position: 'relative' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            data={[{ name: '완료율', value: Math.max(rate, 0.1), fill: '#2563eb' }]}
+            innerRadius="72%"
+            outerRadius="96%"
+            startAngle={90}
+            endAngle={-270}
+          >
+            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+            <RadialBar dataKey="value" background={{ fill: '#e2e8f0' }} cornerRadius={8} />
+          </RadialBarChart>
+        </ResponsiveContainer>
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 900, lineHeight: 1 }}>
+            {rate}%
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            완료율
+          </Typography>
+        </Box>
+      </Box>
+      <Stack spacing={1}>
+        {[
+          { label: '전체', value: total, color: '#334155' },
+          { label: '진행', value: active, color: '#2563eb' },
+          { label: '종료', value: closed, color: '#059669' },
+        ].map((item) => (
+          <Box key={item.label} sx={{ borderLeft: '3px solid', borderColor: item.color, pl: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              {item.label}
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.1 }}>
+              {item.value}
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  );
+
+  const renderRequestTable = (requests, { maxRows = 5, showManager = false } = {}) => {
+    const rows = requests.slice(0, maxRows);
+    if (rows.length === 0) return renderEmptyState();
+
+    return (
+      <TableContainer sx={{ maxHeight: '100%' }}>
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell>제목</TableCell>
+              <TableCell>상태</TableCell>
+              <TableCell>{showManager ? '담당' : '마감'}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((request) => (
+              <TableRow key={request.id} hover>
+                <TableCell sx={{ maxWidth: 140 }}>
+                  <Typography variant="body2" noWrap sx={{ fontWeight: 700 }}>
+                    {request.title || '-'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {getPriorityLabel(request.priority)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={getStatusLabel(request.status)}
+                    size="small"
+                    variant="outlined"
+                  />
+                </TableCell>
+                <TableCell sx={{ maxWidth: 90 }}>
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {showManager ? (request.managerName || '미배정') : formatDashboardDate(request.dueDate)}
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {companies.map((company) => (
-                <TableRow key={company.id}>
-                  <TableCell>{company.companyCode}</TableCell>
-                  <TableCell>{company.companyName}</TableCell>
-                  <TableCell>{company.businessNumber || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
+  const renderDashboardTile = ({ key, title, icon, children }) => (
+    <Card key={key} sx={dashboardTileSx}>
+      <CardHeader
+        avatar={<Avatar sx={cardAvatarSx}>{icon}</Avatar>}
+        title={title}
+        titleTypographyProps={{ variant: 'subtitle1', sx: { fontWeight: 800 } }}
+        sx={{
+          px: 1.5,
+          py: 1.25,
+          '& .MuiCardHeader-avatar': { mr: 1 },
+        }}
+      />
+      <CardContent
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          px: 1.5,
+          pt: 0,
+          pb: 1.5,
+          '&:last-child': { pb: 1.5 },
+        }}
+      >
+        {children}
       </CardContent>
     </Card>
   );
 
-  const renderProjectGrid = (projects, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-      <CardHeader
-        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
-        title={title}
-        titleTypographyProps={{ variant: 'h6' }}
-      />
-      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>프로젝트명</TableCell>
-                <TableCell>회사</TableCell>
-                <TableCell>서비스유형</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell>{project.projectName}</TableCell>
-                  <TableCell>{project.companyName || '-'}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getServiceTypeLabel(project.serviceType)}
-                      size="small"
-                      color={project.serviceType === 'NEW' ? 'info' : project.serviceType === 'MAINTENANCE' ? 'primary' : project.serviceType === 'DEFECT_REPAIR' ? 'secondary' : 'default'}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
+  const renderDashboardGrid = (tiles) => (
+    <Box sx={dashboardGridSx}>
+      {tiles.map(renderDashboardTile)}
+    </Box>
   );
 
-  const renderRequestGrid = (requests, title, icon) => (
-    <Card sx={{ width: '100%', minHeight: '350px', maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-      <CardHeader
-        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{icon}</Avatar>}
-        title={title}
-        titleTypographyProps={{ variant: 'h6' }}
-      />
-      <CardContent sx={{ flex: 1, overflow: 'auto' }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>제목</TableCell>
-                <TableCell>유저</TableCell>
-                <TableCell>우선순위</TableCell>
-                <TableCell>상태</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {requests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>{request.title}</TableCell>
-                  <TableCell>{request.customerName || '-'}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        request.priority === 'URGENT' ? '긴급' :
-                        request.priority === 'HIGH' ? '높음' :
-                        request.priority === 'MEDIUM' ? '보통' :
-                        request.priority === 'LOW' ? '낮음' :
-                        request.priority
-                      }
-                      size="small"
-                      color={
-                        request.priority === 'URGENT' ? 'error' :
-                        request.priority === 'HIGH' ? 'warning' :
-                        request.priority === 'MEDIUM' ? 'info' :
-                        'default'
-                      }
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        request.status === 'OPEN' ? '대기' :
-                        request.status === 'IN_PROGRESS' ? '진행중' :
-                        request.status === 'RESOLVED' ? '완료' :
-                        request.status === 'HOLD' ? '보류' :
-                        request.status === 'CANCELLED' ? '취소' :
-                        request.status
-                      }
-                      size="small"
-                      color={
-                        request.status === 'RESOLVED' ? 'success' :
-                        request.status === 'HOLD' ? 'warning' :
-                        request.status === 'IN_PROGRESS' ? 'info' :
-                        'default'
-                      }
-                      variant="outlined"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
-  );
+  const renderAdminDashboard = () => renderDashboardGrid([
+    {
+      key: 'admin-summary',
+      title: '업무 처리율',
+      icon: <SummaryIcon />,
+      children: renderCompletionGauge({
+        rate: metrics.completionRate,
+        total: metrics.allRequests.length,
+        active: metrics.activeRequests.length,
+        closed: metrics.closedRequests.length,
+      }),
+    },
+    {
+      key: 'admin-status',
+      title: '상태 분포',
+      icon: <RequestIcon />,
+      children: renderDonutChart(metrics.statusRows, { centerLabel: '요청' }),
+    },
+    {
+      key: 'admin-workflow',
+      title: '업무함 현황',
+      icon: <PendingIcon />,
+      children: renderHorizontalBarChart(metrics.workflowRows),
+    },
+    {
+      key: 'admin-sla',
+      title: 'SLA 현황',
+      icon: <ScheduleIcon />,
+      children: renderColumnChart(metrics.slaRows),
+    },
+    {
+      key: 'admin-priority',
+      title: '우선순위 분포',
+      icon: <PriorityIcon />,
+      children: renderDonutChart(metrics.priorityRows, { centerLabel: '우선순위', maxLegendItems: 4 }),
+    },
+    {
+      key: 'admin-monthly',
+      title: '월별 요청 추이',
+      icon: <ScheduleIcon />,
+      children: renderMonthlyTrend(metrics.monthlyRows),
+    },
+    {
+      key: 'admin-manager-rank',
+      title: '매니저 완료 현황',
+      icon: <CompletedIcon />,
+      children: renderHorizontalBarChart(metrics.managerRankRows, { maxItems: 5 }),
+    },
+    {
+      key: 'admin-critical',
+      title: '긴급/지연 목록',
+      icon: <OnHoldIcon />,
+      children: renderRequestTable(metrics.criticalRequests, { showManager: true }),
+    },
+  ]);
 
-  const renderAdminDashboard = () => (
-    <Grid container spacing={2} direction="column">
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderUserGrid(data.users, '사용자 목록', <UsersIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderCompanyGrid(data.companies, '회사 목록', <CompanyIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderProjectGrid(data.projects, '프로젝트 목록', <ProjectIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.requests, '요청 목록', <RequestIcon />)}
-      </Grid>
-    </Grid>
-  );
+  const renderManagerDashboard = () => renderDashboardGrid([
+    {
+      key: 'manager-summary',
+      title: '내 업무 처리율',
+      icon: <SummaryIcon />,
+      children: renderCompletionGauge({
+        rate: metrics.managerCompletionRate,
+        total: metrics.managerScopeRequests.length,
+        active: metrics.managerScopeRequests.filter(isActiveRequest).length,
+        closed: metrics.managerClosedRequests.length,
+      }),
+    },
+    {
+      key: 'manager-workflow',
+      title: '내 업무함 현황',
+      icon: <RequestIcon />,
+      children: renderHorizontalBarChart(metrics.managerWorkflowRows),
+    },
+    {
+      key: 'manager-status',
+      title: '상태 분포',
+      icon: <PendingIcon />,
+      children: renderDonutChart(metrics.managerStatusRows, { centerLabel: '요청' }),
+    },
+    {
+      key: 'manager-sla',
+      title: 'SLA 현황',
+      icon: <ScheduleIcon />,
+      children: renderColumnChart(metrics.managerSlaRows),
+    },
+    {
+      key: 'manager-priority',
+      title: '우선순위 분포',
+      icon: <PriorityIcon />,
+      children: renderDonutChart(metrics.managerPriorityRows, { centerLabel: '우선순위', maxLegendItems: 4 }),
+    },
+    {
+      key: 'manager-monthly',
+      title: '월별 처리 추이',
+      icon: <ScheduleIcon />,
+      children: renderMonthlyTrend(metrics.managerMonthlyRows),
+    },
+    {
+      key: 'manager-confirm',
+      title: '고객 확인 대기',
+      icon: <CompletedIcon />,
+      children: renderRequestTable(metrics.managerCustomerConfirmRequests),
+    },
+    {
+      key: 'manager-critical',
+      title: '긴급/지연 목록',
+      icon: <OnHoldIcon />,
+      children: renderRequestTable(metrics.managerCriticalRequests),
+    },
+  ]);
 
-  const renderManagerDashboard = () => (
-    <Grid container spacing={2} direction="column">
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.unassignedRequests, '미배정 요청', <RequestIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
-      </Grid>
-    </Grid>
-  );
-
-  const renderCustomerDashboard = () => (
-    <Grid container spacing={2} direction="column">
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderProjectGrid(data.myProjects, '할당된 프로젝트', <MyProjectIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.pendingRequests, '처리 대기 요청', <PendingIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.onHoldRequests, '보류 대기 요청', <OnHoldIcon />)}
-      </Grid>
-      <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-        {renderRequestGrid(data.completedRequests, '처리 완료 목록', <CompletedIcon />)}
-      </Grid>
-    </Grid>
-  );
+  const renderCustomerDashboard = () => renderDashboardGrid([
+    {
+      key: 'customer-summary',
+      title: '내 요청 처리율',
+      icon: <SummaryIcon />,
+      children: renderCompletionGauge({
+        rate: metrics.completionRate,
+        total: metrics.allRequests.length,
+        active: metrics.activeRequests.length,
+        closed: metrics.closedRequests.length,
+      }),
+    },
+    {
+      key: 'customer-status',
+      title: '상태 분포',
+      icon: <RequestIcon />,
+      children: renderDonutChart(metrics.statusRows, { centerLabel: '요청' }),
+    },
+    {
+      key: 'customer-workflow',
+      title: '요청 업무함',
+      icon: <PendingIcon />,
+      children: renderHorizontalBarChart(metrics.workflowRows),
+    },
+    {
+      key: 'customer-sla',
+      title: 'SLA 현황',
+      icon: <ScheduleIcon />,
+      children: renderColumnChart(metrics.slaRows),
+    },
+    {
+      key: 'customer-priority',
+      title: '우선순위 분포',
+      icon: <PriorityIcon />,
+      children: renderDonutChart(metrics.priorityRows, { centerLabel: '우선순위', maxLegendItems: 4 }),
+    },
+    {
+      key: 'customer-monthly',
+      title: '월별 요청 추이',
+      icon: <ScheduleIcon />,
+      children: renderMonthlyTrend(metrics.monthlyRows),
+    },
+    {
+      key: 'customer-confirm',
+      title: '완료 확인 필요',
+      icon: <CompletedIcon />,
+      children: renderRequestTable(metrics.customerConfirmRequests),
+    },
+    {
+      key: 'customer-critical',
+      title: '긴급/지연 목록',
+      icon: <OnHoldIcon />,
+      children: renderRequestTable(metrics.criticalRequests),
+    },
+  ]);
 
   return (
-    <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      <PageHeader title="홈" />
+      <Box sx={{ flex: 1, display: 'flex', gap: 0, p: 0, minHeight: 0 }}>
       {/* 왼쪽 400px - 사용자 정보, 달력, 날씨 */}
       <Paper
-        elevation={3}
+        elevation={1}
         sx={{
-          width: '400px',
+          width: 340,
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 3,
-          p: 3,
+          gap: 1.5,
+          p: 1.5,
           overflow: 'auto',
           bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 0,
         }}
       >
         {/* 사용자 정보 */}
@@ -602,7 +1209,6 @@ function DashboardHome() {
                 top: 0,
                 right: 0,
                 color: showProfile ? 'primary.main' : 'text.secondary',
-                '&:hover': { color: 'primary.main' }
               }}
             >
               <SettingsIcon />
@@ -617,8 +1223,8 @@ function DashboardHome() {
               mb: 2,
               bgcolor: 'primary.main',
               fontSize: '2rem',
-              border: '3px solid',
-              borderColor: 'primary.main',
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           >
             {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
@@ -628,7 +1234,7 @@ function DashboardHome() {
           </Typography>
           <Chip
             label={getRoleText()}
-            color="primary"
+            color="secondary"
           />
         </Box>
 
@@ -647,15 +1253,12 @@ function DashboardHome() {
               minWidth: '44px',
               background: 'none',
               fontSize: '16px',
-              fontWeight: 'bold',
-            },
-            '& .react-calendar__navigation button:enabled:hover': {
-              backgroundColor: '#f0f0f0',
+              fontWeight: 700,
             },
             '& .react-calendar__month-view__weekdays': {
               textAlign: 'center',
               textTransform: 'uppercase',
-              fontWeight: 'bold',
+              fontWeight: 700,
               fontSize: '0.75em',
             },
             '& .react-calendar__month-view__weekdays__weekday': {
@@ -668,7 +1271,7 @@ function DashboardHome() {
               color: '#d32f2f',
             },
             '& .react-calendar__month-view__weekdays__weekday:last-child abbr': {
-              color: '#1976d2',
+              color: 'primary.main',
             },
             '& .react-calendar__tile': {
               maxWidth: '100%',
@@ -678,39 +1281,25 @@ function DashboardHome() {
               lineHeight: '16px',
               position: 'relative',
               fontSize: '0.875rem',
-              border: '2px solid transparent',
-            },
-            '& .react-calendar__tile:enabled:hover': {
-              backgroundColor: '#f0f0f0',
+              border: '1px solid transparent',
             },
             '& .react-calendar__tile--now': {
-              backgroundColor: '#e3f2fd',
-              color: '#333',
-              fontWeight: 'bold',
-            },
-            '& .react-calendar__tile--now:enabled:hover': {
-              backgroundColor: '#bbdefb',
+              backgroundColor: 'primary.light',
+              color: 'text.primary',
+              fontWeight: 700,
             },
             '& .react-calendar__tile--active': {
-              backgroundColor: '#ffffff',
-              color: '#006edc',
-              border: '2px solid #1976d2',
-              fontWeight: 'bold',
-            },
-            '& .react-calendar__tile--active:enabled:hover': {
-              backgroundColor: '#ffffff',
-            },
-            '& .react-calendar__tile--active.react-calendar__tile--now': {
-              backgroundColor: '#e3f2fd',
-            },
-            '& .react-calendar__tile--active.react-calendar__tile--now:enabled:hover': {
-              backgroundColor: '#e3f2fd',
+              backgroundColor: 'secondary.main',
+              color: 'secondary.contrastText',
+              border: '1px solid',
+              borderColor: 'secondary.main',
+              fontWeight: 700,
             },
             '& .react-calendar__month-view__days__day--weekend': {
               color: '#d32f2f',
             },
             '& .react-calendar__month-view__days__day--weekend:nth-child(7n)': {
-              color: '#1976d2',
+              color: 'primary.main',
             },
           }}
         >
@@ -772,9 +1361,9 @@ function DashboardHome() {
         <Box
           sx={{
             p: 2.5,
-            backgroundColor: '#1a1a1a',
-            borderRadius: 2,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            backgroundColor: 'secondary.main',
+            borderRadius: 0,
+            boxShadow: 'none',
             color: 'white',
           }}
         >
@@ -861,9 +1450,9 @@ function DashboardHome() {
       </Paper>
 
       {/* 오른쪽 - Role별 대시보드 그리드 또는 프로필 화면 (나머지 공간) */}
-      <Box sx={{ flex: 1, height: '100%', overflow: 'auto', position: 'relative' }}>
+      <Box sx={{ flex: 1, height: '100%', overflow: 'auto', position: 'relative', minWidth: 0 }}>
         <Fade in={!showProfile} timeout={300} unmountOnExit>
-          <Box sx={{ height: '100%', p: 2 }}>
+          <Box sx={{ height: '100%' }}>
             {isAdmin && renderAdminDashboard()}
             {isManager && renderManagerDashboard()}
             {isCustomer && renderCustomerDashboard()}
@@ -874,6 +1463,7 @@ function DashboardHome() {
             <UserProfile onBack={() => setShowProfile(false)} />
           </Box>
         </Fade>
+      </Box>
       </Box>
     </Box>
   );

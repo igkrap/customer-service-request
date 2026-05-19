@@ -72,7 +72,12 @@ CREATE TABLE IF NOT EXISTS service_requests (
     hours_spent DOUBLE PRECISION,
     resolution_notes TEXT,
     due_date TEXT,
-    CONSTRAINT chk_service_requests_status CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'HOLD', 'CANCELLED')),
+    assigned_at TEXT,
+    started_at TEXT,
+    closed_at TEXT,
+    cancelled_at TEXT,
+    reopened_at TEXT,
+    CONSTRAINT chk_service_requests_status CHECK (status IN ('OPEN', 'TRIAGE', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'HOLD', 'RESOLVED', 'REOPENED', 'CLOSED', 'CANCELLED')),
     CONSTRAINT chk_service_requests_priority CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')),
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
@@ -208,6 +213,9 @@ CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(statu
 CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(priority);
 CREATE INDEX IF NOT EXISTS idx_service_requests_created_by_user_id ON service_requests(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_service_requests_due_date ON service_requests(due_date);
+CREATE INDEX IF NOT EXISTS idx_service_requests_assigned_at ON service_requests(assigned_at);
+CREATE INDEX IF NOT EXISTS idx_service_requests_started_at ON service_requests(started_at);
+CREATE INDEX IF NOT EXISTS idx_service_requests_closed_at ON service_requests(closed_at);
 CREATE INDEX IF NOT EXISTS idx_service_requests_parent_id ON service_requests(parent_id);
 CREATE INDEX IF NOT EXISTS idx_service_request_histories_request_id ON service_request_histories(service_request_id);
 CREATE INDEX IF NOT EXISTS idx_service_request_histories_created_at ON service_request_histories(created_at);

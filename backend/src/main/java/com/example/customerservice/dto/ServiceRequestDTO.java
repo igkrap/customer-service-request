@@ -56,6 +56,16 @@ public class ServiceRequestDTO {
 
     private String dueDate;
 
+    private String assignedAt;
+
+    private String startedAt;
+
+    private String closedAt;
+
+    private String cancelledAt;
+
+    private String reopenedAt;
+
     private List<AttachmentDTO> attachments;
     private List<ServiceRequestDTO> followUpRequests;
 }

@@ -1,94 +1,106 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Switch,
-  FormControlLabel,
   Alert,
-  Snackbar,
-  Grid,
-  Divider,
+  Box,
+  Button,
+  Chip,
   CircularProgress,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Snackbar,
+  Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
-  Storage as StorageIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Add as AddIcon,
+  Save as SaveIcon,
+  Search as SearchIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import PageHeader from './common/PageHeader';
+import { EmptyState, PageBody, SectionPanel } from './common/WorkspaceLayout';
+
+const initialDocument = {
+  title: '',
+  content: '',
+  category: '',
+  enabled: true,
+};
 
 function RagManagement() {
-  const { user } = useAuth();
   const [documents, setDocuments] = useState([]);
-  const [currentDocument, setCurrentDocument] = useState({
-    title: '',
-    content: '',
-    category: '',
-    enabled: true,
-  });
-
+  const [currentDocument, setCurrentDocument] = useState(initialDocument);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewDocument, setViewDocument] = useState(null);
+  const [documentQuery, setDocumentQuery] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get('/rag-documents');
-      setDocuments(response.data);
+      setDocuments(response.data || []);
     } catch (error) {
       console.error('Failed to fetch RAG documents:', error);
       setSnackbar({
         open: true,
-        message: 'RAG 문서 불러오기 실패',
+        message: 'RAG 문서를 불러오지 못했습니다.',
         severity: 'error',
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  const visibleDocuments = useMemo(() => {
+    const query = documentQuery.trim().toLowerCase();
+    if (!query) return documents;
+
+    return documents.filter((document) => (
+      [document.title, document.category, document.content]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    ));
+  }, [documentQuery, documents]);
 
   const handleChange = (field) => (event) => {
-    const value =
-      event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    setCurrentDocument({ ...currentDocument, [field]: value });
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    setCurrentDocument((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleReset = () => {
+    setCurrentDocument(initialDocument);
+    setEditMode(false);
   };
 
   const handleSave = async () => {
-    if (!currentDocument.title || !currentDocument.content) {
+    if (!currentDocument.title.trim() || !currentDocument.content.trim()) {
       setSnackbar({
         open: true,
-        message: '제목과 내용은 필수 항목입니다.',
+        message: '문서 제목과 내용을 입력하세요.',
         severity: 'error',
       });
       return;
@@ -100,18 +112,18 @@ function RagManagement() {
         await api.put(`/rag-documents/${currentDocument.id}`, currentDocument);
         setSnackbar({
           open: true,
-          message: 'RAG 문서가 성공적으로 업데이트되었습니다. 임베딩이 재생성됩니다.',
+          message: 'RAG 문서가 수정되었습니다. 임베딩이 다시 생성됩니다.',
           severity: 'success',
         });
       } else {
         await api.post('/rag-documents', currentDocument);
         setSnackbar({
           open: true,
-          message: 'RAG 문서가 성공적으로 생성되었습니다. 임베딩이 생성됩니다.',
+          message: 'RAG 문서가 추가되었습니다. 임베딩이 생성됩니다.',
           severity: 'success',
         });
       }
-      fetchDocuments();
+      await fetchDocuments();
       handleReset();
     } catch (error) {
       console.error('Failed to save RAG document:', error);
@@ -125,24 +137,24 @@ function RagManagement() {
     }
   };
 
-  const handleEdit = (doc) => {
+  const handleEdit = (document) => {
     setCurrentDocument({
-      id: doc.id,
-      title: doc.title,
-      content: doc.content,
-      category: doc.category || '',
-      enabled: doc.enabled,
+      id: document.id,
+      title: document.title || '',
+      content: document.content || '',
+      category: document.category || '',
+      enabled: document.enabled,
     });
     setEditMode(true);
-  };
-
-  const handleView = (doc) => {
-    setViewDocument(doc);
-    setViewDialogOpen(true);
+    setViewDocument(null);
+    setPendingDeleteId(null);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('이 RAG 문서를 삭제하시겠습니까?')) return;
+    if (pendingDeleteId !== id) {
+      setPendingDeleteId(id);
+      return;
+    }
 
     try {
       await api.delete(`/rag-documents/${id}`);
@@ -151,7 +163,11 @@ function RagManagement() {
         message: 'RAG 문서가 삭제되었습니다.',
         severity: 'success',
       });
-      fetchDocuments();
+      if (viewDocument?.id === id) {
+        setViewDocument(null);
+      }
+      setPendingDeleteId(null);
+      await fetchDocuments();
     } catch (error) {
       console.error('Failed to delete RAG document:', error);
       setSnackbar({
@@ -162,226 +178,189 @@ function RagManagement() {
     }
   };
 
-  const handleReset = () => {
-    setCurrentDocument({
-      title: '',
-      content: '',
-      category: '',
-      enabled: true,
-    });
-    setEditMode(false);
-  };
-
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          RAG 지식베이스 관리
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
-
-        <Alert severity="info" sx={{ mb: 3 }}>
-          챗봇이 참조할 문서를 추가하고 관리합니다. 문서를 저장하면 자동으로 벡터 임베딩이 생성됩니다.
-          <br />
-          사용자가 질문하면 유사한 문서를 검색하여 답변에 활용합니다.
+      <PageHeader title="RAG 지식베이스 관리" subtitle="챗봇이 참조할 문서와 임베딩 상태를 관리합니다." />
+      <PageBody>
+        <Alert severity="info">
+          챗봇이 참조할 문서를 추가하고 관리합니다. 문서를 저장하면 임베딩이 생성되며, 사용자의 질문과 유사한 문서를 검색해 답변에 활용합니다.
         </Alert>
 
-        <Divider sx={{ mb: 3 }} />
-
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          {editMode ? 'RAG 문서 수정' : '새 RAG 문서 추가'}
-        </Typography>
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={8}>
-            <TextField
-              fullWidth
-              label="문서 제목"
-              value={currentDocument.title}
-              onChange={handleChange('title')}
-              placeholder="예: 서비스 요청 처리 방법"
-              required
-            />
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="카테고리 (선택사항)"
-              value={currentDocument.category}
-              onChange={handleChange('category')}
-              placeholder="예: FAQ, 매뉴얼, 정책"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={8}
-              label="문서 내용"
-              value={currentDocument.content}
-              onChange={handleChange('content')}
-              placeholder="챗봇이 참조할 내용을 입력하세요..."
-              required
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={currentDocument.enabled}
-                  onChange={handleChange('enabled')}
-                />
-              }
-              label="활성화 (비활성화하면 챗봇이 참조하지 않습니다)"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                onClick={handleSave}
-                disabled={saving || !currentDocument.title || !currentDocument.content}
-              >
-                {editMode ? '수정' : '추가'}
+        {viewDocument && (
+          <SectionPanel
+            title={viewDocument.title}
+            subtitle="문서 상세 내용"
+            actions={(
+              <Button size="small" variant="outlined" onClick={() => setViewDocument(null)}>
+                닫기
               </Button>
-              {editMode && (
-                <Button variant="outlined" onClick={handleReset}>
-                  취소
-                </Button>
+            )}
+          >
+            <Stack spacing={1.5}>
+              {viewDocument.category && (
+                <Box>
+                  <Chip label={viewDocument.category} size="small" color="primary" variant="outlined" />
+                </Box>
               )}
-            </Box>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {viewDocument.content}
+              </Typography>
+            </Stack>
+          </SectionPanel>
+        )}
+
+        <SectionPanel
+          title={editMode ? 'RAG 문서 수정' : 'RAG 문서 추가'}
+          subtitle="문서 제목, 분류, 본문을 입력합니다. 비활성 문서는 챗봇 검색에서 제외됩니다."
+        >
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                label="문서 제목"
+                value={currentDocument.title}
+                onChange={handleChange('title')}
+                placeholder="예: 서비스 요청 처리 방법"
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="카테고리"
+                value={currentDocument.category}
+                onChange={handleChange('category')}
+                placeholder="예: FAQ, 매뉴얼, 정책"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={8}
+                label="문서 내용"
+                value={currentDocument.content}
+                onChange={handleChange('content')}
+                placeholder="챗봇이 참조할 내용을 입력하세요."
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={<Switch checked={currentDocument.enabled} onChange={handleChange('enabled')} />}
+                label="활성화"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                {editMode && (
+                  <Button variant="outlined" onClick={handleReset}>
+                    취소
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  startIcon={saving ? <CircularProgress size={18} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  disabled={saving || !currentDocument.title || !currentDocument.content}
+                >
+                  {editMode ? '수정 저장' : '문서 저장'}
+                </Button>
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
+        </SectionPanel>
 
-        <Divider sx={{ my: 3 }} />
+        <SectionPanel
+          title="저장된 RAG 문서"
+          subtitle="등록된 문서의 활성 상태와 내용을 확인합니다."
+          actions={<Chip label={`${visibleDocuments.length}/${documents.length}건`} size="small" color="primary" variant="outlined" />}
+          contentSx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+        >
+          <TextField
+            value={documentQuery}
+            onChange={(event) => setDocumentQuery(event.target.value)}
+            placeholder="문서 제목, 카테고리, 내용 검색"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          저장된 RAG 문서 ({documents.length}개)
-        </Typography>
-
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>제목</TableCell>
-                  <TableCell>카테고리</TableCell>
-                  <TableCell>내용 미리보기</TableCell>
-                  <TableCell>상태</TableCell>
-                  <TableCell align="right">작업</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {documents.length === 0 ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : visibleDocuments.length === 0 ? (
+            <EmptyState title="표시할 RAG 문서가 없습니다" description="문서를 추가하거나 검색어를 조정하세요." />
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      저장된 RAG 문서가 없습니다.
-                    </TableCell>
+                    <TableCell>제목</TableCell>
+                    <TableCell>카테고리</TableCell>
+                    <TableCell>내용 미리보기</TableCell>
+                    <TableCell>상태</TableCell>
+                    <TableCell align="right">작업</TableCell>
                   </TableRow>
-                ) : (
-                  documents.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell>{doc.title}</TableCell>
+                </TableHead>
+                <TableBody>
+                  {visibleDocuments.map((document) => (
+                    <TableRow key={document.id}>
+                      <TableCell>{document.title}</TableCell>
                       <TableCell>
-                        {doc.category ? (
-                          <Chip label={doc.category} size="small" color="primary" variant="outlined" />
+                        {document.category ? (
+                          <Chip label={document.category} size="small" color="primary" variant="outlined" />
                         ) : (
                           '-'
                         )}
                       </TableCell>
-                      <TableCell>
-                        {doc.content.length > 100
-                          ? doc.content.substring(0, 100) + '...'
-                          : doc.content}
+                      <TableCell sx={{ maxWidth: 420 }}>
+                        <Typography variant="body2" color="text.secondary" noWrap>
+                          {document.content}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={doc.enabled ? '활성화' : '비활성화'}
-                          color={doc.enabled ? 'success' : 'default'}
+                          label={document.enabled ? '활성화' : '비활성화'}
+                          color={document.enabled ? 'success' : 'default'}
                           size="small"
                         />
                       </TableCell>
                       <TableCell align="right">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleView(doc)}
-                          color="info"
-                        >
+                        <IconButton size="small" onClick={() => setViewDocument(document)} color="info">
                           <ViewIcon />
                         </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEdit(doc)}
-                          color="primary"
-                        >
+                        <IconButton size="small" onClick={() => handleEdit(document)} color="primary">
                           <EditIcon />
                         </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(doc.id)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        {pendingDeleteId === document.id ? (
+                          <Button size="small" color="error" onClick={() => handleDelete(document.id)}>
+                            삭제 확인
+                          </Button>
+                        ) : (
+                          <IconButton size="small" onClick={() => handleDelete(document.id)} color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Box>
-
-      {/* View Dialog */}
-      <Dialog
-        open={viewDialogOpen}
-        onClose={() => setViewDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>{viewDocument?.title}</DialogTitle>
-        <DialogContent>
-          {viewDocument?.category && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                카테고리:
-              </Typography>
-              <Chip
-                label={viewDocument.category}
-                size="small"
-                color="primary"
-                sx={{ ml: 1 }}
-              />
-            </Box>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
-          <Divider sx={{ mb: 2 }} />
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-            {viewDocument?.content}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>닫기</Button>
-        </DialogActions>
-      </Dialog>
+        </SectionPanel>
+      </PageBody>
 
       <Snackbar
         open={snackbar.open}

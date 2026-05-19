@@ -63,22 +63,23 @@ public interface ServiceRequestMapper {
 
     @Insert("INSERT INTO service_requests (title, description, status, priority, customer_id, " +
             "manager_id, project_id, created_by_user_id, parent_id, created_at, updated_at, resolved_at, " +
-            "hours_spent, resolution_notes, due_date, received_at) " +
+            "hours_spent, resolution_notes, due_date, received_at, assigned_at, started_at, closed_at, cancelled_at, reopened_at) " +
             "VALUES (#{title}, #{description}, #{status}, #{priority}, #{customerId}, " +
             "#{managerId}, #{projectId}, #{createdByUserId}, #{parentId}, #{createdAt}, #{updatedAt}, #{resolvedAt}, " +
-            "#{hoursSpent}, #{resolutionNotes}, #{dueDate}, #{receivedAt})")
+            "#{hoursSpent}, #{resolutionNotes}, #{dueDate}, #{receivedAt}, #{assignedAt}, #{startedAt}, #{closedAt}, #{cancelledAt}, #{reopenedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ServiceRequest serviceRequest);
 
     @Update("UPDATE service_requests SET title = #{title}, description = #{description}, " +
             "status = #{status}, priority = #{priority}, customer_id = #{customerId}, " +
             "manager_id = #{managerId}, project_id = #{projectId}, parent_id = #{parentId}, updated_at = #{updatedAt}, resolved_at = #{resolvedAt}, " +
-            "hours_spent = #{hoursSpent}, resolution_notes = #{resolutionNotes}, due_date = #{dueDate}, received_at = #{receivedAt} " +
+            "hours_spent = #{hoursSpent}, resolution_notes = #{resolutionNotes}, due_date = #{dueDate}, received_at = #{receivedAt}, " +
+            "assigned_at = #{assignedAt}, started_at = #{startedAt}, closed_at = #{closedAt}, cancelled_at = #{cancelledAt}, reopened_at = #{reopenedAt} " +
             "WHERE id = #{id}")
     int update(ServiceRequest serviceRequest);
 
     @Update("UPDATE service_requests SET manager_id = NULL, status = 'OPEN', " +
-            "hours_spent = NULL, resolution_notes = NULL, resolved_at = NULL, " +
+            "hours_spent = NULL, resolution_notes = NULL, resolved_at = NULL, assigned_at = NULL, started_at = NULL, closed_at = NULL, cancelled_at = NULL, reopened_at = NULL, " +
             "updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
     int unassign(Long id);
 

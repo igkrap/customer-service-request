@@ -1,6 +1,7 @@
 package com.example.customerservice.controller;
 
 import com.example.customerservice.dto.ServiceRequestDTO;
+import com.example.customerservice.dto.ServiceRequestActionRequest;
 import com.example.customerservice.dto.UpdateServiceRequestStatusRequest;
 import com.example.customerservice.model.ServiceRequest;
 import com.example.customerservice.model.User;
@@ -158,6 +159,10 @@ public class ServiceRequestController {
             }
 
             if (user.getRole() == User.Role.ROLE_CUSTOMER) {
+                dto.setStatus(existingRequest.getStatus());
+                dto.setManagerId(existingRequest.getManagerId());
+                dto.setHoursSpent(existingRequest.getHoursSpent());
+                dto.setResolutionNotes(existingRequest.getResolutionNotes());
                 dto.setReceivedAt(existingRequest.getReceivedAt());
                 dto.setResolvedAt(existingRequest.getResolvedAt());
             }
@@ -179,8 +184,7 @@ public class ServiceRequestController {
             // Check if user has permission to delete
             ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
             if (!isAdmin(authentication) &&
-                user.getRole() == User.Role.ROLE_CUSTOMER &&
-                !existingRequest.getCustomerId().equals(user.getId())) {
+                (user.getRole() != User.Role.ROLE_CUSTOMER || !existingRequest.getCustomerId().equals(user.getId()))) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only delete your own requests");
             }
 
@@ -271,6 +275,217 @@ public class ServiceRequestController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PatchMapping("/{id}/triage")
+    public ResponseEntity<?> triageServiceRequest(@PathVariable Long id,
+                                                  @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                  Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !canManagerAccessRequest(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or project managers can triage this request");
+            }
+            return ResponseEntity.ok(serviceRequestService.triageServiceRequest(id, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/assign")
+    public ResponseEntity<?> assignServiceRequest(@PathVariable Long id,
+                                                  @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                  Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            Long managerId = request != null ? request.getManagerId() : null;
+
+            if (isAdmin(authentication)) {
+                if (managerId == null) {
+                    return ResponseEntity.badRequest().body("Manager ID is required");
+                }
+            } else if (canManagerAccessRequest(user, existingRequest)) {
+                managerId = user.getId();
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or project managers can assign this request");
+            }
+
+            return ResponseEntity.ok(serviceRequestService.assignServiceRequest(id, managerId, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/start")
+    public ResponseEntity<?> startServiceRequest(@PathVariable Long id,
+                                                 @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                 Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            Long managerId = request != null ? request.getManagerId() : null;
+
+            if (isAdmin(authentication)) {
+                managerId = managerId != null ? managerId : existingRequest.getManagerId();
+            } else if (canManagerAccessRequest(user, existingRequest)) {
+                managerId = user.getId();
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or project managers can start this request");
+            }
+
+            return ResponseEntity.ok(serviceRequestService.startServiceRequest(id, managerId, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/hold")
+    public ResponseEntity<?> holdServiceRequest(@PathVariable Long id,
+                                                @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !isAssignedManager(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or assigned managers can hold this request");
+            }
+            return ResponseEntity.ok(serviceRequestService.holdServiceRequest(id, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/wait-customer")
+    public ResponseEntity<?> waitCustomerServiceRequest(@PathVariable Long id,
+                                                        @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                        Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !isAssignedManager(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or assigned managers can request customer response");
+            }
+            return ResponseEntity.ok(serviceRequestService.waitCustomerServiceRequest(id, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/resolve")
+    public ResponseEntity<?> resolveServiceRequest(@PathVariable Long id,
+                                                   @RequestBody ServiceRequestActionRequest request,
+                                                   Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !isAssignedManager(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or assigned managers can resolve this request");
+            }
+            return ResponseEntity.ok(serviceRequestService.resolveServiceRequest(
+                    id,
+                    request != null ? request.getHoursSpent() : null,
+                    request != null ? request.getResolutionNotes() : null,
+                    request != null ? request.getAttachments() : null,
+                    getNote(request),
+                    user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/close")
+    public ResponseEntity<?> closeServiceRequest(@PathVariable Long id,
+                                                 @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                 Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !isCustomerOwner(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or owning customers can close this request");
+            }
+            return ResponseEntity.ok(serviceRequestService.closeServiceRequest(id, getNote(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/reject-resolution")
+    public ResponseEntity<?> rejectResolution(@PathVariable Long id,
+                                              @RequestBody(required = false) ServiceRequestActionRequest request,
+                                              Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            ServiceRequest existingRequest = serviceRequestService.getServiceRequestEntityById(id);
+            if (!isAdmin(authentication) && !isCustomerOwner(user, existingRequest)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins or owning customers can reject this resolution");
+            }
+            return ResponseEntity.ok(serviceRequestService.rejectResolution(id, getReason(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelServiceRequest(@PathVariable Long id,
+                                                  @RequestBody(required = false) ServiceRequestActionRequest request,
+                                                  Authentication authentication) {
+        try {
+            User user = getAuthenticatedUser(authentication);
+            if (!isAdmin(authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins can cancel service requests");
+            }
+            return ResponseEntity.ok(serviceRequestService.cancelServiceRequest(id, getReason(request), user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    private User getAuthenticatedUser(Authentication authentication) {
+        String userId = authentication.getName();
+        return userMapper.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private boolean isAssignedManager(User user, ServiceRequest request) {
+        return user.getRole() == User.Role.ROLE_MANAGER &&
+                request.getManagerId() != null &&
+                request.getManagerId().equals(user.getId());
+    }
+
+    private boolean canManagerAccessRequest(User user, ServiceRequest request) {
+        if (user.getRole() != User.Role.ROLE_MANAGER) {
+            return false;
+        }
+        if (isAssignedManager(user, request)) {
+            return true;
+        }
+        if (request.getManagerId() != null && !request.getManagerId().equals(user.getId())) {
+            return false;
+        }
+        return request.getProjectId() != null &&
+                userMapper.getProjectIdsByUserId(user.getId()).contains(request.getProjectId());
+    }
+
+    private boolean isCustomerOwner(User user, ServiceRequest request) {
+        return user.getRole() == User.Role.ROLE_CUSTOMER &&
+                request.getCustomerId() != null &&
+                request.getCustomerId().equals(user.getId());
+    }
+
+    private String getNote(ServiceRequestActionRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return request.getNote() != null ? request.getNote() : request.getReason();
+    }
+
+    private String getReason(ServiceRequestActionRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return request.getReason() != null ? request.getReason() : request.getNote();
     }
 
     private ServiceRequestDTO convertToDTO(ServiceRequest request) {

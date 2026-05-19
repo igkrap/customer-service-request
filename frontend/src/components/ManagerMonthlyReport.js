@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
-  Typography,
   FormControl,
   InputLabel,
   Select,
@@ -10,13 +8,13 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  Chip,
-  Button
+  Chip
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
-import DownloadIcon from '@mui/icons-material/Download';
+import { DataGrid } from '@mui/x-data-grid';
 import * as XLSX from 'xlsx';
 import { userAPI, projectAPI, serviceRequestAPI } from '../services/api';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import { FilterPanel } from './common/WorkspaceLayout';
 
 function ManagerMonthlyReport() {
   const [managers, setManagers] = useState([]);
@@ -32,6 +30,7 @@ function ManagerMonthlyReport() {
   const [daysInMonth, setDaysInMonth] = useState([]);
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
+  const [searched, setSearched] = useState(false);
 
   useEffect(() => {
     fetchManagers();
@@ -42,12 +41,6 @@ function ManagerMonthlyReport() {
       calculateDaysInMonth(selectedMonth);
     }
   }, [selectedMonth]);
-
-  useEffect(() => {
-    if (selectedManagerId && selectedMonth) {
-      fetchReportData();
-    }
-  }, [selectedManagerId, selectedMonth]);
 
   useEffect(() => {
     if (daysInMonth.length > 0) {
@@ -94,7 +87,12 @@ function ManagerMonthlyReport() {
   };
 
   const fetchReportData = async () => {
+    if (!selectedManagerId || !selectedMonth) {
+      return;
+    }
+
     try {
+      setSearched(true);
       setLoading(true);
       setError(null);
 
@@ -136,10 +134,10 @@ function ManagerMonthlyReport() {
       const requestsResponse = await serviceRequestAPI.getAll();
       const allRequests = requestsResponse.data;
 
-      // 5. 해당 매니저가 RESOLVED 처리한 요청만 필터링
+      // 5. 해당 매니저가 완료보고/종료 처리한 요청만 필터링
       const managerResolvedRequests = allRequests.filter(req =>
         req.managerId === parseInt(selectedManagerId) &&
-        req.status === 'RESOLVED' &&
+        ['RESOLVED', 'CLOSED'].includes(req.status) &&
         req.resolvedAt &&
         req.hoursSpent
       );
@@ -186,10 +184,16 @@ function ManagerMonthlyReport() {
 
   const handleManagerChange = (event) => {
     setSelectedManagerId(event.target.value);
+    setReportData([]);
+    setRows([]);
+    setSearched(false);
   };
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
+    setReportData([]);
+    setRows([]);
+    setSearched(false);
   };
 
   const generateColumns = () => {
@@ -418,32 +422,7 @@ function ManagerMonthlyReport() {
 
   // 커스텀 툴바 컴포넌트
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   if (loading) {
@@ -456,25 +435,30 @@ function ManagerMonthlyReport() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          월간 매니저별 실적 현황
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="월간 매니저별 실적 현황"
+        subtitle="매니저, 월, 프로젝트 기준으로 완료 처리 시간을 집계합니다."
+        actions={
+          <PageActions>
+            <PageActionButton
+              action="search"
+              onClick={fetchReportData}
+              disabled={!selectedManagerId || !selectedMonth}
+            />
+            <PageActionButton
+              action="export"
+              onClick={handleExportToExcel}
+              disabled={!selectedManagerId || !selectedMonth || rows.length === 0}
+            />
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <FormControl sx={{ minWidth: 200 }}>
+        <FilterPanel>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>매니저 선택</InputLabel>
             <Select
               value={selectedManagerId}
@@ -493,6 +477,7 @@ function ManagerMonthlyReport() {
           <TextField
             type="month"
             label="연월 선택"
+            size="small"
             value={selectedMonth}
             onChange={handleMonthChange}
             InputLabelProps={{
@@ -500,7 +485,7 @@ function ManagerMonthlyReport() {
             }}
             sx={{ minWidth: 200 }}
           />
-        </Box>
+        </FilterPanel>
 
         {selectedManagerId && selectedMonth && (
           <Box
@@ -554,13 +539,13 @@ function ManagerMonthlyReport() {
               '& .MuiDataGrid-root': {
                 border: '1px solid',
                 borderColor: 'divider',
-                borderRadius: 2,
+                borderRadius: 0,
               },
               '& .MuiDataGrid-row:nth-of-type(even)': {
                 bgcolor: 'rgba(0, 0, 0, 0.02)',
               },
               '& .MuiDataGrid-row:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.04)',
+                bgcolor: 'background.default',
               },
               '& .MuiDataGrid-columnHeader': {
                 outline: 'none !important',
@@ -580,6 +565,7 @@ function ManagerMonthlyReport() {
             <DataGrid
               rows={rows}
               columns={columns}
+              localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
               disableRowSelectionOnClick
               disableColumnMenu
               hideFooter

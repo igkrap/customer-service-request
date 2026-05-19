@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { showInfo } from '../utils/alerts';
 
 const AuthContext = createContext(null);
 
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     const handleAuthExpired = (event) => {
       // Optional: show alert message
       if (event.detail?.message) {
-        alert(event.detail.message);
+        showInfo('세션 안내', event.detail.message);
       }
     };
 

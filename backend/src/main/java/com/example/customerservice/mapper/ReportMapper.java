@@ -24,13 +24,13 @@ public interface ReportMapper {
                         + DATE_PART('month', AGE(p.contract_end_date, p.contract_start_date))
                         + 1
                     ) AS planned_man_days,
-                COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0) AS actual_man_days,
+                COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN sr.hours_spent ELSE 0 END), 0) AS actual_man_days,
                 COALESCE(SUM(CASE WHEN sr.status <> 'CANCELLED' THEN 1 ELSE 0 END), 0) AS total_requests,
-                COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN 1 ELSE 0 END), 0) AS resolved_requests,
+                COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN 1 ELSE 0 END), 0) AS resolved_requests,
                 CASE
                     WHEN p.contract_man_days > 0
                         THEN ROUND(
-                            COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0)
+                            COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN sr.hours_spent ELSE 0 END), 0)
                             / (
                                 p.contract_man_days
                                 * (
@@ -45,7 +45,7 @@ public interface ReportMapper {
                 CASE
                     WHEN COALESCE(SUM(CASE WHEN sr.status <> 'CANCELLED' THEN 1 ELSE 0 END), 0) > 0
                         THEN ROUND(
-                            COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN 1 ELSE 0 END), 0)::numeric
+                            COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN 1 ELSE 0 END), 0)::numeric
                             / COALESCE(SUM(CASE WHEN sr.status <> 'CANCELLED' THEN 1 ELSE 0 END), 0) * 100
                         )
                     ELSE 0
@@ -68,11 +68,11 @@ public interface ReportMapper {
                 p.project_name AS project_name,
                 TO_CHAR(months.month_start, 'YYYY/MM') AS year_month,
                 p.contract_man_days AS planned_man_days,
-                COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0) AS actual_man_days,
+                COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN sr.hours_spent ELSE 0 END), 0) AS actual_man_days,
                 CASE
                     WHEN p.contract_man_days > 0
                         THEN ROUND(
-                            COALESCE(SUM(CASE WHEN sr.status = 'RESOLVED' THEN sr.hours_spent ELSE 0 END), 0)
+                            COALESCE(SUM(CASE WHEN sr.status IN ('CLOSED', 'RESOLVED') THEN sr.hours_spent ELSE 0 END), 0)
                             / p.contract_man_days * 100
                         )
                     ELSE 0
@@ -120,7 +120,7 @@ public interface ReportMapper {
                     ELSE 0
                 END), 0) AS total_requests,
                 COALESCE(SUM(CASE
-                    WHEN sr.status = 'RESOLVED' AND
+                    WHEN sr.status IN ('CLOSED', 'RESOLVED') AND
                         (CASE
                             WHEN sr.resolved_at IS NOT NULL AND LENGTH(TRIM(sr.resolved_at)) >= 4
                                 THEN CAST(SUBSTRING(sr.resolved_at, 1, 4) AS INTEGER)
@@ -130,7 +130,7 @@ public interface ReportMapper {
                     ELSE 0
                 END), 0) AS resolved_requests,
                 COALESCE(SUM(CASE
-                    WHEN sr.status = 'RESOLVED' AND
+                    WHEN sr.status IN ('CLOSED', 'RESOLVED') AND
                         (CASE
                             WHEN sr.resolved_at IS NOT NULL AND LENGTH(TRIM(sr.resolved_at)) >= 4
                                 THEN CAST(SUBSTRING(sr.resolved_at, 1, 4) AS INTEGER)
@@ -152,7 +152,7 @@ public interface ReportMapper {
                     END), 0) > 0
                         THEN ROUND(
                             COALESCE(SUM(CASE
-                                WHEN sr.status = 'RESOLVED' AND
+                                WHEN sr.status IN ('CLOSED', 'RESOLVED') AND
                                     (CASE
                                         WHEN sr.resolved_at IS NOT NULL AND LENGTH(TRIM(sr.resolved_at)) >= 4
                                             THEN CAST(SUBSTRING(sr.resolved_at, 1, 4) AS INTEGER)
@@ -182,3 +182,4 @@ public interface ReportMapper {
             """)
     List<AnnualManagerPerformanceDTO> findAnnualManagerPerformance(@Param("year") int year);
 }
+

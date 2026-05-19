@@ -128,6 +128,15 @@ export const serviceRequestAPI = {
   update: (id, request) => api.put(`/service-requests/${id}`, request),
   updateStatus: (id, status, hoursSpent, resolutionNotes, attachments) =>
     api.patch(`/service-requests/${id}/status`, { status, hoursSpent, resolutionNotes, attachments }),
+  triage: (id, payload = {}) => api.patch(`/service-requests/${id}/triage`, payload),
+  assign: (id, payload = {}) => api.patch(`/service-requests/${id}/assign`, payload),
+  start: (id, payload = {}) => api.patch(`/service-requests/${id}/start`, payload),
+  hold: (id, payload = {}) => api.patch(`/service-requests/${id}/hold`, payload),
+  waitCustomer: (id, payload = {}) => api.patch(`/service-requests/${id}/wait-customer`, payload),
+  resolve: (id, payload = {}) => api.patch(`/service-requests/${id}/resolve`, payload),
+  close: (id, payload = {}) => api.patch(`/service-requests/${id}/close`, payload),
+  rejectResolution: (id, payload = {}) => api.patch(`/service-requests/${id}/reject-resolution`, payload),
+  cancel: (id, payload = {}) => api.patch(`/service-requests/${id}/cancel`, payload),
   unassign: (id) => api.patch(`/service-requests/${id}/unassign`),
   delete: (id) => api.delete(`/service-requests/${id}`),
 };

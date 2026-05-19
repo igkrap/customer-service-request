@@ -140,6 +140,7 @@ public class ProjectRequestService {
         project.setContractStartDate(projectRequest.getContractStartDate());
         project.setContractEndDate(projectRequest.getContractEndDate());
         project.setContractManDays(projectRequest.getContractManDays());
+        project.setLicenseKey(LicenseKeyGenerator.generate());
         project.setCreatedAt(LocalDateTime.now());
         project.setUpdatedAt(LocalDateTime.now());
 

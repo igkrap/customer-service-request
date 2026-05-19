@@ -1,69 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { projectAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
-import {
-  Box,
-  Paper,
-  Typography,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+import PageHeader, { PageActionButton } from './common/PageHeader';
+import { EmptyState, PageBody, RecordListItem, SectionPanel } from './common/WorkspaceLayout';
 
 function MyProjectList() {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const formatDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('ko-KR');
+  };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
+
     try {
+      setSearched(true);
       setLoading(true);
+      setError(null);
 
-      // Get user's assigned projects
       const userProjectsResponse = await userAPI.getProjects(user.id);
-      const assignedProjectIds = userProjectsResponse.data;
+      const assignedProjectIds = userProjectsResponse.data || [];
       setSelectedProjects(assignedProjectIds);
 
-      // Get available projects based on role
       if (user.role === 'ROLE_CUSTOMER') {
-        // Customer: Only show projects from their company
         const userResponse = await userAPI.getById(user.id);
         const userData = userResponse.data;
 
         if (userData.companyId) {
           const projectsResponse = await projectAPI.getByCompanyId(userData.companyId);
-          setProjects(projectsResponse.data);
+          setProjects(projectsResponse.data || []);
         } else {
           setProjects([]);
-          setError('회사에 할당되지 않았습니다. 관리자에게 문의하세요.');
+          setError('회사 정보가 할당되지 않았습니다. 관리자에게 문의하세요.');
         }
       } else if (user.role === 'ROLE_MANAGER') {
-        // Manager: Only show assigned projects (read-only)
         if (assignedProjectIds.length > 0) {
           const allProjectsResponse = await projectAPI.getAll();
-          const assignedProjects = allProjectsResponse.data.filter(p => assignedProjectIds.includes(p.id));
+          const assignedProjects = (allProjectsResponse.data || []).filter((project) => (
+            assignedProjectIds.includes(project.id)
+          ));
           setProjects(assignedProjects);
         } else {
           setProjects([]);
         }
+      } else {
+        setProjects([]);
       }
-
-      setError(null);
     } catch (err) {
-      setError('데이터 가져오기 실패: ' + (err.response?.data || err.message));
+      setError(`프로젝트 목록을 불러오지 못했습니다: ${err.response?.data || err.message}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, user?.role]);
 
   if (loading && projects.length === 0) {
     return (
@@ -73,64 +80,64 @@ function MyProjectList() {
     );
   }
 
+  const roleDescription = user?.role === 'ROLE_MANAGER'
+    ? '현재 매니저에게 배정된 프로젝트만 표시됩니다.'
+    : '소속 회사에서 사용할 수 있는 프로젝트를 표시합니다.';
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
+      <PageHeader
+        title="프로젝트 조회"
+        subtitle="배정된 프로젝트와 계약 정보를 확인합니다."
+        actions={<PageActionButton action="search" onClick={fetchData} />}
+      />
+      <PageBody>
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <SectionPanel
+          title="사용 가능한 프로젝트"
+          subtitle={roleDescription}
+          actions={<Chip label={`${projects.length}건`} size="small" color="primary" variant="outlined" />}
         >
-          프로젝트 조회
+          {projects.length === 0 ? (
+            <EmptyState
+              title={searched ? '조회 가능한 프로젝트가 없습니다' : '조회 버튼을 눌러 데이터를 조회하세요'}
+              description={searched ? '프로젝트 배정 또는 회사 연결 상태를 확인하세요.' : '배정된 프로젝트와 계약 정보는 조회 후 표시됩니다.'}
+            />
+          ) : (
+            <Stack spacing={1.25}>
+              {projects.map((project) => {
+                const isSelected = selectedProjects.includes(project.id);
+                return (
+                  <RecordListItem
+                    key={project.id}
+                    selected={isSelected}
+                    leading={<Checkbox checked={isSelected} disabled />}
+                    primary={project.projectName}
+                    secondary={project.companyName || '회사 정보 없음'}
+                    meta={[
+                      <Chip key="type" label={getServiceTypeLabel(project.serviceType)} size="small" />,
+                      <Chip
+                        key="period"
+                        label={`${formatDate(project.contractStartDate)} - ${formatDate(project.contractEndDate)}`}
+                        size="small"
+                        variant="outlined"
+                      />,
+                      project.contractManDays !== undefined && (
+                        <Chip key="md" label={`${project.contractManDays} M/D`} size="small" variant="outlined" />
+                      ),
+                    ].filter(Boolean)}
+                  />
+                );
+              })}
+            </Stack>
+          )}
+        </SectionPanel>
+
+        <Typography variant="caption" color="text.secondary">
+          이 화면은 조회 전용입니다. 프로젝트 배정 변경은 관리자에게 요청하세요.
         </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
-
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        {(user.role === 'ROLE_CUSTOMER' || user.role === 'ROLE_MANAGER') && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            관리자가 할당한 프로젝트 목록입니다. (조회 전용)
-          </Alert>
-        )}
-
-        {projects.length === 0 ? (
-          <Typography color="text.secondary">
-            사용 가능한 프로젝트가 없습니다.
-          </Typography>
-        ) : (
-          <>
-            <FormGroup>
-              {projects.map(project => (
-                <FormControlLabel
-                  key={project.id}
-                  control={
-                    <Checkbox
-                      checked={selectedProjects.includes(project.id)}
-                      disabled={true}
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography variant="body1">
-                        {project.projectName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        회사: {project.companyName} | 유형: {getServiceTypeLabel(project.serviceType)} |
-                        계약기간: {new Date(project.contractStartDate).toLocaleDateString()} - {new Date(project.contractEndDate).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  }
-                />
-              ))}
-            </FormGroup>
-          </>
-        )}
-      </Box>
+      </PageBody>
     </Box>
   );
 }

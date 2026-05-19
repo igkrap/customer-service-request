@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './components/AuthPage';
@@ -35,10 +35,11 @@ import {
   IconButton,
   Tooltip,
   Fade,
-  Fab,
+  Slide,
   Dialog,
   DialogContent,
   DialogTitle,
+  Popover,
   Snackbar,
   Alert,
   Badge,
@@ -52,13 +53,10 @@ import {
   Business as CompanyIcon,
   Work as ProjectIcon,
   AccountTree as MappingIcon,
-  Person as ProfileIcon,
-  Logout as LogoutIcon,
   Settings as SettingsIcon,
+  Logout as LogoutIcon,
   Assessment as AssessmentIcon,
-  Chat as ChatIcon,
   SmartToy as AiIcon,
-  Storage as StorageIcon,
   Close as CloseIcon,
   Email as EmailIcon,
   Description as TemplateIcon,
@@ -74,6 +72,42 @@ import './styles/App.css';
 
 const drawerWidth = 280;
 const collapsedDrawerWidth = 72;
+const chatbotPanelWidth = 420;
+const sidebarBrandHeight = 68;
+const sidebarUserUtilityHeight = 112;
+const sidebarRailSlotSx = {
+  width: collapsedDrawerWidth,
+  minWidth: collapsedDrawerWidth,
+  flex: `0 0 ${collapsedDrawerWidth}px`,
+  boxSizing: 'border-box',
+  display: 'grid',
+  placeItems: 'center',
+};
+const sidebarRailActionSx = {
+  width: 56,
+  height: 48,
+  borderRadius: 1,
+  boxSizing: 'border-box',
+  display: 'grid',
+  placeItems: 'center',
+};
+const sidebarUtilityIconButtonSx = {
+  width: 36,
+  height: 36,
+  border: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+  '&:hover': {
+    bgcolor: 'primary.light',
+  },
+};
+const drawerTransition = 'width 220ms cubic-bezier(0.2, 0, 0, 1)';
+const sidebarTextTransition = 'opacity 140ms ease, max-width 220ms cubic-bezier(0.2, 0, 0, 1)';
+const drawerCloseDelayMs = 120;
+
+const ChatbotTransition = React.forwardRef(function ChatbotTransition(props, ref) {
+  return <Slide direction="left" ref={ref} {...props} />;
+});
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -85,13 +119,50 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [notification, setNotification] = useState({
     open: false,
     message: '',
     createdAt: null,
   });
   const [notificationList, setNotificationList] = useState([]);
+  const drawerCloseTimerRef = useRef(null);
+  const notificationPopoverOpen = Boolean(notificationAnchorEl);
+
+  const openDrawer = () => {
+    if (drawerCloseTimerRef.current) {
+      window.clearTimeout(drawerCloseTimerRef.current);
+      drawerCloseTimerRef.current = null;
+    }
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    if (notificationPopoverOpen) {
+      if (drawerCloseTimerRef.current) {
+        window.clearTimeout(drawerCloseTimerRef.current);
+        drawerCloseTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (drawerCloseTimerRef.current) {
+      window.clearTimeout(drawerCloseTimerRef.current);
+    }
+    drawerCloseTimerRef.current = window.setTimeout(() => {
+      setDrawerOpen(false);
+      drawerCloseTimerRef.current = null;
+    }, drawerCloseDelayMs);
+  };
+
+  const handleNotificationClick = (event) => {
+    openDrawer();
+    setNotificationAnchorEl((current) => (current ? null : event.currentTarget));
+  };
+
+  const handleNotificationClose = () => {
+    setNotificationAnchorEl(null);
+  };
 
   const getNotificationTypeMeta = (type) => {
     switch (type) {
@@ -267,6 +338,50 @@ function Dashboard() {
     };
   }, [user]);
 
+  useEffect(() => () => {
+    if (drawerCloseTimerRef.current) {
+      window.clearTimeout(drawerCloseTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!notificationPopoverOpen) return;
+
+    if (drawerCloseTimerRef.current) {
+      window.clearTimeout(drawerCloseTimerRef.current);
+      drawerCloseTimerRef.current = null;
+    }
+    setDrawerOpen(true);
+  }, [notificationPopoverOpen]);
+
+  const notificationButton = (
+    <Tooltip title="알림" placement={drawerOpen ? 'top' : 'right'}>
+      <IconButton
+        size="small"
+        onClick={handleNotificationClick}
+        sx={{
+          ...sidebarUtilityIconButtonSx,
+          bgcolor: notificationPopoverOpen ? 'primary.light' : 'background.paper',
+        }}
+      >
+        <Badge
+          color="error"
+          badgeContent={notificationList.length}
+          overlap="circular"
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: 10,
+              height: 16,
+              minWidth: 16,
+            },
+          }}
+        >
+          <NotificationsIcon fontSize="small" />
+        </Badge>
+      </IconButton>
+    </Tooltip>
+  );
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Drawer
@@ -274,20 +389,23 @@ function Dashboard() {
           '& .MuiDrawer-paper': {
             width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
             boxSizing: 'border-box',
-            transition: 'width 0.3s ease',
+            transition: drawerTransition,
+            willChange: 'width',
             overflow: 'hidden',
             position: 'fixed',
             height: '100vh',
             zIndex: 1200,
             left: 0,
             top: 0,
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
           },
         }}
-        variant="persistent"
-        open={true}
+        variant="permanent"
         anchor="left"
-        onMouseEnter={() => setDrawerOpen(true)}
-        onMouseLeave={() => setDrawerOpen(false)}
+        onMouseEnter={openDrawer}
+        onMouseLeave={closeDrawer}
       >
         <Box
           sx={{
@@ -303,46 +421,114 @@ function Dashboard() {
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'center',
               alignItems: 'center',
-              px: drawerOpen ? 2 : 1,
-              minHeight: 80,
-              pb: 2
+              justifyContent: 'flex-start',
+              px: 0,
+              height: sidebarBrandHeight,
+              minHeight: sidebarBrandHeight,
+              flex: `0 0 ${sidebarBrandHeight}px`,
+              boxSizing: 'border-box',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
             }}
           >
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              width: '100%',
-              gap: drawerOpen ? 2 : 0,
-              justifyContent: drawerOpen ? 'flex-start' : 'center',
-              transition: 'gap 0.3s ease, justify-content 0.3s ease'
-            }}>
-              <Avatar
-                src={getProfilePictureUrl(user?.profilePictureId)}
+            <Box sx={sidebarRailSlotSx}>
+              <Box className="notion-mark" aria-hidden="true">N</Box>
+            </Box>
+            <Box
+              sx={{
+                minWidth: 0,
+                maxWidth: drawerOpen ? 180 : 0,
+                opacity: drawerOpen ? 1 : 0,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                transition: sidebarTextTransition,
+                pointerEvents: drawerOpen ? 'auto' : 'none',
+              }}
+            >
+              <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 700 }}>
+                CSR Desk
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Service operations
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              px: 0,
+              py: 1.25,
+              height: sidebarUserUtilityHeight,
+              minHeight: sidebarUserUtilityHeight,
+              flex: `0 0 ${sidebarUserUtilityHeight}px`,
+              boxSizing: 'border-box',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <Box
                 sx={{
-                  width: drawerOpen ? 56 : 40,
-                  height: drawerOpen ? 56 : 40,
-                  border: '2px solid',
-                  borderColor: 'primary.main',
-                  transition: 'width 0.3s ease, height 0.3s ease',
-                  flexShrink: 0
+                  height: 48,
+                  minWidth: 0,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  px: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  overflow: 'hidden',
                 }}
               >
-                {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
-              </Avatar>
-              {drawerOpen && (
-                <Box sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  opacity: drawerOpen ? 1 : 0,
-                  transition: 'opacity 0.3s ease'
-                }}>
+                <Box sx={sidebarRailSlotSx}>
+                  <Box
+                    sx={{
+                      ...sidebarRailActionSx,
+                      bgcolor: 'transparent',
+                    }}
+                  >
+                  <Avatar
+                    src={getProfilePictureUrl(user?.profilePictureId)}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: 'divider',
+                      flex: '0 0 40px',
+                      fontSize: 16,
+                      lineHeight: 1,
+                      '& img': {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      },
+                    }}
+                  >
+                    {!user?.profilePictureId && user?.username?.charAt(0).toUpperCase()}
+                  </Avatar>
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    minWidth: 0,
+                    maxWidth: drawerOpen ? 184 : 0,
+                    opacity: drawerOpen ? 1 : 0,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    transition: sidebarTextTransition,
+                    pointerEvents: drawerOpen ? 'auto' : 'none',
+                  }}
+                >
                   <Chip
                     label={getRoleText()}
-                    color="primary"
                     size="small"
-                    sx={{ mb: 0.5, height: 24 }}
+                    sx={{
+                      mb: 0.5,
+                      height: 22,
+                      bgcolor: 'action.selected',
+                      color: 'text.primary',
+                      fontWeight: 700,
+                    }}
                   />
                   <Typography
                     variant="caption"
@@ -352,24 +538,74 @@ function Dashboard() {
                       lineHeight: '16px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
                     }}
                   >
-                    환영합니다, {user?.username}님
+                    {user?.username}
                   </Typography>
+                </Box>
+              </Box>
+            </ListItem>
+            <Box
+              sx={{
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                overflow: 'hidden',
+              }}
+            >
+              {drawerOpen ? (
+                <Box
+                  sx={{
+                    pl: `${(collapsedDrawerWidth - 36) / 2}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                  }}
+                >
+                  {notificationButton}
+                  <Tooltip title="설정" placement="top">
+                    <IconButton
+                      size="small"
+                      onClick={() => setActiveTab('profile')}
+                      sx={{
+                        ...sidebarUtilityIconButtonSx,
+                        bgcolor: activeTab === 'profile' ? 'primary.light' : 'background.paper',
+                      }}
+                    >
+                      <SettingsIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="로그아웃" placement="top">
+                    <IconButton
+                      size="small"
+                      onClick={logout}
+                      sx={sidebarUtilityIconButtonSx}
+                    >
+                      <LogoutIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              ) : (
+                <Box sx={sidebarRailSlotSx}>
+                  {notificationButton}
                 </Box>
               )}
             </Box>
           </Box>
-          <Divider />
           <Box
             sx={{
               flex: 1,
-              overflowY: drawerOpen ? 'auto' : 'hidden',
-              overflowX: 'hidden'
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': {
+                display: 'none',
+              },
             }}
           >
-            <List>
+            <List sx={{ py: 0.5 }}>
             {menuGroups.map((group) => {
               const visibleItems = group.items.filter((item) => item.show);
               if (visibleItems.length === 0) return null;
@@ -384,28 +620,26 @@ function Dashboard() {
                       fontWeight: 600,
                       fontSize: 11,
                       lineHeight: 1.2,
-                      px: 1.5,
+                      px: 0,
                       py: 0.75,
                       minHeight: 'auto',
-                      width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
-                      minWidth: drawerOpen ? drawerWidth : collapsedDrawerWidth,
-                      maxWidth: drawerOpen ? drawerWidth : collapsedDrawerWidth,
                       boxSizing: 'border-box',
-                      overflow: 'visible',
+                      overflow: 'hidden',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      justifyContent: 'flex-start',
                       mx: 'auto',
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     <Tooltip title={group.label} placement="right">
                       <Box
                         component="span"
                         sx={{
+                          ...sidebarRailSlotSx,
                           fontSize: 11,
                           fontWeight: 700,
-                          letterSpacing: 0.6
+                          letterSpacing: 0
                         }}
                       >
                         {groupLabel}
@@ -416,51 +650,61 @@ function Dashboard() {
                     <ListItem key={item.key} disablePadding>
                       <Tooltip title={!drawerOpen ? item.label : ""} placement="right">
                       <ListItemButton
-                        selected={activeTab === item.key}
+                        aria-current={activeTab === item.key ? 'page' : undefined}
                         onClick={() => setActiveTab(item.key)}
                         sx={{
-                          height: 48, // Fixed height
-                          px: drawerOpen ? 2.5 : 0,
+                          height: 48,
+                          minWidth: 0,
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          m: 0,
+                          px: 0,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: drawerOpen ? 'flex-start' : 'center',
-                          '&.Mui-selected': {
-                              backgroundColor: 'primary.light',
-                              color: 'primary.contrastText',
-                              '&:hover': {
-                                backgroundColor: 'primary.main',
-                              },
-                              '& .MuiListItemIcon-root': {
-                                color: 'primary.contrastText',
-                              },
-                            },
+                          justifyContent: 'flex-start',
+                          overflow: 'hidden',
+                          bgcolor: activeTab === item.key ? 'secondary.main' : 'transparent',
+                          transition: 'background-color 120ms ease, color 120ms ease',
+                          '&:hover': {
+                            bgcolor: activeTab === item.key ? 'secondary.main' : 'action.hover',
+                          },
                           }}
                         >
                         <ListItemIcon
                           sx={{
-                            minWidth: drawerOpen ? 40 : 0,
-                            width: 40,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
+                            ...sidebarRailSlotSx,
                           }}
                         >
-                            {item.icon}
-                          </ListItemIcon>
-                          {drawerOpen && (
-                            <ListItemText
-                              primary={item.label}
+                            <Box
                               sx={{
-                                ml: 1,
-                                '& .MuiTypography-root': {
-                                  lineHeight: '24px',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
-                                }
+                                ...sidebarRailActionSx,
+                                bgcolor: 'transparent',
+                                color: activeTab === item.key ? 'secondary.contrastText' : 'text.secondary',
                               }}
-                            />
-                          )}
+                            >
+                              {item.icon}
+                            </Box>
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={item.label}
+                            sx={{
+                              ml: 0,
+                              minWidth: 0,
+                              maxWidth: drawerOpen ? 190 : 0,
+                              opacity: drawerOpen ? 1 : 0,
+                              overflow: 'hidden',
+                              transition: sidebarTextTransition,
+                              pointerEvents: drawerOpen ? 'auto' : 'none',
+                              '& .MuiTypography-root': {
+                                lineHeight: '24px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                color: activeTab === item.key ? 'secondary.contrastText' : 'text.secondary',
+                                fontWeight: activeTab === item.key ? 700 : 500,
+                              }
+                            }}
+                          />
                         </ListItemButton>
                       </Tooltip>
                     </ListItem>
@@ -469,49 +713,6 @@ function Dashboard() {
                 </Box>
               );
             })}
-            </List>
-          </Box>
-          <Box sx={{ mt: 'auto', pb: 2 }}>
-            <Divider />
-            <List>
-              <ListItem disablePadding>
-                <Tooltip title={!drawerOpen ? "로그아웃" : ""} placement="right">
-                  <ListItemButton
-                    onClick={logout}
-                    sx={{
-                      height: 48, // Fixed height
-                      px: 2.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 40, // Fixed width
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <LogoutIcon />
-                    </ListItemIcon>
-                    {drawerOpen && (
-                      <ListItemText
-                        primary="로그아웃"
-                        sx={{
-                          ml: 1,
-                          '& .MuiTypography-root': {
-                            lineHeight: '24px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }
-                        }}
-                      />
-                    )}
-                  </ListItemButton>
-                </Tooltip>
-              </ListItem>
             </List>
           </Box>
         </Box>
@@ -532,72 +733,83 @@ function Dashboard() {
         }}
       >
         <Fade in={true} timeout={300} key={activeTab}>
-          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+          <Box className="notion-page-shell" sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
             {renderContent()}
           </Box>
         </Fade>
       </Box>
 
-      {/* Floating Chatbot Button */}
-      <Fab
-        color="primary"
-        aria-label="chatbot"
-        onClick={() => setChatbotOpen(true)}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1000,
-        }}
-      >
-        <ChatIcon />
-      </Fab>
-
-      {/* Floating Notifications Button */}
-      <Fab
-        color="primary"
-        aria-label="notifications"
-        onClick={() => setNotificationOpen(true)}
-        sx={{
-          position: 'fixed',
-          bottom: 96,
-          right: 24,
-          zIndex: 1000,
-        }}
-      >
-        <Badge
-          color="error"
-          badgeContent={notificationList.length}
-          overlap="circular"
+      <Tooltip title={chatbotOpen ? 'AI 챗봇 닫기' : 'AI 챗봇 열기'} placement="left">
+        <Box
+          component="button"
+          type="button"
+          aria-label={chatbotOpen ? 'AI 챗봇 닫기' : 'AI 챗봇 열기'}
+          aria-expanded={chatbotOpen}
+          onClick={() => setChatbotOpen((current) => !current)}
           sx={{
-            '& .MuiBadge-badge': {
-              fontSize: 11,
-              height: 18,
-              minWidth: 18,
+            position: 'fixed',
+            top: '50%',
+            right: { xs: 0, sm: chatbotOpen ? chatbotPanelWidth : 0 },
+            transform: 'translateY(-50%)',
+            zIndex: (theme) => theme.zIndex.modal + 1,
+            width: 40,
+            height: 88,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRight: 0,
+            borderRadius: '8px 0 0 8px',
+            bgcolor: chatbotOpen ? 'secondary.main' : 'background.paper',
+            color: chatbotOpen ? 'secondary.contrastText' : 'text.secondary',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.12)',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+            transition: 'right 220ms cubic-bezier(0.2, 0, 0, 1), background-color 120ms ease, color 120ms ease, width 120ms ease',
+            '&:hover': {
+              width: 46,
+              bgcolor: chatbotOpen ? 'secondary.main' : 'primary.light',
+              color: chatbotOpen ? 'secondary.contrastText' : 'primary.main',
             },
           }}
         >
-          <NotificationsIcon />
-        </Badge>
-      </Fab>
+          <AiIcon fontSize="small" />
+          <Typography
+            component="span"
+            sx={{
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+          >
+            AI
+          </Typography>
+        </Box>
+      </Tooltip>
 
       {/* Chatbot Dialog */}
       <Dialog
         open={chatbotOpen}
         onClose={() => setChatbotOpen(false)}
+        TransitionComponent={ChatbotTransition}
+        transitionDuration={220}
         maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
             position: 'fixed',
-            bottom: 24,
-            right: 24,
+            top: 0,
+            right: 0,
             m: 0,
-            maxHeight: '70vh',
-            height: '600px',
-            borderRadius: 3,
+            width: { xs: '100vw', sm: chatbotPanelWidth },
+            maxWidth: { xs: '100vw', sm: chatbotPanelWidth },
+            height: '100vh',
+            maxHeight: '100vh',
+            borderRadius: 0,
             overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+            boxShadow: '0 8px 24px rgba(26, 26, 26, 0.12)',
           }
         }}
       >
@@ -606,11 +818,10 @@ function Dashboard() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            bgcolor: 'transparent',
+            bgcolor: 'secondary.main',
             color: 'white',
             py: 1.5,
             px: 2.5,
-            backgroundImage: 'linear-gradient(120deg, #1e88e5 0%, #42a5f5 100%)',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -630,53 +841,41 @@ function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Notifications Dialog */}
-      <Dialog
-        open={notificationOpen}
-        onClose={() => setNotificationOpen(false)}
-        maxWidth="sm"
-        fullWidth
+      <Popover
+        open={notificationPopoverOpen}
+        anchorEl={notificationAnchorEl}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'center', horizontal: 'left' }}
         PaperProps={{
+          onMouseEnter: openDrawer,
+          onMouseLeave: closeDrawer,
           sx: {
-            position: 'fixed',
-            bottom: 110,
-            right: 24,
-            m: 0,
-            maxHeight: '60vh',
-            height: '420px',
-            borderRadius: 3,
-            overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
-          }
+            ml: 1.5,
+            width: { xs: 'calc(100vw - 96px)', sm: 380 },
+            maxWidth: 'calc(100vw - 96px)',
+            height: { xs: 260, sm: 320 },
+            maxHeight: 'calc(100vh - 96px)',
+            overflow: 'auto',
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+          },
         }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            bgcolor: 'transparent',
-            color: 'white',
-            py: 1.5,
-            px: 2.5,
-            backgroundImage: 'linear-gradient(120deg, #1e88e5 0%, #42a5f5 100%)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <NotificationsIcon />
-            <Typography variant="h6">알림</Typography>
-          </Box>
-          <IconButton
-            onClick={() => setNotificationOpen(false)}
-            size="small"
-            sx={{ color: 'white' }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent sx={{ p: 0, height: '100%' }}>
           {notificationList.length === 0 ? (
-            <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+            <Box
+              sx={{
+                height: '100%',
+                p: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                color: 'text.secondary',
+              }}
+            >
               아직 도착한 알림이 없습니다.
             </Box>
           ) : (
@@ -711,7 +910,7 @@ function Dashboard() {
             </List>
           )}
         </DialogContent>
-      </Dialog>
+      </Popover>
 
       <Snackbar
         open={notification.open}

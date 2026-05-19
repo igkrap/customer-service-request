@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CircularProgress,
@@ -8,31 +8,30 @@ import {
   Button,
   Chip,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { projectAPI, companyAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import * as XLSX from 'xlsx';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
+import { confirmAction } from '../utils/alerts';
 
 function ProjectList() {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -45,12 +44,9 @@ function ProjectList() {
     contractManDays: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
-
   const fetchData = async () => {
     try {
+      setSearched(true);
       setLoading(true);
 
       let projectsData = [];
@@ -81,6 +77,26 @@ function ProjectList() {
       setError(null);
     } catch (err) {
       setError('데이터 불러오기 실패: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ensureCompanies = async () => {
+    if (companies.length > 0) {
+      return;
+    }
+    const companiesResponse = await companyAPI.getAll();
+    setCompanies(companiesResponse.data);
+  };
+
+  const handleOpenCreate = async () => {
+    try {
+      setLoading(true);
+      await ensureCompanies();
+      setShowForm(true);
+    } catch (err) {
+      setError('회사 목록 불러오기 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -138,13 +154,21 @@ function ProjectList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('이 프로젝트를 삭제하시겠습니까?')) {
-      try {
-        await projectAPI.delete(id);
-        fetchData();
-      } catch (err) {
-        setError('프로젝트 삭제 실패: ' + (err.response?.data || err.message));
-      }
+    const confirmed = await confirmAction({
+      title: '프로젝트 삭제',
+      text: '이 프로젝트를 삭제하시겠습니까?',
+      confirmButtonText: '삭제',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await projectAPI.delete(id);
+      fetchData();
+    } catch (err) {
+      setError('프로젝트 삭제 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -341,75 +365,47 @@ function ProjectList() {
   };
 
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            프로젝트 관리
-          </Typography>
-          {!showForm && user?.role === 'ROLE_ADMIN' && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setShowForm(true)}
-            >
-              새 프로젝트 등록
-            </Button>
-          )}
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="프로젝트 관리"
+        actions={
+          <PageActions>
+            <PageActionButton action="search" onClick={fetchData} />
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={projects.length === 0} />
+            {!showForm && user?.role === 'ROLE_ADMIN' && (
+              <PageActionButton action="create" onClick={handleOpenCreate} />
+            )}
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column' }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {user?.role === 'ROLE_MANAGER' && (
-          <Alert severity="info" sx={{ mb: 3 }}>
+          <Alert severity="info" sx={{ mb: 0, borderRadius: 0 }}>
             이 페이지는 조회 전용입니다. 프로젝트 생성 및 수정은 관리자에게 문의하세요.
           </Alert>
         )}
 
-        <Dialog open={showForm && user?.role === 'ROLE_ADMIN'} onClose={handleCancel} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingProject ? '프로젝트 수정' : '새 프로젝트 등록'}</DialogTitle>
-          <form onSubmit={handleSubmit}>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        {showForm && user?.role === 'ROLE_ADMIN' && (
+          <InlineEditorPanel
+            title={editingProject ? '프로젝트 수정' : '새 프로젝트 등록'}
+            subtitle="계약 기간, 서비스 유형, 계약 m/d를 함께 관리합니다."
+            onClose={handleCancel}
+          >
+            <Box component="form" onSubmit={handleSubmit}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 2,
+                }}
+              >
                 <FormControl fullWidth required>
                   <InputLabel>회사</InputLabel>
                   <Select
@@ -484,17 +480,17 @@ function ProjectList() {
                   inputProps={{ step: 0.1, min: 0 }}
                 />
               </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancel}>취소</Button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
+              <Button type="button" onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained" color="primary">
                 {editingProject ? '수정' : '등록'}
               </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           <DataGrid
             rows={projects}
             columns={columns}
@@ -508,6 +504,7 @@ function ProjectList() {
             }}
             showToolbar
             sx={{ height: '100%', scrollbarGutter: 'stable' }}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
           />
         </Box>
       </Box>

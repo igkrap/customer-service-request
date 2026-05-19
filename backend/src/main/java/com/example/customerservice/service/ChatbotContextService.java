@@ -150,9 +150,10 @@ public class ChatbotContextService {
             if (requests.isEmpty()) {
                 sb.append("현재 담당 중인 요청이 없습니다.\n");
             } else {
-                long openCount = requests.stream().filter(r -> "OPEN".equals(r.getStatus())).count();
-                long inProgressCount = requests.stream().filter(r -> "IN_PROGRESS".equals(r.getStatus())).count();
-                long resolvedCount = requests.stream().filter(r -> "RESOLVED".equals(r.getStatus())).count();
+                long openCount = requests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.OPEN).count();
+                long inProgressCount = requests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS).count();
+                long resolvedCount = requests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.RESOLVED
+                        || r.getStatus() == ServiceRequest.RequestStatus.CLOSED).count();
 
                 sb.append(String.format("담당 요청: 총 %d건 (대기: %d건, 진행중: %d건, 완료: %d건)\n\n",
                         requests.size(), openCount, inProgressCount, resolvedCount));
@@ -161,7 +162,7 @@ public class ChatbotContextService {
                 if (openCount > 0) {
                     sb.append("### 대기 중인 요청:\n");
                     requests.stream()
-                        .filter(r -> "OPEN".equals(r.getStatus()))
+                        .filter(r -> r.getStatus() == ServiceRequest.RequestStatus.OPEN)
                         .limit(5)
                         .forEach(req -> {
                             sb.append(String.format("- %s (우선순위: %s)\n", req.getTitle(), req.getPriority()));
@@ -188,16 +189,17 @@ public class ChatbotContextService {
 
             if (user.getRole() == User.Role.ROLE_CUSTOMER) {
                 List<ServiceRequest> myRequests = serviceRequestMapper.findByCustomerId(user.getId());
-                long openCount = myRequests.stream().filter(r -> "OPEN".equals(r.getStatus())).count();
-                long inProgressCount = myRequests.stream().filter(r -> "IN_PROGRESS".equals(r.getStatus())).count();
-                long resolvedCount = myRequests.stream().filter(r -> "RESOLVED".equals(r.getStatus())).count();
+                long openCount = myRequests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.OPEN).count();
+                long inProgressCount = myRequests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS).count();
+                long resolvedCount = myRequests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.RESOLVED
+                        || r.getStatus() == ServiceRequest.RequestStatus.CLOSED).count();
 
                 sb.append(String.format("- 내 요청: 총 %d건 (대기: %d, 진행중: %d, 완료: %d)\n",
                         myRequests.size(), openCount, inProgressCount, resolvedCount));
             } else if (user.getRole() == User.Role.ROLE_MANAGER) {
                 List<ServiceRequest> assignedRequests = serviceRequestMapper.findByManagerId(user.getId());
-                long openCount = assignedRequests.stream().filter(r -> "OPEN".equals(r.getStatus())).count();
-                long inProgressCount = assignedRequests.stream().filter(r -> "IN_PROGRESS".equals(r.getStatus())).count();
+                long openCount = assignedRequests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.OPEN).count();
+                long inProgressCount = assignedRequests.stream().filter(r -> r.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS).count();
 
                 sb.append(String.format("- 담당 요청: 총 %d건 (대기: %d, 진행중: %d)\n",
                         assignedRequests.size(), openCount, inProgressCount));

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI, companyAPI } from '../services/api';
 import { formatDateTime } from '../utils/dateFormatter';
+import { confirmAction } from '../utils/alerts';
 
 function PendingUserList() {
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -60,14 +61,22 @@ function PendingUserList() {
   };
 
   const handleReject = async (userId) => {
-    if (window.confirm('Are you sure you want to reject this user?')) {
-      try {
-        await userAPI.reject(userId);
-        fetchData(); // Refresh the list
-        setError(null);
-      } catch (err) {
-        setError('Failed to reject user: ' + (err.response?.data || err.message));
-      }
+    const confirmed = await confirmAction({
+      title: '사용자 거부',
+      text: '이 사용자를 거부하시겠습니까?',
+      confirmButtonText: '거부',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await userAPI.reject(userId);
+      fetchData(); // Refresh the list
+      setError(null);
+    } catch (err) {
+      setError('Failed to reject user: ' + (err.response?.data || err.message));
     }
   };
 

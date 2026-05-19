@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { projectRequestAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import {
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
@@ -16,25 +12,26 @@ import {
   InputLabel,
   Chip,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
   IconButton
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import {
-  Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Download as DownloadIcon
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
+import { confirmAction } from '../utils/alerts';
 
 function ProjectRequestList() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
@@ -46,12 +43,9 @@ function ProjectRequestList() {
     contractManDays: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
+      setSearched(true);
       setLoading(true);
       const response = await projectRequestAPI.getAll();
       setRequests(response.data);
@@ -114,13 +108,21 @@ function ProjectRequestList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this project request?')) {
-      try {
-        await projectRequestAPI.delete(id);
-        fetchData();
-      } catch (err) {
-        setError('Failed to delete project request: ' + (err.response?.data || err.message));
-      }
+    const confirmed = await confirmAction({
+      title: '프로젝트 등록 요청 삭제',
+      text: '이 프로젝트 등록 요청을 삭제하시겠습니까?',
+      confirmButtonText: '삭제',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await projectRequestAPI.delete(id);
+      fetchData();
+    } catch (err) {
+      setError('Failed to delete project request: ' + (err.response?.data || err.message));
     }
   };
 
@@ -288,32 +290,7 @@ function ProjectRequestList() {
   };
 
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   if (loading) {
@@ -326,46 +303,41 @@ function ProjectRequestList() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            내 프로젝트 등록 요청
-          </Typography>
-          {!showForm && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setShowForm(true)}
-            >
-              새 프로젝트 등록 요청
-            </Button>
-          )}
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="내 프로젝트 등록 요청"
+        subtitle="신규 프로젝트 등록 요청과 처리 상태를 확인합니다."
+        actions={
+          <PageActions>
+            <PageActionButton action="search" onClick={fetchData} />
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={requests.length === 0} />
+            {!showForm && (
+              <PageActionButton action="create" onClick={() => setShowForm(true)} />
+            )}
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info" sx={{ mb: 0, borderRadius: 0 }}>
           회사의 새 프로젝트 등록을 요청하세요. 관리자가 검토 후 승인합니다.
         </Alert>
 
-        {/* Create/Edit Form Dialog */}
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="md" fullWidth>
-          <form onSubmit={handleSubmit}>
-            <DialogTitle>
-              {editingRequest ? '프로젝트 등록 요청 수정' : '새 프로젝트 등록 요청'}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+        {showForm && (
+          <InlineEditorPanel
+            title={editingRequest ? '프로젝트 등록 요청 수정' : '새 프로젝트 등록 요청'}
+            subtitle="관리자가 검토할 프로젝트 계약 정보를 입력합니다."
+            onClose={handleCancel}
+          >
+            <Box component="form" onSubmit={handleSubmit}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 2,
+                }}
+              >
                 <TextField
                   fullWidth
                   required
@@ -423,20 +395,20 @@ function ProjectRequestList() {
                   inputProps={{ step: "0.01", min: "0" }}
                 />
               </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancel}>취소</Button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
+              <Button type="button" onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained">
                 {editingRequest ? '수정' : '요청 제출'}
               </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
-        {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <DataGrid
             sx={{ scrollbarGutter: 'stable' }}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
             rows={requests}
             columns={columns}
             pagination={false}

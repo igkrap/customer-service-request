@@ -150,6 +150,13 @@ public class ServiceRequestService {
         if (serviceRequest.getPriority() == null) {
             serviceRequest.setPriority(ServiceRequest.Priority.MEDIUM);
         }
+        applyDefaultDueDate(serviceRequest);
+        if (serviceRequest.getManagerId() != null && serviceRequest.getAssignedAt() == null) {
+            serviceRequest.setAssignedAt(getTodayDateString());
+            if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.OPEN) {
+                serviceRequest.setStatus(ServiceRequest.RequestStatus.ASSIGNED);
+            }
+        }
 
         serviceRequestMapper.insert(serviceRequest);
         recordHistory(serviceRequest.getId(), "CREATE", null,
@@ -229,6 +236,13 @@ public class ServiceRequestService {
         if (serviceRequest.getPriority() == null) {
             serviceRequest.setPriority(ServiceRequest.Priority.MEDIUM);
         }
+        applyDefaultDueDate(serviceRequest);
+        if (serviceRequest.getManagerId() != null && serviceRequest.getAssignedAt() == null) {
+            serviceRequest.setAssignedAt(getTodayDateString());
+            if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.OPEN) {
+                serviceRequest.setStatus(ServiceRequest.RequestStatus.ASSIGNED);
+            }
+        }
 
         serviceRequestMapper.insert(serviceRequest);
         recordHistory(serviceRequest.getId(), "CREATE", null,
@@ -280,16 +294,25 @@ public class ServiceRequestService {
 
         serviceRequest.setTitle(dto.getTitle());
         serviceRequest.setDescription(dto.getDescription());
-        serviceRequest.setStatus(dto.getStatus());
+        if (dto.getStatus() != null) {
+            serviceRequest.setStatus(dto.getStatus());
+        }
         serviceRequest.setPriority(dto.getPriority());
         if (dto.getManagerId() != null) {
             serviceRequest.setManagerId(dto.getManagerId());
+            if (!dto.getManagerId().equals(oldManagerId) && serviceRequest.getAssignedAt() == null) {
+                serviceRequest.setAssignedAt(getTodayDateString());
+            }
         }
         serviceRequest.setProjectId(dto.getProjectId());
         serviceRequest.setDueDate(dto.getDueDate());
         serviceRequest.setResolvedAt(dto.getResolvedAt());
         serviceRequest.setReceivedAt(dto.getReceivedAt());
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        if (serviceRequest.getDueDate() == null || serviceRequest.getDueDate().isBlank()) {
+            applyDefaultDueDate(serviceRequest);
+        }
+        applyWorkflowTimestamp(serviceRequest, serviceRequest.getStatus(), oldStatus);
 
         // Set resolvedAt when status changes to RESOLVED
         if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED &&
@@ -375,19 +398,19 @@ public class ServiceRequestService {
         }
 
         // 2. If status changed, notify customer
-        if (dto.getStatus() != oldStatus) {
+        if (serviceRequest.getStatus() != oldStatus) {
             populateProjectName(serviceRequest);
             User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
             if (customer != null && customer.getEmail() != null) {
-                if (dto.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
+                if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
                     emailService.sendServiceRequestResolvedEmail(customer.getEmail(), serviceRequest.getTitle(), serviceRequest.getResolutionNotes());
                 } else {
                     emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
-                        oldStatus != null ? oldStatus.name() : "UNKNOWN", dto.getStatus().name());
+                        oldStatus != null ? oldStatus.name() : "UNKNOWN", serviceRequest.getStatus().name());
                 }
             }
             if (customer != null && !isActor(customer.getUserId(), actorUserKey)) {
-                if (dto.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
+                if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.IN_PROGRESS) {
                     notificationService.sendManagerAssigned(serviceRequest, customer.getUserId(), null);
                 } else {
                     notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
@@ -395,10 +418,10 @@ public class ServiceRequestService {
             }
         }
 
-        if (dto.getStatus() != oldStatus) {
+        if (serviceRequest.getStatus() != oldStatus) {
             recordHistory(serviceRequest.getId(), "STATUS_CHANGED",
                     oldStatus != null ? oldStatus.name() : null,
-                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
                     oldManagerId, serviceRequest.getManagerId(),
                     "상태 변경", actorUserId);
         }
@@ -406,7 +429,7 @@ public class ServiceRequestService {
         if (dto.getManagerId() != null && !dto.getManagerId().equals(oldManagerId)) {
             recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
                     oldStatus != null ? oldStatus.name() : null,
-                    dto.getStatus() != null ? dto.getStatus().name() : null,
+                    serviceRequest.getStatus() != null ? serviceRequest.getStatus().name() : null,
                     oldManagerId, dto.getManagerId(),
                     "담당자 변경", actorUserId);
         }
@@ -433,6 +456,7 @@ public class ServiceRequestService {
         ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
         serviceRequest.setStatus(status);
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        applyWorkflowTimestamp(serviceRequest, status, oldStatus);
 
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
@@ -534,11 +558,15 @@ public class ServiceRequestService {
             }
             // Assign manager when moving to IN_PROGRESS
             serviceRequest.setManagerId(managerId);
+            if (serviceRequest.getAssignedAt() == null || serviceRequest.getAssignedAt().isBlank()) {
+                serviceRequest.setAssignedAt(getTodayDateString());
+            }
         }
 
         ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
         serviceRequest.setStatus(status);
         serviceRequest.setUpdatedAt(LocalDateTime.now());
+        applyWorkflowTimestamp(serviceRequest, status, oldStatus);
 
         // Set resolvedAt when status changes to RESOLVED
         if (status == ServiceRequest.RequestStatus.RESOLVED &&
@@ -605,6 +633,134 @@ public class ServiceRequestService {
         return convertToDTO(serviceRequest);
     }
 
+    public ServiceRequestDTO triageServiceRequest(Long id, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.OPEN, ServiceRequest.RequestStatus.REOPENED);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.TRIAGE, "TRIAGE_STARTED",
+                defaultNote(note, "접수 검토 시작"), actorUserId);
+    }
+
+    public ServiceRequestDTO assignServiceRequest(Long id, Long managerId, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.OPEN, ServiceRequest.RequestStatus.TRIAGE,
+                ServiceRequest.RequestStatus.REOPENED, ServiceRequest.RequestStatus.HOLD,
+                ServiceRequest.RequestStatus.WAITING_CUSTOMER);
+
+        User manager = userMapper.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found with id: " + managerId));
+        if (manager.getRole() != User.Role.ROLE_MANAGER) {
+            throw new RuntimeException("Assigned user is not a manager");
+        }
+
+        Long oldManagerId = serviceRequest.getManagerId();
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+        serviceRequest.setManagerId(managerId);
+        serviceRequest.setStatus(ServiceRequest.RequestStatus.ASSIGNED);
+        serviceRequest.setAssignedAt(getTodayDateString());
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
+        serviceRequestMapper.update(serviceRequest);
+
+        recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED",
+                oldStatus != null ? oldStatus.name() : null,
+                ServiceRequest.RequestStatus.ASSIGNED.name(),
+                oldManagerId, managerId,
+                defaultNote(note, "담당자 배정"), actorUserId);
+
+        String actorUserKey = getActorUserKey(actorUserId);
+        if (manager.getEmail() != null) {
+            emailService.sendManagerAssignedEmail(manager.getEmail(), serviceRequest.getTitle(), serviceRequest.getId());
+        }
+        if (!isActor(manager.getUserId(), actorUserKey)) {
+            notificationService.sendManagerAssigned(serviceRequest, manager.getUserId(), manager.getUsername());
+        }
+        notifyCustomerStatusChanged(serviceRequest, oldStatus, actorUserId);
+
+        return convertToDTO(serviceRequest);
+    }
+
+    public ServiceRequestDTO startServiceRequest(Long id, Long managerId, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.OPEN, ServiceRequest.RequestStatus.TRIAGE,
+                ServiceRequest.RequestStatus.ASSIGNED, ServiceRequest.RequestStatus.REOPENED,
+                ServiceRequest.RequestStatus.HOLD, ServiceRequest.RequestStatus.WAITING_CUSTOMER);
+
+        Long oldManagerId = serviceRequest.getManagerId();
+        if (managerId != null) {
+            if (oldManagerId != null && !oldManagerId.equals(managerId)) {
+                throw new RuntimeException("This request is already assigned to another manager");
+            }
+            serviceRequest.setManagerId(managerId);
+            if (serviceRequest.getAssignedAt() == null || serviceRequest.getAssignedAt().isBlank()) {
+                serviceRequest.setAssignedAt(getTodayDateString());
+            }
+        }
+        ServiceRequestDTO result = transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.IN_PROGRESS,
+                "WORK_STARTED", defaultNote(note, "처리 시작"), actorUserId);
+
+        if (managerId != null && (oldManagerId == null || !oldManagerId.equals(managerId))) {
+            recordHistory(serviceRequest.getId(), "MANAGER_ASSIGNED", null,
+                    ServiceRequest.RequestStatus.IN_PROGRESS.name(), oldManagerId, managerId,
+                    "담당자 배정", actorUserId);
+        }
+        return result;
+    }
+
+    public ServiceRequestDTO holdServiceRequest(Long id, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.ASSIGNED, ServiceRequest.RequestStatus.IN_PROGRESS,
+                ServiceRequest.RequestStatus.REOPENED, ServiceRequest.RequestStatus.WAITING_CUSTOMER);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.HOLD, "WORK_HELD",
+                defaultNote(note, "내부 보류"), actorUserId);
+    }
+
+    public ServiceRequestDTO waitCustomerServiceRequest(Long id, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.IN_PROGRESS, ServiceRequest.RequestStatus.REOPENED);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.WAITING_CUSTOMER, "WAITING_CUSTOMER",
+                defaultNote(note, "고객 응답 대기"), actorUserId);
+    }
+
+    public ServiceRequestDTO resolveServiceRequest(Long id, Double hoursSpent, String resolutionNotes,
+                                                   List<com.example.customerservice.dto.AttachmentDTO> attachments,
+                                                   String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.IN_PROGRESS, ServiceRequest.RequestStatus.REOPENED,
+                ServiceRequest.RequestStatus.HOLD, ServiceRequest.RequestStatus.WAITING_CUSTOMER,
+                ServiceRequest.RequestStatus.RESOLVED);
+        if (hoursSpent == null || resolutionNotes == null || resolutionNotes.isBlank()) {
+            throw new RuntimeException("Hours spent and resolution notes are required");
+        }
+        serviceRequest.setHoursSpent(hoursSpent);
+        serviceRequest.setResolutionNotes(resolutionNotes);
+        syncResolutionAttachments(serviceRequest.getId(), attachments);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.RESOLVED, "RESOLUTION_SUBMITTED",
+                defaultNote(note, "완료보고"), actorUserId);
+    }
+
+    public ServiceRequestDTO closeServiceRequest(Long id, String note, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.RESOLVED);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.CLOSED, "CUSTOMER_CLOSED",
+                defaultNote(note, "고객 확인 종료"), actorUserId);
+    }
+
+    public ServiceRequestDTO rejectResolution(Long id, String reason, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        assertCurrentStatus(serviceRequest, ServiceRequest.RequestStatus.RESOLVED);
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.REOPENED, "RESOLUTION_REJECTED",
+                defaultNote(reason, "고객 반려"), actorUserId);
+    }
+
+    public ServiceRequestDTO cancelServiceRequest(Long id, String reason, Long actorUserId) {
+        ServiceRequest serviceRequest = getServiceRequestEntityById(id);
+        if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.CLOSED ||
+            serviceRequest.getStatus() == ServiceRequest.RequestStatus.CANCELLED) {
+            throw new RuntimeException("Closed or cancelled requests cannot be cancelled again");
+        }
+        return transitionServiceRequest(serviceRequest, ServiceRequest.RequestStatus.CANCELLED, "REQUEST_CANCELLED",
+                defaultNote(reason, "요청 취소"), actorUserId);
+    }
+
     public ServiceRequestDTO unassignServiceRequest(Long id, Long actorUserId) {
         ServiceRequest serviceRequest = serviceRequestMapper.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found with id: " + id));
@@ -627,6 +783,165 @@ public class ServiceRequestService {
             throw new RuntimeException("Service request not found with id: " + id);
         }
         serviceRequestMapper.deleteById(id);
+    }
+
+    private ServiceRequestDTO transitionServiceRequest(ServiceRequest serviceRequest,
+                                                       ServiceRequest.RequestStatus nextStatus,
+                                                       String eventType,
+                                                       String note,
+                                                       Long actorUserId) {
+        ServiceRequest.RequestStatus oldStatus = serviceRequest.getStatus();
+        Long oldManagerId = serviceRequest.getManagerId();
+
+        serviceRequest.setStatus(nextStatus);
+        serviceRequest.setUpdatedAt(LocalDateTime.now());
+        applyWorkflowTimestamp(serviceRequest, nextStatus, oldStatus);
+        serviceRequestMapper.update(serviceRequest);
+
+        recordHistory(serviceRequest.getId(), eventType,
+                oldStatus != null ? oldStatus.name() : null,
+                nextStatus != null ? nextStatus.name() : null,
+                oldManagerId, serviceRequest.getManagerId(),
+                note, actorUserId);
+
+        notifyCustomerStatusChanged(serviceRequest, oldStatus, actorUserId);
+
+        return convertToDTO(serviceRequest);
+    }
+
+    private void assertCurrentStatus(ServiceRequest serviceRequest, ServiceRequest.RequestStatus... allowedStatuses) {
+        for (ServiceRequest.RequestStatus allowedStatus : allowedStatuses) {
+            if (serviceRequest.getStatus() == allowedStatus) {
+                return;
+            }
+        }
+        throw new RuntimeException("Current status cannot be changed by this action: " + serviceRequest.getStatus());
+    }
+
+    private String defaultNote(String note, String fallback) {
+        if (note == null || note.isBlank()) {
+            return fallback;
+        }
+        return note;
+    }
+
+    private void applyDefaultDueDate(ServiceRequest serviceRequest) {
+        if (serviceRequest.getDueDate() != null && !serviceRequest.getDueDate().isBlank()) {
+            return;
+        }
+        String baseDate = serviceRequest.getReceivedAt();
+        if (baseDate == null || baseDate.isBlank()) {
+            baseDate = getTodayDateString();
+        }
+        int days = switch (serviceRequest.getPriority() != null ? serviceRequest.getPriority() : ServiceRequest.Priority.MEDIUM) {
+            case URGENT -> 1;
+            case HIGH -> 3;
+            case MEDIUM -> 7;
+            case LOW -> 14;
+        };
+        serviceRequest.setDueDate(addDays(baseDate, days));
+    }
+
+    private String addDays(String yyyymmdd, int days) {
+        try {
+            return LocalDate.parse(yyyymmdd, DateTimeFormatter.ofPattern("yyyyMMdd"))
+                    .plusDays(days)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        } catch (Exception e) {
+            return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        }
+    }
+
+    private void applyWorkflowTimestamp(ServiceRequest serviceRequest,
+                                        ServiceRequest.RequestStatus nextStatus,
+                                        ServiceRequest.RequestStatus oldStatus) {
+        if (nextStatus == oldStatus) {
+            return;
+        }
+        String today = getTodayDateString();
+        if (nextStatus == ServiceRequest.RequestStatus.ASSIGNED &&
+            (serviceRequest.getAssignedAt() == null || serviceRequest.getAssignedAt().isBlank())) {
+            serviceRequest.setAssignedAt(today);
+        }
+        if (nextStatus == ServiceRequest.RequestStatus.IN_PROGRESS &&
+            (serviceRequest.getStartedAt() == null || serviceRequest.getStartedAt().isBlank())) {
+            serviceRequest.setStartedAt(today);
+        }
+        if (nextStatus == ServiceRequest.RequestStatus.RESOLVED &&
+            (serviceRequest.getResolvedAt() == null || serviceRequest.getResolvedAt().isBlank())) {
+            serviceRequest.setResolvedAt(today);
+        }
+        if (nextStatus == ServiceRequest.RequestStatus.CLOSED &&
+            (serviceRequest.getClosedAt() == null || serviceRequest.getClosedAt().isBlank())) {
+            serviceRequest.setClosedAt(today);
+        }
+        if (nextStatus == ServiceRequest.RequestStatus.CANCELLED &&
+            (serviceRequest.getCancelledAt() == null || serviceRequest.getCancelledAt().isBlank())) {
+            serviceRequest.setCancelledAt(today);
+        }
+        if (nextStatus == ServiceRequest.RequestStatus.REOPENED) {
+            serviceRequest.setReopenedAt(today);
+        }
+    }
+
+    private void syncResolutionAttachments(Long id, List<com.example.customerservice.dto.AttachmentDTO> attachments) {
+        if (attachments == null) {
+            return;
+        }
+
+        List<com.example.customerservice.dto.AttachmentDTO> existingAttachments =
+            attachmentService.getAttachmentsByServiceRequestId(id);
+
+        Set<Long> incomingAttachmentIds = attachments.stream()
+            .filter(a -> a.getId() != null)
+            .map(com.example.customerservice.dto.AttachmentDTO::getId)
+            .collect(Collectors.toCollection(HashSet::new));
+
+        List<com.example.customerservice.dto.AttachmentDTO> existingResolutionAttachments = existingAttachments.stream()
+            .filter(a -> "RESOLUTION".equalsIgnoreCase(a.getAttachmentType()))
+            .collect(Collectors.toList());
+
+        for (com.example.customerservice.dto.AttachmentDTO attachmentDTO : attachments) {
+            if (attachmentDTO.getId() != null) {
+                boolean alreadyLinked = existingResolutionAttachments.stream()
+                    .anyMatch(a -> a.getId().equals(attachmentDTO.getId()));
+
+                if (!alreadyLinked) {
+                    attachmentService.linkToServiceRequest(id, attachmentDTO.getId(), "RESOLUTION");
+                }
+            }
+        }
+
+        for (com.example.customerservice.dto.AttachmentDTO existing : existingResolutionAttachments) {
+            if (!incomingAttachmentIds.contains(existing.getId())) {
+                attachmentService.unlinkFromServiceRequest(id, existing.getId());
+            }
+        }
+    }
+
+    private void notifyCustomerStatusChanged(ServiceRequest serviceRequest,
+                                             ServiceRequest.RequestStatus oldStatus,
+                                             Long actorUserId) {
+        if (serviceRequest.getStatus() == oldStatus) {
+            return;
+        }
+        populateProjectName(serviceRequest);
+        String actorUserKey = getActorUserKey(actorUserId);
+        User customer = userMapper.findById(serviceRequest.getCustomerId()).orElse(null);
+        if (customer == null) {
+            return;
+        }
+        if (customer.getEmail() != null) {
+            if (serviceRequest.getStatus() == ServiceRequest.RequestStatus.RESOLVED) {
+                emailService.sendServiceRequestResolvedEmail(customer.getEmail(), serviceRequest.getTitle(), serviceRequest.getResolutionNotes());
+            } else {
+                emailService.sendServiceRequestStatusChangedEmail(customer.getEmail(), serviceRequest.getTitle(),
+                        oldStatus != null ? oldStatus.name() : "UNKNOWN", serviceRequest.getStatus().name());
+            }
+        }
+        if (!isActor(customer.getUserId(), actorUserKey)) {
+            notificationService.sendServiceRequestStatusUpdated(serviceRequest, customer.getUserId());
+        }
     }
 
     private ServiceRequestDTO convertToDTO(ServiceRequest serviceRequest) {
@@ -687,6 +1002,11 @@ public class ServiceRequestService {
         dto.setHoursSpent(serviceRequest.getHoursSpent());
         dto.setResolutionNotes(serviceRequest.getResolutionNotes());
         dto.setDueDate(serviceRequest.getDueDate());
+        dto.setAssignedAt(serviceRequest.getAssignedAt());
+        dto.setStartedAt(serviceRequest.getStartedAt());
+        dto.setClosedAt(serviceRequest.getClosedAt());
+        dto.setCancelledAt(serviceRequest.getCancelledAt());
+        dto.setReopenedAt(serviceRequest.getReopenedAt());
 
         // Note: Attachments, comments, and follow-ups are loaded separately via dedicated API endpoints
         // to avoid N+1 query issues and recursive loading problems.
@@ -712,6 +1032,11 @@ public class ServiceRequestService {
         serviceRequest.setDueDate(dto.getDueDate());
         serviceRequest.setResolvedAt(dto.getResolvedAt());
         serviceRequest.setReceivedAt(dto.getReceivedAt());
+        serviceRequest.setAssignedAt(dto.getAssignedAt());
+        serviceRequest.setStartedAt(dto.getStartedAt());
+        serviceRequest.setClosedAt(dto.getClosedAt());
+        serviceRequest.setCancelledAt(dto.getCancelledAt());
+        serviceRequest.setReopenedAt(dto.getReopenedAt());
         return serviceRequest;
     }
 

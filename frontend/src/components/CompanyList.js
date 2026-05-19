@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CircularProgress,
-  Typography,
   Alert,
   IconButton,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
 import { companyAPI } from '../services/api';
 import { formatDateTime } from '../utils/dateFormatter';
 import * as XLSX from 'xlsx';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
+import { confirmAction } from '../utils/alerts';
 
 function CompanyList() {
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
@@ -32,12 +30,9 @@ function CompanyList() {
     businessNumber: ''
   });
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
-
   const fetchCompanies = async () => {
     try {
+      setSearched(true);
       setLoading(true);
       const response = await companyAPI.getAll();
       setCompanies(response.data);
@@ -89,13 +84,21 @@ function CompanyList() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('이 회사를 삭제하시겠습니까?')) {
-      try {
-        await companyAPI.delete(id);
-        fetchCompanies();
-      } catch (err) {
-        setError('회사 삭제 실패: ' + (err.response?.data || err.message));
-      }
+    const confirmed = await confirmAction({
+      title: '회사 삭제',
+      text: '이 회사를 삭제하시겠습니까?',
+      confirmButtonText: '삭제',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await companyAPI.delete(id);
+      fetchCompanies();
+    } catch (err) {
+      setError('회사 삭제 실패: ' + (err.response?.data || err.message));
     }
   };
 
@@ -192,68 +195,34 @@ function CompanyList() {
   };
 
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            회사 관리
-          </Typography>
-          {!showForm && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setShowForm(true)}
-            >
-              새 회사 등록
-            </Button>
-          )}
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, minHeight: 0, p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="회사 관리"
+        actions={
+          <PageActions>
+            <PageActionButton action="search" onClick={fetchCompanies} />
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={companies.length === 0} />
+            {!showForm && (
+              <PageActionButton action="create" onClick={() => setShowForm(true)} />
+            )}
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, minHeight: 0, p: 0, display: 'flex', flexDirection: 'column' }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Dialog open={showForm} onClose={handleCancel} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingCompany ? '회사 정보 수정' : '새 회사 등록'}</DialogTitle>
-          <form onSubmit={handleSubmit}>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        {showForm && (
+          <InlineEditorPanel
+            title={editingCompany ? '회사 정보 수정' : '새 회사 등록'}
+            subtitle="회사명, 회사 코드, 사업자 번호를 입력합니다."
+            onClose={handleCancel}
+          >
+            <Box component="form" onSubmit={handleSubmit}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <TextField
                   fullWidth
                   required
@@ -281,15 +250,15 @@ function CompanyList() {
                   onChange={handleInputChange}
                 />
               </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancel}>취소</Button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2.5 }}>
+              <Button type="button" onClick={handleCancel}>취소</Button>
               <Button type="submit" variant="contained" color="primary">
                 {editingCompany ? '수정' : '등록'}
               </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+              </Box>
+            </Box>
+          </InlineEditorPanel>
+        )}
 
         <Box sx={{ flex: 1, minHeight: 0 }}>
           <DataGrid
@@ -305,6 +274,7 @@ function CompanyList() {
             }}
             showToolbar
             sx={{ height: '100%', scrollbarGutter: 'stable' }}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
           />
         </Box>
       </Box>

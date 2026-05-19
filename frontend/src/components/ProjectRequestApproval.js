@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { projectRequestAPI } from '../services/api';
 import {
   Box,
@@ -10,26 +10,26 @@ import {
   TextField,
   Chip,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
   IconButton,
   Grid
 } from '@mui/material';
-import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
-  Visibility as ViewIcon,
-  Download as DownloadIcon
+  Visibility as ViewIcon
 } from '@mui/icons-material';
 import { formatDateTime } from '../utils/dateFormatter';
 import { getServiceTypeLabel } from '../utils/serviceTypeLabel';
 import * as XLSX from 'xlsx';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
 
 function ProjectRequestApproval() {
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -38,12 +38,9 @@ function ProjectRequestApproval() {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [approvalAction, setApprovalAction] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
+      setSearched(true);
       setLoading(true);
       const response = await projectRequestAPI.getAll();
       setRequests(response.data);
@@ -258,32 +255,7 @@ function ProjectRequestApproval() {
   };
 
   function CustomToolbar() {
-    return (
-      <GridToolbarContainer
-        sx={{
-          p: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportToExcel}
-          sx={{
-            color: 'success.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'success.light',
-              color: 'white',
-            },
-          }}
-        >
-          Excel 내보내기
-        </Button>
-      </GridToolbarContainer>
-    );
+    return null;
   }
 
   if (loading) {
@@ -296,25 +268,22 @@ function ProjectRequestApproval() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          프로젝트 요청 승인
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
+      <PageHeader
+        title="프로젝트 요청 승인"
+        subtitle="고객 프로젝트 요청을 검토하고 승인 또는 거부합니다."
+        actions={
+          <PageActions>
+            <PageActionButton action="search" onClick={fetchData} />
+            <PageActionButton action="export" onClick={handleExportToExcel} disabled={requests.length === 0} />
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info" sx={{ mb: 0, borderRadius: 0 }}>
           요청자의 프로젝트 요청을 검토하고 승인 또는 거부하세요. 승인된 요청은 새 프로젝트를 생성합니다.
         </Alert>
 
@@ -473,7 +442,7 @@ function ProjectRequestApproval() {
         </Dialog>
 
         {/* DataGrid */}
-        <Box sx={{ flex: 1, width: '100%' }}>
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <DataGrid
             rows={requests}
             columns={columns}
@@ -482,6 +451,7 @@ function ProjectRequestApproval() {
             hideFooter
             disableSelectionOnClick
             autoHeight={false}
+            localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
             onRowClick={handleRowClick}
             slots={{
               toolbar: CustomToolbar,

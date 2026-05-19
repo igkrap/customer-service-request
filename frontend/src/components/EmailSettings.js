@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -10,15 +9,12 @@ import {
   Alert,
   Snackbar,
   Grid,
-  Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   CircularProgress
 } from '@mui/material';
-import { Save as SaveIcon, Email as EmailIcon, Send as SendIcon } from '@mui/icons-material';
+import { Send as SendIcon } from '@mui/icons-material';
 import api from '../services/api';
+import PageHeader, { PageActionButton, PageActions } from './common/PageHeader';
+import InlineEditorPanel from './common/InlineEditorPanel';
 
 function EmailSettings() {
   const [settings, setSettings] = useState({
@@ -36,7 +32,7 @@ function EmailSettings() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [testEmailDialog, setTestEmailDialog] = useState(false);
+  const [showTestEmail, setShowTestEmail] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
 
@@ -93,7 +89,7 @@ function EmailSettings() {
         message: `테스트 이메일이 ${testEmail}로 전송되었습니다. 받은편지함과 스팸 폴더를 확인하세요.`,
         severity: 'success'
       });
-      setTestEmailDialog(false);
+      setShowTestEmail(false);
       setTestEmail('');
     } catch (error) {
       console.error('Failed to send test email:', error);
@@ -118,26 +114,48 @@ function EmailSettings() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          이메일 서버 설정
-        </Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+      <PageHeader
+        title="이메일 서버 설정"
+        subtitle="SMTP 서버 연결과 테스트 발송을 관리합니다."
+        actions={
+          <PageActions>
+            <PageActionButton
+              action="save"
+              onClick={handleSave}
+              disabled={saving}
+              icon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
+            >
+              {saving ? '저장 중' : '저장'}
+            </PageActionButton>
+            <PageActionButton
+              action="send"
+              variant="outlined"
+              onClick={() => setShowTestEmail(true)}
+              disabled={!settings.id}
+            />
+          </PageActions>
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-        <Alert severity="info" sx={{ mb: 3 }}>
+        <Alert severity="info" sx={{ mb: 0, borderRadius: 0 }}>
           이메일 알림 기능을 사용하려면 SMTP 서버 정보를 입력하세요. Gmail을 사용하는 경우, 앱 비밀번호를 생성하여 사용해야 합니다.
         </Alert>
 
-        <Grid container spacing={3}>
+        <Grid
+          container
+          rowSpacing={1.5}
+          columnSpacing={1.5}
+          sx={{
+            m: 0,
+            width: '100%',
+            p: 1.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderTop: 0,
+            bgcolor: 'background.paper',
+          }}
+        >
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -240,36 +258,47 @@ function EmailSettings() {
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? '저장 중...' : '설정 저장'}
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<SendIcon />}
-                onClick={() => setTestEmailDialog(true)}
-                disabled={!settings.id}
-              >
-                테스트 이메일 전송
-              </Button>
-            </Box>
-          </Grid>
         </Grid>
 
-        <Box sx={{ mt: 4 }}>
+        {showTestEmail && (
+          <InlineEditorPanel
+            title="테스트 이메일 전송"
+            subtitle="현재 저장된 SMTP 설정으로 테스트 메일을 보냅니다."
+            onClose={() => setShowTestEmail(false)}
+            sx={{ mt: 0 }}
+          >
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <TextField
+                label="수신자 이메일 주소"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="test@example.com"
+                sx={{ minWidth: 280, flex: '1 1 320px' }}
+              />
+              <Button
+                onClick={handleSendTestEmail}
+                variant="contained"
+                disabled={!testEmail || sendingTest}
+                startIcon={sendingTest ? <CircularProgress size={20} /> : <SendIcon />}
+                sx={{ mt: { xs: 0, sm: 0.5 } }}
+              >
+                {sendingTest ? '전송 중...' : '전송'}
+              </Button>
+            </Box>
+          </InlineEditorPanel>
+        )}
+
+        <Box
+          sx={{
+            mt: 0,
+            p: 1.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderTop: 0,
+            bgcolor: 'background.paper',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             이메일 알림이 발송되는 경우
           </Typography>
@@ -285,33 +314,6 @@ function EmailSettings() {
           </Typography>
         </Box>
       </Box>
-
-      <Dialog open={testEmailDialog} onClose={() => setTestEmailDialog(false)}>
-        <DialogTitle>테스트 이메일 전송</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="수신자 이메일 주소"
-            type="email"
-            fullWidth
-            value={testEmail}
-            onChange={(e) => setTestEmail(e.target.value)}
-            placeholder="test@example.com"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTestEmailDialog(false)}>취소</Button>
-          <Button
-            onClick={handleSendTestEmail}
-            variant="contained"
-            disabled={!testEmail || sendingTest}
-            startIcon={sendingTest ? <CircularProgress size={20} /> : <SendIcon />}
-          >
-            {sendingTest ? '전송 중...' : '전송'}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Snackbar
         open={snackbar.open}

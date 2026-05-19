@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Alert,
   TextField,
@@ -22,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { userAPI, getProfilePictureUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import PageHeader from './common/PageHeader';
 
 function UserProfile({ onBack }) {
   const { user, updateUser } = useAuth();
@@ -165,33 +165,24 @@ function UserProfile({ onBack }) {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 3, minHeight: 72, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {onBack && (
-            <IconButton onClick={onBack} sx={{ mr: 2 }}>
+      <PageHeader
+        title="프로필 정보 변경"
+        subtitle="계정 정보와 프로필 이미지를 관리합니다."
+        leading={
+          onBack && (
+            <IconButton onClick={onBack} aria-label="뒤로 가기">
               <ArrowBackIcon />
             </IconButton>
-          )}
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            프로필 정보 변경
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+          )
+        }
+      />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
 
       {/* 프로필 사진 + 정보 변경 타일 */}
-      <Grid container spacing={2} direction="column">
+      <Grid container spacing={0} direction="column">
         {/* 프로필 사진 변경 타일 */}
         <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
           <Card elevation={3} sx={{ width: '100%' }}>

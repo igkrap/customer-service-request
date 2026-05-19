@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   FormControl,
   InputLabel,
@@ -24,6 +23,8 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
 import { companyAPI, reportAPI } from '../services/api';
+import PageHeader, { PageActionButton } from './common/PageHeader';
+import { DataSurface, FilterPanel } from './common/WorkspaceLayout';
 
 const normalizeNumber = (value) => {
   if (value === null || value === undefined || value === '') {
@@ -72,6 +73,7 @@ function CompanyPerformance() {
   const [monthlyRows, setMonthlyRows] = useState([]);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(null);
+  const [searched, setSearched] = useState(false);
 
   // console.log('[CompanyPerformance] render', {
   //   selectedCompanyId,
@@ -124,41 +126,28 @@ function CompanyPerformance() {
     fetchCompanies();
   }, []);
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      // console.log('[CompanyPerformance] fetch report start', {
-      //   selectedCompanyId
-      // });
-      if (!selectedCompanyId) {
-        // console.log('[CompanyPerformance] skipped report fetch (no selection)');
-        setRows([]);
-        return;
-      }
+  const fetchReport = async () => {
+    if (!selectedCompanyId) {
+      setRows([]);
+      setSearched(false);
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
-      try {
-        const isAllCompanies = selectedCompanyId === 'all';
-        const companyId = isAllCompanies ? null : Number(selectedCompanyId);
-        const response = await reportAPI.getCompanyPerformance(companyId);
-        const normalized = (response.data || []).map(normalizeRow);
-        // console.log('[CompanyPerformance] report request', {
-        //   selectedCompanyId,
-        //   isAllCompanies,
-        //   companyId
-        // });
-        // console.log('[CompanyPerformance] report response', response.data);
-        // console.log('[CompanyPerformance] normalized rows', normalized);
-        setRows(normalized);
-      } catch (err) {
-        setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReport();
-  }, [selectedCompanyId]);
+    setSearched(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const isAllCompanies = selectedCompanyId === 'all';
+      const companyId = isAllCompanies ? null : Number(selectedCompanyId);
+      const response = await reportAPI.getCompanyPerformance(companyId);
+      const normalized = (response.data || []).map(normalizeRow);
+      setRows(normalized);
+    } catch (err) {
+      setError(`회사별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRowClick = async (params) => {
     const project = params.row;
@@ -201,46 +190,32 @@ function CompanyPerformance() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{
-          p: 3,
-          minHeight: 72,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          회사별 실적 현황
-        </Typography>
-      </Box>
+      <PageHeader
+        title="회사별 실적 현황"
+        subtitle="회사와 프로젝트 단위의 처리 실적을 확인합니다."
+        actions={<PageActionButton action="search" onClick={fetchReport} disabled={!selectedCompanyId} />}
+      />
       <Box
         sx={{
           flexGrow: 1,
           minHeight: 0,
           overflow: 'auto',
-          p: 3,
+          p: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 3
+          gap: 0
         }}
       >
-        <Paper sx={{ p: 3 }}>
-          <FormControl sx={{ minWidth: 240 }}>
+        <FilterPanel>
+          <FormControl size="small" sx={{ minWidth: 240 }}>
             <InputLabel>회사 선택</InputLabel>
             <Select
               value={selectedCompanyId}
-              onChange={(event) => setSelectedCompanyId(event.target.value)}
+              onChange={(event) => {
+                setSelectedCompanyId(event.target.value);
+                setRows([]);
+                setSearched(false);
+              }}
               label="회사 선택"
             >
               <MenuItem value="">회사 선택</MenuItem>
@@ -252,8 +227,8 @@ function CompanyPerformance() {
               ))}
             </Select>
           </FormControl>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1, minHeight: 0, display: 'flex' }}>
+        </FilterPanel>
+        <DataSurface>
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
@@ -265,6 +240,7 @@ function CompanyPerformance() {
               sx={{ height: '100%', flex: 1, scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
+              localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
               pagination={false}
               hideFooter
               hideFooterPagination
@@ -272,11 +248,10 @@ function CompanyPerformance() {
               initialState={{
                 pagination: { paginationModel: { pageSize: 10, page: 0 } }
               }}
-              localeText={{ noRowsLabel: '조회 결과가 없습니다.' }}
               onRowClick={handleRowClick}
             />
           )}
-        </Paper>
+        </DataSurface>
       </Box>
       <Dialog
         open={dialogOpen}

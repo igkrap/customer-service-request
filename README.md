@@ -24,18 +24,24 @@ Spring Boot + React + PostgreSQL로 만든 서비스 요청 관리 플랫폼입�
 
 ## 빠른 시작
 
-### 1. 데이터베이스 실행
+### 1. 데이터베이스 준비
 
-```bash
-docker-compose up -d
-```
-
-PostgreSQL이 `localhost:5432`에서 실행됩니다.
+PostgreSQL 데이터베이스 `customer_service`가 `localhost:5432`에서 접근 가능해야 합니다.
+RAG 기능을 사용하므로 PostgreSQL 서버에 `pgvector` 확장이 설치되어 있어야 합니다.
+접속 정보는 `backend/src/main/resources/application.properties`에서 확인하거나 변경할 수 있습니다.
+로컬 비밀번호가 기본값과 다르면 환경변수로 넘겨 실행합니다.
 
 ### 2. 백엔드 실행
 
 ```bash
 cd backend
+mvn spring-boot:run
+```
+
+PowerShell 예시:
+
+```powershell
+$env:DB_PASSWORD='로컬 PostgreSQL 비밀번호'
 mvn spring-boot:run
 ```
 
@@ -104,13 +110,14 @@ customer-service-request/
 │   │       └── config/        # 설정
 │   └── src/main/resources/
 │       ├── schema.sql         # DB 스키마
-│       └── data.sql           # 초기 데이터
+│       ├── data.sql           # 초기 데이터
+│       └── db/migration/      # 기존 DB 보정용 SQL
 ├── frontend/             # React 프론트엔드
 │   └── src/
 │       ├── components/        # React 컴포넌트
 │       ├── services/          # API 클라이언트
 │       └── context/           # 인증 상태 관리
-└── docker-compose.yml    # PostgreSQL 설정
+└── README.md
 ```
 
 ## 환경 요구사항
@@ -118,15 +125,14 @@ customer-service-request/
 - **Java 17** 이상
 - **Maven 3.6+**
 - **Node.js 16+**
-- **Docker** (PostgreSQL용)
+- **PostgreSQL** + **pgvector**
 
 ## 문제 해결
 
 ### 데이터베이스 초기화
-```bash
-docker-compose down -v
-docker-compose up -d
-```
+백엔드 실행 시 `schema.sql`과 `data.sql`이 적용됩니다. 필요하면 PostgreSQL에서 `customer_service` 데이터베이스를 초기화한 뒤 백엔드를 다시 실행하세요.
+
+`db/migration`의 SQL 파일은 기존 DB에서 누락 컬럼이나 기존 데이터 보정이 필요할 때 참고합니다. 현재 프로젝트에는 Flyway/Liquibase 자동 마이그레이션 설정이 없으므로, 새 DB 기준 스키마는 `schema.sql`을 기준으로 봅니다.
 
 ### 포트 충돌
 - 백엔드: `application.properties`에서 `server.port` 변경

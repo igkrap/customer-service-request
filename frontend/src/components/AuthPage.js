@@ -3,6 +3,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
+import { showSuccess } from '../utils/alerts';
 import '../styles/Auth.css';
 
 function AuthPage() {
@@ -99,7 +100,10 @@ function AuthPage() {
       const { token, id, username, email, role } = response.data;
 
       if (!token) {
-        alert('회원가입이 완료되었습니다! 관리자의 승인 대기 중입니다. 승인 후 로그인하실 수 있습니다.');
+        await showSuccess(
+          '회원가입 완료',
+          '관리자의 승인 대기 중입니다. 승인 후 로그인하실 수 있습니다.'
+        );
         setIsLogin(true);
         setRegisterData({
           userId: '',

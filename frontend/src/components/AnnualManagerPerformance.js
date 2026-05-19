@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
-  Paper,
-  Typography,
   TextField,
   Alert,
   CircularProgress
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { reportAPI } from '../services/api';
+import PageHeader, { PageActionButton } from './common/PageHeader';
+import { DataSurface, FilterPanel } from './common/WorkspaceLayout';
 
 function AnnualManagerPerformance() {
   const currentYear = new Date().getFullYear();
@@ -16,6 +16,7 @@ function AnnualManagerPerformance() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searched, setSearched] = useState(false);
 
   const normalizeNumber = (value) => {
     if (value === null || value === undefined || value === '') {
@@ -52,72 +53,52 @@ function AnnualManagerPerformance() {
     }
   ]), []);
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const yearNumber = Number(selectedYear);
-        const response = await reportAPI.getAnnualManagerPerformance(yearNumber);
-        const normalized = (response.data || []).map(normalizeRow);
-        setRows(normalized);
-      } catch (err) {
-        setError(`연간 매니저별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReport();
-  }, [selectedYear]);
+  const fetchReport = async () => {
+    setSearched(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const yearNumber = Number(selectedYear);
+      const response = await reportAPI.getAnnualManagerPerformance(yearNumber);
+      const normalized = (response.data || []).map(normalizeRow);
+      setRows(normalized);
+    } catch (err) {
+      setError(`연간 매니저별 실적을 불러오는 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{
-          p: 3,
-          minHeight: 72,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          연간 매니저별 실적 현황
-        </Typography>
-      </Box>
+      <PageHeader
+        title="연간 매니저별 실적 현황"
+        subtitle="연도별 매니저 처리 실적을 비교합니다."
+        actions={<PageActionButton action="search" onClick={fetchReport} />}
+      />
       <Box
         sx={{
           flexGrow: 1,
           minHeight: 0,
           overflow: 'auto',
-          p: 3,
+          p: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 3
+          gap: 0
         }}
       >
-        <Paper sx={{ p: 3 }}>
+        <FilterPanel>
           <TextField
             label="연도"
             type="number"
+            size="small"
             value={selectedYear}
             onChange={(event) => setSelectedYear(event.target.value)}
             inputProps={{ min: 2000, max: 2100 }}
             sx={{ width: 160 }}
           />
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1, minHeight: 0, display: 'flex' }}>
+        </FilterPanel>
+        <DataSurface>
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
@@ -129,6 +110,7 @@ function AnnualManagerPerformance() {
               sx={{ height: '100%', flex: 1, scrollbarGutter: 'stable' }}
               rows={rows}
               columns={columns}
+              localeText={{ noRowsLabel: searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 데이터를 조회하세요.' }}
               pagination={false}
               hideFooter
               hideFooterPagination
@@ -138,7 +120,7 @@ function AnnualManagerPerformance() {
               }}
             />
           )}
-        </Paper>
+        </DataSurface>
       </Box>
     </Box>
   );

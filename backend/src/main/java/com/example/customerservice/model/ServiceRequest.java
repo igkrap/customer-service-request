@@ -49,8 +49,27 @@ public class ServiceRequest {
 
     private String dueDate;
 
+    private String assignedAt;
+
+    private String startedAt;
+
+    private String closedAt;
+
+    private String cancelledAt;
+
+    private String reopenedAt;
+
     public enum RequestStatus {
-        OPEN, IN_PROGRESS, RESOLVED, HOLD, CANCELLED
+        OPEN,
+        TRIAGE,
+        ASSIGNED,
+        IN_PROGRESS,
+        WAITING_CUSTOMER,
+        HOLD,
+        RESOLVED,
+        REOPENED,
+        CLOSED,
+        CANCELLED
     }
 
     public enum Priority {
