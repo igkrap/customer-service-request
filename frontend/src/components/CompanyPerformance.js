@@ -18,7 +18,8 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TableRow
+  TableRow,
+  TableContainer
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import CloseIcon from '@mui/icons-material/Close';
@@ -307,50 +308,34 @@ function CompanyPerformance() {
           )}
           {monthlyError && <Alert severity="error">{monthlyError}</Alert>}
           {!monthlyLoading && !monthlyError && monthlyRows.length > 0 && (
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table sx={{ minWidth: 600 }}>
+            <TableContainer sx={{ maxHeight: 360 }}>
+              <Table stickyHeader sx={{ minWidth: 520 }}>
                 <TableHead>
                   <TableRow>
-                    {monthlyRows.map((item) => (
-                      <TableCell
-                        key={`${item.projectId}-${item.yearMonth}-header`}
-                        align="center"
-                        colSpan={3}
-                        sx={{ fontWeight: 700, bgcolor: 'grey.100' }}
-                      >
-                        {item.yearMonth}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    {monthlyRows.map((item) => (
-                      <React.Fragment key={`${item.projectId}-${item.yearMonth}-sub`}>
-                        <TableCell align="center" sx={{ minWidth: 110, whiteSpace: 'nowrap' }}>
-                          계획 공수
-                        </TableCell>
-                        <TableCell align="center" sx={{ minWidth: 110, whiteSpace: 'nowrap' }}>
-                          투입 공수
-                        </TableCell>
-                        <TableCell align="center" sx={{ minWidth: 100, whiteSpace: 'nowrap' }}>
-                          달성률
-                        </TableCell>
-                      </React.Fragment>
-                    ))}
+                    <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.100' }}>년월</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, bgcolor: 'grey.100' }}>
+                      계획 공수
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, bgcolor: 'grey.100' }}>
+                      투입 공수
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, bgcolor: 'grey.100' }}>
+                      달성률
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  <TableRow>
-                    {monthlyRows.map((item) => (
-                      <React.Fragment key={`${item.projectId}-${item.yearMonth}-value`}>
-                        <TableCell align="center">{formatNumber(item.plannedManDays)}</TableCell>
-                        <TableCell align="center">{formatNumber(item.actualManDays)}</TableCell>
-                        <TableCell align="center">{formatPercent(item.achievementRate)}</TableCell>
-                      </React.Fragment>
-                    ))}
-                  </TableRow>
+                  {monthlyRows.map((item) => (
+                    <TableRow key={`${item.projectId}-${item.yearMonth}`}>
+                      <TableCell>{item.yearMonth}</TableCell>
+                      <TableCell align="right">{formatNumber(item.plannedManDays)}</TableCell>
+                      <TableCell align="right">{formatNumber(item.actualManDays)}</TableCell>
+                      <TableCell align="right">{formatPercent(item.achievementRate)}</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
-            </Box>
+            </TableContainer>
           )}
           {!monthlyLoading && !monthlyError && monthlyRows.length === 0 && (
             <Alert severity="info">표시할 월별 데이터가 없습니다.</Alert>
